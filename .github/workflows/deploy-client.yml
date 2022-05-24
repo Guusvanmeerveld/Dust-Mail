@@ -22,12 +22,13 @@ jobs:
           cache: "yarn"
 
       - name: Install NPM dependencies
-        run: yarn install
+        run: yarn --cwd packages/client run install
+
+      - name: Build client
+        run: yarn --cwd packages/client run build --base=/Mail-Client/
 
       - name: Check size
         run: yarn --cwd packages/client run size
-        env:
-          BASE_URL: "/Mail-Client"
 
       - name: Deploy to pages
         uses: peaceiris/actions-gh-pages@v3

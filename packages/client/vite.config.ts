@@ -19,6 +19,7 @@ export default defineConfig({
 		tsconfigPaths()
 	],
 	build: {
+		sourcemap: true,
 		outDir: "dist",
 		rollupOptions: {
 			input: {

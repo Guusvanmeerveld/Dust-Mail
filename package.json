@@ -3,10 +3,6 @@
 	"author": {
 		"name": "Guus van Meerveld"
 	},
-	"workspaces": [
-		"packages/client",
-		"packages/server"
-	],
 	"scripts": {
 		"prettify": "prettier packages/client/src --write "
 	},
