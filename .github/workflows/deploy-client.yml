@@ -22,7 +22,7 @@ jobs:
           cache: "yarn"
 
       - name: Install NPM dependencies
-        run: yarn --cwd packages/client run install
+        run: yarn --cwd packages/client install
 
       - name: Build client
         run: yarn --cwd packages/client run build --base=/Mail-Client/
