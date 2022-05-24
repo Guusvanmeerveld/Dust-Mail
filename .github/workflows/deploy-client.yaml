@@ -3,7 +3,7 @@ name: Deploy to Github Pages / Docker hub
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - packages/client
       - .github/workflows/deploy-client.yml
