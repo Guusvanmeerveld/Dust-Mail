@@ -7,7 +7,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "matrix-client",
+    "productName": "mail-client",
     "version": "0.1.0"
   },
   "tauri": {
@@ -58,8 +58,15 @@
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "Matrix",
+        "title": "Mail-Client",
         "width": 800
+      },
+      {
+        "width": 400,
+        "height": 200,
+        "decorations": false,
+        "url": "splashscreen.html",
+        "label": "splashscreen"
       }
     ]
   }

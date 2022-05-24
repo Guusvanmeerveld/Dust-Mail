@@ -5,7 +5,7 @@ import Layout from "@components/Layout";
 const Index = () => {
   return (
     <Layout>
-      <div></div>
+      <div>yote</div>
     </Layout>
   );
 };

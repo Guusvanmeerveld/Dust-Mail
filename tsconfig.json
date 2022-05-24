@@ -5,6 +5,9 @@
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "allowJs": false,
     "paths": {
+      "@utils/*": [
+        "./src/utils/*"
+      ],
       "@components/*": ["./src/components/*"],
       "react": [
         "./node_modules/preact/compat/"

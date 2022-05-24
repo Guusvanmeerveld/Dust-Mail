@@ -4,9 +4,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 import alias from "@rollup/plugin-alias";
 
+import { resolve } from "path";
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  // optimizeDeps: { include: ["imap"] },
   plugins: [
     preact(),
     tsconfigPaths(),
@@ -19,4 +20,12 @@ export default defineConfig({
       ],
     }),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        splashscreen: resolve(__dirname, "splashscreen.html"),
+      },
+    },
+  },
 });
