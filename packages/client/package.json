@@ -1,0 +1,40 @@
+{
+  "name": "mail-client",
+  "private": true,
+  "version": "0.0.0",
+  "size-limit": [
+    {
+      "path": "dist/assets/*.js",
+      "limit": "300 kB"
+    }
+  ],
+  "scripts": {
+    "dev": "vite",
+    "size": "yarn run build && size-limit",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "@fontsource/roboto": "^4.5.7",
+    "@mui/icons-material": "^5.8.0",
+    "@mui/material": "^5.8.0",
+    "@tauri-apps/api": "^1.0.0-rc.5",
+    "preact": "^10.5.15",
+    "use-local-storage-state": "^17.0.1"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-jsx-source": "^7.16.7",
+    "@preact/preset-vite": "^2.1.5",
+    "@rollup/plugin-alias": "^3.1.9",
+    "@size-limit/preset-app": "^7.0.8",
+    "@tauri-apps/cli": "^1.0.0-rc.10",
+    "@types/node": "^17.0.35",
+    "size-limit": "^7.0.8",
+    "typescript": "^4.5.4",
+    "vite": "^2.9.9",
+    "vite-tsconfig-paths": "^3.4.1"
+  }
+}

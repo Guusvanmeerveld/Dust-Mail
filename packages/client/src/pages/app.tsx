@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import useLocalStorageState from "use-local-storage-state";
 
 import useTheme from "@utils/hooks/useTheme";
+
 import Index from "./Index";
 import Login from "./Login";
 
