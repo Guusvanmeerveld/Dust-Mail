@@ -53,7 +53,7 @@ jobs:
       - name: Build Dockerfile and push
         uses: docker/build-push-action@v2
         with:
-          context: packages/client
+          context: ./packages/client
           push: true
           tags: guusvanmeerveld/mail-client:latest
 
