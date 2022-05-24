@@ -1,7 +1,17 @@
 {
-  "private": true,
-  "workspaces": [
-    "packages/client",
-    "packages/server"
-  ]
+	"private": true,
+	"author": {
+		"name": "Guus van Meerveld"
+	},
+	"workspaces": [
+		"packages/client",
+		"packages/server"
+	],
+	"scripts": {
+		"prettify": "prettier packages/client/src --write "
+	},
+	"devDependencies": {
+		"@trivago/prettier-plugin-sort-imports": "^3.2.0",
+		"prettier": "^2.6.2"
+	}
 }

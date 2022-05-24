@@ -1,0 +1,10 @@
+**
+
+!/src
+!/index.html
+!/splashscreen.html
+!/tsconfig.json
+!/tsconfig.node.json
+!/vite.config.ts
+!/package.json
+!/yarn.lock
