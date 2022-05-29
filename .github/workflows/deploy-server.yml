@@ -35,7 +35,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    needs: pages
+    needs: test
     steps:
       - name: Setup
         uses: actions/checkout@v2
