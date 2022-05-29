@@ -10,6 +10,7 @@ on:
 
 jobs:
   test:
+    name: Test server
     runs-on: ubuntu-latest
     steps:
       - name: Setup
@@ -34,6 +35,7 @@ jobs:
         run: yarn --cwd packages/server run test:e2e
 
   docker:
+    name: Build Docker image
     runs-on: ubuntu-latest
     needs: test
     steps:

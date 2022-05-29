@@ -1,5 +1,6 @@
 import { PipeTransform, Injectable, BadRequestException } from "@nestjs/common";
-import { emailRegex } from "../constants";
+
+import isEmail from "validator/lib/isEmail";
 
 @Injectable()
 export class MailValidationPipe implements PipeTransform {
@@ -8,7 +9,7 @@ export class MailValidationPipe implements PipeTransform {
 			throw new BadRequestException("Email must be a string");
 		}
 
-		if (!value.match(emailRegex)) {
+		if (!isEmail(value)) {
 			throw new BadRequestException("Invalid email address");
 		}
 
