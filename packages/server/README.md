@@ -7,3 +7,4 @@ ENV's:
 - JWT_EXPIRES: The expiry time in seconds for the JSON webtoken. Default: 600
 - ALLOWED_DOMAINS: The domains for the imap servers that the server can fetch, seperated by comma's.
 - PROXY: A boolean value to signify if the server is behind a proxy. Default: false
+- PORT: The port the application should run on. Default: 3000
