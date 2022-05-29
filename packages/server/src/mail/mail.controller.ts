@@ -1,37 +1,51 @@
-import { Controller, Get, Headers, UseGuards } from "@nestjs/common";
+import {
+	BadRequestException,
+	Controller,
+	Get,
+	ParseIntPipe,
+	Query,
+	Req,
+	UseGuards
+} from "@nestjs/common";
 
-import { AuthService } from "../auth/auth.service";
+import { ImapSimple } from "imap-simple";
 
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
-const BEARER_PREFIX = "Bearer ";
+import { mailFetchLimit } from "./constants";
 
 @Controller("mail")
 export class MailController {
-	constructor(private authService: AuthService) {}
-
 	@Get("/")
 	@UseGuards(JwtAuthGuard)
-	async fetchMail(@Headers("authorization") authorization?: string) {
-		const token = authorization.slice(BEARER_PREFIX.length);
+	async fetchMail(@Req() req, @Query("limit", ParseIntPipe) limit: number) {
+		if (limit < 0 || limit > mailFetchLimit) {
+			throw new BadRequestException(
+				`Limit can't be lower than 0 or greater than ${mailFetchLimit}`
+			);
+		}
 
-		const connection = this.authService.findConnection(token);
+		const connection: ImapSimple = req.user.connection;
 
 		return await connection.openBox("INBOX").then(async () => {
-			return await connection
-				.search(["SEEN"], {
-					bodies: ["HEADER", "TEXT"],
+			const results = await connection
+				.search([`1:${limit}`], {
+					bodies: ["HEADER"],
 					markSeen: false
 				})
 				.then((results) => {
 					const subjects = results.map((res) => {
 						return res.parts.filter((part) => {
 							return part.which === "HEADER";
-						})[0].body.subject[0];
+						})[0].body;
 					});
 
 					return subjects;
 				});
+
+			await connection.closeBox(false);
+
+			return results;
 		});
 	}
 }

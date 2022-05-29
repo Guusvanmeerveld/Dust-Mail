@@ -1,9 +1,14 @@
-import { AppModule } from "./app.module";
 import { NestFactory } from "@nestjs/core";
 
-async function bootstrap() {
-	const app = await NestFactory.create(AppModule);
+import { AppModule } from "./app.module";
 
-	await app.listen(3000);
+import { AppLogger } from "./utils/logger";
+
+async function bootstrap() {
+	// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+	const app = await NestFactory.create(AppModule, { logger: new AppLogger() });
+
+	await app.listen(parseInt(process.env.PORT) || 3000);
 }
 bootstrap();

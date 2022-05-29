@@ -4,9 +4,11 @@ import { Injectable } from "@nestjs/common";
 
 import { jwtConstants } from "./constants";
 
+import { AuthService } from "./auth.service";
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-	constructor() {
+	constructor(private authService: AuthService) {
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
@@ -15,6 +17,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	}
 
 	async validate(payload: any) {
-		return { server: payload.sub, username: payload.username };
+		const connection = this.authService.findConnection(payload.username);
+
+		return { connection };
 	}
 }

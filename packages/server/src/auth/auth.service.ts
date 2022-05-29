@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 
 import * as imaps from "imap-simple";
 
-import { jwtExpiry } from "./constants";
+import { jwtConstants } from "./constants";
 
 @Injectable()
 export class AuthService {
@@ -34,16 +34,19 @@ export class AuthService {
 
 			const access_token = this.jwtService.sign(payload);
 
-			this.clients.set(access_token, connection);
+			this.clients.set(username, connection);
 
-			setTimeout(() => this.clients.delete(access_token), jwtExpiry * 1000);
+			setTimeout(
+				() => this.clients.delete(username),
+				jwtConstants.expires * 1000
+			);
 
 			return access_token;
 		});
 	}
 
-	findConnection(access_token: string): imaps.ImapSimple {
-		const connection = this.clients.get(access_token);
+	findConnection(username: string): imaps.ImapSimple {
+		const connection = this.clients.get(username);
 
 		if (!connection)
 			throw new UnauthorizedException("Token expired or was never created");
