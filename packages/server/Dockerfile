@@ -7,6 +7,8 @@ WORKDIR /app
 
 COPY . .
 
+RUN apk add git
+
 RUN yarn install --frozen-lockfile
 
 RUN yarn build
