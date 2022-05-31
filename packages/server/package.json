@@ -25,6 +25,8 @@
     "@nestjs/passport": "^8.2.1",
     "@nestjs/platform-express": "^8.0.0",
     "@nestjs/throttler": "^2.0.1",
+    "axios": "^0.27.2",
+    "helmet": "^5.1.0",
     "imap-simple": "^5.1.0",
     "kleur": "^4.1.4",
     "passport": "^0.6.0",

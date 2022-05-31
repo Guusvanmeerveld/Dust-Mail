@@ -1,5 +1,6 @@
 {
 	"name": "mail-client",
+	"description": "A simple and fast mail client",
 	"version": "0.0.0",
 	"size-limit": [
 		{
@@ -22,7 +23,9 @@
 		"@mui/icons-material": "^5.8.0",
 		"@mui/material": "^5.8.0",
 		"@tauri-apps/api": "^1.0.0-rc.5",
+		"axios": "^0.27.2",
 		"preact": "^10.5.15",
+		"react-query": "^3.39.1",
 		"use-local-storage-state": "^17.0.1"
 	},
 	"devDependencies": {

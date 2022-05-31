@@ -1,3 +1,7 @@
+import useLocalStorageState from "use-local-storage-state";
+
+import { FunctionComponent } from "preact";
+
 import { useState } from "preact/hooks";
 
 import AppBar from "@mui/material/AppBar";
@@ -18,8 +22,10 @@ const drawerItems: { text: string; icon: JSX.Element }[] = [
 	{ text: "Inbox", icon: <div></div> }
 ];
 
-const Navbar = () => {
+const Navbar: FunctionComponent = () => {
 	const [drawerState, setDrawerState] = useState(false);
+
+	const [, setLoggedIn] = useLocalStorageState<undefined>("jwtToken");
 
 	const toggleDrawer =
 		(open: boolean) => (event: KeyboardEvent | MouseEvent) => {
@@ -52,7 +58,9 @@ const Navbar = () => {
 						<Typography variant="h6" sx={{ flexGrow: 1 }}>
 							{import.meta.env.VITE_APP_NAME}
 						</Typography>
-						<Button color="inherit">Login</Button>
+						<Button onClick={() => setLoggedIn()} color="inherit">
+							Logout
+						</Button>
 					</Toolbar>
 				</AppBar>
 			</Box>
