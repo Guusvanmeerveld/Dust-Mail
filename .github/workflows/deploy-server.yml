@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - packages/server
+      - packages/server/**
       - .github/workflows/deploy-server.yml
 
 jobs:
