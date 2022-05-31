@@ -27,6 +27,8 @@ jobs:
 
       - name: Build client
         run: yarn --cwd packages/client run build --base=/Mail-Client/
+        env:
+          VITE_DEFAULT_SERVER: https://dust-mail.herokuapp.com/
 
       - name: Check size
         run: yarn --cwd packages/client run size
