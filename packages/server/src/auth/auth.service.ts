@@ -1,9 +1,13 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import * as imaps from "imap-simple";
+import imaps from "imap-simple";
 
 import { jwtConstants } from "./constants";
+
+import Error from "./enums/error.enum";
+
+import { fetchServerFromEmail } from "./utils/autodiscover";
 
 @Injectable()
 export class AuthService {
@@ -12,37 +16,69 @@ export class AuthService {
 	private readonly clients: Map<string, imaps.ImapSimple> = new Map();
 
 	async login(
-		server: string,
 		username: string,
 		password: string,
+		server?: string,
 		port?: number
 	): Promise<string> {
+		// if (!server) {
+		// 	const info = await fetchServerFromEmail(username, password);
+
+		// 	console.log(info);
+		// }
+
 		const tls = port == 993;
 
-		const config = {
+		const config: imaps.ImapSimpleOptions = {
 			imap: {
 				host: server,
 				port: port ?? 25,
 				tls,
 				user: username,
-				password: password
+				password: password,
+				authTimeout: 6000
 			}
 		};
 
-		return await imaps.connect(config).then((connection) => {
-			const payload = { username: username, sub: server };
+		return await imaps
+			.connect(config)
+			.then((connection) => {
+				const payload = { username: username, sub: server };
 
-			const access_token = this.jwtService.sign(payload);
+				const access_token = this.jwtService.sign(payload);
 
-			this.clients.set(username, connection);
+				if (!this.clients.get(username)) {
+					this.clients.set(username, connection);
+				}
 
-			setTimeout(
-				() => this.clients.delete(username),
-				jwtConstants.expires * 1000
-			);
+				setTimeout(
+					() => this.clients.delete(username),
+					jwtConstants.expires * 1000
+				);
 
-			return access_token;
-		});
+				return access_token;
+			})
+			.catch((error) => {
+				throw this.parseError(error);
+			});
+	}
+
+	parseError(error: any): Error {
+		// console.log(error);
+
+		if (error.source == "socket") {
+			return Error.Network;
+		}
+
+		if (error.source == "timeout") {
+			return Error.Timeout;
+		}
+
+		if (error.source == "authentication") {
+			return Error.Credentials;
+		}
+
+		return Error.Misc;
 	}
 
 	findConnection(username: string): imaps.ImapSimple {

@@ -2,19 +2,26 @@ import {
 	BadRequestException,
 	Body,
 	Controller,
-	ParseIntPipe,
+	Get,
 	Post,
+	Req,
 	UnauthorizedException,
 	UseGuards
 } from "@nestjs/common";
 
+import { ImapSimple } from "imap-simple";
+
 import { AuthService } from "./auth.service";
+
+import { JwtAuthGuard } from "./jwt-auth.guard";
 
 import { allowedDomains } from "./constants";
 
 import { MailValidationPipe } from "./pipes/mail.pipe";
 
 import { ThrottlerBehindProxyGuard } from "./throttler-proxy.guard";
+
+import Error from "./enums/error.enum";
 
 @Controller("auth")
 export class AuthController {
@@ -29,28 +36,45 @@ export class AuthController {
 	async login(
 		@Body("server")
 		server?: string,
-		@Body("port", ParseIntPipe)
+		@Body("port")
 		port?: number,
 		@Body("username", MailValidationPipe)
 		username?: string,
 		@Body("password")
 		password?: string
 	) {
-		if (server && username && password) {
-			if (this.allowedDomains && !this.allowedDomains.includes(server)) {
+		if (username && password) {
+			if (
+				server &&
+				this.allowedDomains &&
+				!this.allowedDomains.includes(server)
+			) {
 				throw new UnauthorizedException("Mail server is not on whitelist");
 			}
 
 			const token = await this.authService
-				.login(server, username, password, port)
+				.login(username, password, server, port)
 				.then((token) => token)
-				.catch((error) => {
-					throw new UnauthorizedException({ error });
+				.catch((error: Error) => {
+					throw new BadRequestException(error);
 				});
 
 			return token;
 		}
 
 		throw new BadRequestException("Missing fields");
+	}
+
+	@Get("logout")
+	@UseGuards(JwtAuthGuard)
+	logout(@Req() req: Request & { user: { connection: ImapSimple } }) {
+		const connection = req.user.connection;
+
+		if (!connection)
+			throw new UnauthorizedException("Token expired or was never created");
+
+		connection.end();
+
+		return "ok";
 	}
 }

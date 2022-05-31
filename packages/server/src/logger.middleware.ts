@@ -11,7 +11,7 @@ import { UAParser } from "ua-parser-js";
 export class LoggerMiddleware implements NestMiddleware {
 	private readonly logger = new Logger(LoggerMiddleware.name);
 
-	use(req: Request, res: Response, next: NextFunction) {
+	use(req: Request, _: Response, next: NextFunction) {
 		const userAgent = new UAParser(req.headers["user-agent"]);
 
 		const browser = userAgent.getBrowser();

@@ -16,6 +16,8 @@ import Typography from "@mui/material/Typography";
 
 import Settings from "@mui/icons-material/Settings";
 
+import Error from "@interfaces/error";
+
 import useTheme from "@utils/hooks/useTheme";
 
 import Loading from "@components/Loading";
@@ -39,7 +41,9 @@ const Login = () => {
 
 	const [fetching, setFetching] = useState(false);
 
-	const [error, setError] = useState<string | undefined>();
+	const [error, setError] = useState<
+		{ message: string; type: Error } | undefined
+	>();
 
 	const [, setJwtToken] = useLocalStorageState<string | undefined>("jwtToken");
 
@@ -47,7 +51,7 @@ const Login = () => {
 		e.preventDefault();
 
 		if (!email || !password || (advanced && (!server || !port))) {
-			setError("Missing required fields");
+			setError({ message: "Missing required fields", type: Error.Misc });
 			return;
 		}
 
@@ -65,9 +69,40 @@ const Login = () => {
 			{ validateStatus: () => true }
 		);
 
-		if (status == 401) {
+		if (status == 400) {
 			setFetching(false);
-			setError("Authentication failed: incorrect password or email");
+
+			switch (data.message as Error) {
+				case Error.Credentials:
+					setError({
+						message:
+							"Failed to authorize with server, please check your credentials",
+						type: Error.Credentials
+					});
+
+					break;
+
+				case Error.Timeout:
+					setError({
+						message: "Server connection timed out",
+						type: Error.Timeout
+					});
+
+					break;
+
+				case Error.Network:
+					setError({
+						message:
+							"Failed to connect to remote imap server, please check your configuration",
+						type: Error.Network
+					});
+
+					break;
+
+				default:
+					setError({ message: "Unknown error ocurred", type: Error.Misc });
+					break;
+			}
 			return;
 		}
 
@@ -78,7 +113,10 @@ const Login = () => {
 
 		setFetching(false);
 
-		setError(`Unknown error with status code ${status} occured`);
+		setError({
+			message: `Unknown error with status code ${status} occured`,
+			type: Error.Misc
+		});
 	};
 
 	return (
@@ -110,7 +148,7 @@ const Login = () => {
 					<Typography gutterBottom variant="h5">
 						Set custom {import.meta.env.VITE_APP_NAME} backend server
 					</Typography>
-					<Typography variant="subtitle1">
+					<Typography color={theme.palette.text.secondary} variant="subtitle1">
 						Only update this value if you know what you are doing!
 					</Typography>
 					<br />
@@ -146,6 +184,10 @@ const Login = () => {
 								<TextField
 									required
 									onChange={(e) => setServer(e.currentTarget.value)}
+									error={error && error.type == Error.Network}
+									helperText={
+										error && error.type == Error.Network && error.message
+									}
 									id="server"
 									label="IMAP server"
 									variant="outlined"
@@ -155,6 +197,7 @@ const Login = () => {
 								<TextField
 									required
 									onChange={(e) => setPort(parseInt(e.currentTarget.value))}
+									error={error && error.type == Error.Network}
 									id="port"
 									label="Port"
 									variant="outlined"
@@ -167,6 +210,10 @@ const Login = () => {
 							required
 							onChange={(e) => setEmail(e.currentTarget.value)}
 							id="username"
+							error={error && error.type == Error.Credentials}
+							helperText={
+								error && error.type == Error.Credentials && error.message
+							}
 							label="Email address"
 							variant="outlined"
 							type="email"
@@ -175,6 +222,7 @@ const Login = () => {
 						<TextField
 							required
 							onChange={(e) => setPassword(e.currentTarget.value)}
+							error={error && error.type == Error.Credentials}
 							id="password"
 							label="Password"
 							variant="outlined"
@@ -189,11 +237,12 @@ const Login = () => {
 						>
 							Login
 						</Button>
-						{error != undefined && (
-							<Typography color={theme.palette.error.main} variant="caption">
-								{error}
-							</Typography>
-						)}
+						{error &&
+							(error.type == Error.Timeout || error.type == Error.Misc) && (
+								<Typography color={theme.palette.error.main} variant="caption">
+									{error.message}
+								</Typography>
+							)}
 						<Button
 							variant="text"
 							onClick={() => setAdvanced((state) => !state)}
