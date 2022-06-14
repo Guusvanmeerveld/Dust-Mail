@@ -1,8 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import autodiscoverServer from "../../../autodiscover";
-
 import Client, { Config } from "../utils/imap";
 
 @Injectable()
@@ -17,12 +15,6 @@ export class AuthService {
 		server?: string,
 		port?: number
 	): Promise<string> {
-		if (!server) {
-			const [imap] = await autodiscoverServer(username, password);
-
-			(server = imap.server), (port = imap.port);
-		}
-
 		const config = this.createConfig(username, password, server, port);
 
 		const client = new Client(config);
