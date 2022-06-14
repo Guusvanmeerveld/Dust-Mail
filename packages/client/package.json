@@ -26,7 +26,8 @@
 		"axios": "^0.27.2",
 		"preact": "^10.5.15",
 		"react-query": "^3.39.1",
-		"use-local-storage-state": "^17.0.1"
+		"use-local-storage-state": "^17.0.1",
+		"zustand": "^4.0.0-rc.1"
 	},
 	"devDependencies": {
 		"@babel/plugin-transform-react-jsx-source": "^7.16.7",

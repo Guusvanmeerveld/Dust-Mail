@@ -14,10 +14,12 @@ export class MailService {
 
 			const totalMessages = box.messages.total;
 
+			if (totalMessages <= start) return [];
+
 			const results = await client
 				.fetch({
 					start: totalMessages - start,
-					end: totalMessages - end,
+					end: totalMessages - end > 0 ? totalMessages - end : 1,
 					bodies: headerBody
 				})
 				.then((results) =>

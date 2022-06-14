@@ -611,6 +611,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dust-mail"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+]
+
+[[package]]
 name = "embed_plist"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1376,16 +1386,6 @@ dependencies = [
  "objc-foundation",
  "objc_id",
  "time",
-]
-
-[[package]]
-name = "mail-client"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
 ]
 
 [[package]]

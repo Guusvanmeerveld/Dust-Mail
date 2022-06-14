@@ -1,13 +1,19 @@
 import { useInfiniteQuery } from "react-query";
 import useLocalStorageState from "use-local-storage-state";
 
+import { useEffect } from "preact/hooks";
+
 import axios from "axios";
 
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
 
+import Error from "@interfaces/error";
 import { BasicMessage } from "@interfaces/message";
+
+import useStore from "@utils/createStore";
 
 import Layout from "@components/Layout";
 import Loading from "@components/Loading";
@@ -19,45 +25,43 @@ const Index = () => {
 	// The amount of messages to load per request
 	const messageCountForPage = 10;
 
+	const currentBox = useStore((state) => state.currentBox);
+
 	// Request the messages using react-query
-	const {
-		data,
-		error,
-		fetchNextPage,
-		hasNextPage,
-		isFetching,
-		isFetchingNextPage
-	} = useInfiniteQuery<BasicMessage[]>(
-		"mails",
-		({ pageParam = 0 }) => {
-			if (pageParam === false) {
-				return [];
+	const { data, error, fetchNextPage, isFetching, isFetchingNextPage } =
+		useInfiniteQuery<BasicMessage[], Error>(
+			["mails", currentBox],
+			({ pageParam = 0 }) => {
+				if (pageParam === false) {
+					return [];
+				}
+
+				return axios
+					.get(`${customServerUrl}/mail`, {
+						headers: { Authorization: `Bearer ${jwtToken}` },
+						params: {
+							cursor: pageParam,
+							limit: messageCountForPage,
+							box: currentBox
+						}
+					})
+					.then(({ data }) => data);
+			},
+			{
+				getNextPageParam: (lastPage, pages) => {
+					const morePagesExist = lastPage?.length === messageCountForPage;
+
+					if (!morePagesExist) return false;
+
+					return pages.length;
+				}
 			}
-
-			return axios
-				.get(`${customServerUrl}/mail`, {
-					headers: { Authorization: `Bearer ${jwtToken}` },
-					params: {
-						cursor: pageParam,
-						limit: messageCountForPage
-					}
-				})
-				.then(({ data }) => data);
-		},
-		{
-			getNextPageParam: (lastPage, pages) => {
-				const morePagesExist = lastPage?.length === messageCountForPage;
-
-				if (!morePagesExist) return false;
-
-				return pages.length;
-			}
-		}
-	);
+		);
 
 	return (
 		<Layout>
 			{(isFetching || isFetchingNextPage) && <Loading />}
+			{error && <div>{error}</div>}
 			{data &&
 				data.pages &&
 				data.pages.map((messages) =>
@@ -73,6 +77,10 @@ const Index = () => {
 						);
 					})
 				)}
+			{data && data.pages && data.pages.length == 0 && (
+				<Typography>Mail box is empty</Typography>
+			)}
+
 			<Button onClick={() => fetchNextPage()}>Next</Button>
 		</Layout>
 	);
