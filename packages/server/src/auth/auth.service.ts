@@ -1,92 +1,80 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import imaps from "imap-simple";
+import autodiscoverServer from "../../../autodiscover";
 
-import { jwtConstants } from "./constants";
-
-import Error from "./enums/error.enum";
-
-import { fetchServerFromEmail } from "./utils/autodiscover";
+import Client, { Config } from "../utils/imap";
 
 @Injectable()
 export class AuthService {
 	constructor(private jwtService: JwtService) {}
 
-	private readonly clients: Map<string, imaps.ImapSimple> = new Map();
+	private readonly clients: Map<string, Client> = new Map();
 
-	async login(
+	public async login(
 		username: string,
 		password: string,
 		server?: string,
 		port?: number
 	): Promise<string> {
-		// if (!server) {
-		// 	const info = await fetchServerFromEmail(username, password);
+		if (!server) {
+			const [imap] = await autodiscoverServer(username, password);
 
-		// 	console.log(info);
-		// }
+			(server = imap.server), (port = imap.port);
+		}
 
-		const tls = port == 993;
+		const config = this.createConfig(username, password, server, port);
 
-		const config: imaps.ImapSimpleOptions = {
-			imap: {
-				host: server,
-				port: port ?? 25,
-				tls,
-				user: username,
-				password: password,
-				authTimeout: 6000
+		const client = new Client(config);
+
+		return await client.connect().then(() => {
+			const payload = { username: username, sub: { server, port, password } };
+
+			const access_token = this.jwtService.sign(payload);
+
+			if (!this.clients.get(username)) {
+				this.clients.set(username, client);
 			}
+
+			return access_token;
+		});
+	}
+
+	private createConfig = (
+		username: string,
+		password: string,
+		server: string,
+		port?: number
+	): Config => {
+		const config: Config = {
+			server: server,
+			port: port,
+			user: { name: username, password: password }
 		};
 
-		return await imaps
-			.connect(config)
-			.then((connection) => {
-				const payload = { username: username, sub: server };
+		return config;
+	};
 
-				const access_token = this.jwtService.sign(payload);
+	public async findConnection(
+		username: string,
+		password: string,
+		server: string,
+		port: number
+	): Promise<Client> {
+		const client = this.clients.get(username);
 
-				if (!this.clients.get(username)) {
-					this.clients.set(username, connection);
-				}
+		if (!client) {
+			const config = this.createConfig(username, password, server, port);
 
-				setTimeout(
-					() => this.clients.delete(username),
-					jwtConstants.expires * 1000
-				);
+			const client = new Client(config);
 
-				return access_token;
-			})
-			.catch((error) => {
-				throw this.parseError(error);
+			return await client.connect().then(() => {
+				this.clients.set(username, client);
+
+				return client;
 			});
-	}
-
-	parseError(error: any): Error {
-		// console.log(error);
-
-		if (error.source == "socket") {
-			return Error.Network;
 		}
 
-		if (error.source == "timeout") {
-			return Error.Timeout;
-		}
-
-		if (error.source == "authentication") {
-			return Error.Credentials;
-		}
-
-		return Error.Misc;
-	}
-
-	findConnection(username: string): imaps.ImapSimple {
-		const connection = this.clients.get(username);
-
-		if (!connection)
-			throw new UnauthorizedException("Token expired or was never created");
-
-		return connection;
+		return client;
 	}
 }

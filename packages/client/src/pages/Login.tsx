@@ -47,17 +47,44 @@ const Login = () => {
 
 	const [, setJwtToken] = useLocalStorageState<string | undefined>("jwtToken");
 
+	const [, setBoxes] = useLocalStorageState<string | undefined>("boxes");
+
+	/**
+	 * Request the users inboxes and puts them in local storage
+	 */
+	const fetchBoxes = async (token: string): Promise<void> => {
+		console.log("Fetching inboxes...");
+
+		const boxes = await axios
+			.get<string[]>(`${customServerUrl}/mail/boxes`, {
+				headers: { Authorization: `Bearer ${token}` }
+			})
+			.then(({ data }) => data);
+
+		setBoxes(boxes);
+	};
+
+	/**
+	 * Runs when the form should be submitted to the server
+	 */
 	const onSubmit = async (e: TargetedEvent) => {
 		e.preventDefault();
 
+		// Reject the form if there any fields empty
 		if (!email || !password || (advanced && (!server || !port))) {
 			setError({ message: "Missing required fields", type: Error.Misc });
 			return;
 		}
 
+		// Show the fetching animation
 		setFetching(true);
+
+		// Remove any old errors
 		setError(undefined);
 
+		console.log("Sending login request...");
+
+		// Request the JWT token
 		const { data, status } = await axios.post(
 			`${customServerUrl}/auth/login`,
 			{
@@ -69,9 +96,14 @@ const Login = () => {
 			{ validateStatus: () => true }
 		);
 
+		// If there was anything wrong with the request, catch it
 		if (status == 400) {
+			// Hide the fetching animation
 			setFetching(false);
 
+			console.log("An error occured when requesting the JWT token");
+
+			// Check the error type
 			switch (data.message as Error) {
 				case Error.Credentials:
 					setError({
@@ -103,11 +135,18 @@ const Login = () => {
 					setError({ message: "Unknown error ocurred", type: Error.Misc });
 					break;
 			}
+
 			return;
 		}
 
+		// Check if the request was successfull
 		if (status == 201) {
+			console.log("Successfully logged in, redirecting soon");
+
+			await fetchBoxes(data);
+
 			setJwtToken(data);
+
 			return;
 		}
 

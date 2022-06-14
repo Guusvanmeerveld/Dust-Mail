@@ -1,12 +1,9 @@
-import { JwtModule } from "@nestjs/jwt";
-import { Test, TestingModule } from "@nestjs/testing";
-
-import { ThrottlerModule } from "@nestjs/throttler";
-
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-
 import { jwtConstants } from "./constants";
+import { JwtModule } from "@nestjs/jwt";
+import { Test, TestingModule } from "@nestjs/testing";
+import { ThrottlerModule } from "@nestjs/throttler";
 
 describe("AuthController", () => {
 	let controller: AuthController;

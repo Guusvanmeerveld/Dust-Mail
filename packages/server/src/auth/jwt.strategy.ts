@@ -6,6 +6,8 @@ import { jwtConstants } from "./constants";
 
 import { AuthService } from "./auth.service";
 
+import { Payload } from "./interfaces/payload.interface";
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
 	constructor(private authService: AuthService) {
@@ -16,9 +18,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		});
 	}
 
-	async validate(payload: any) {
-		const connection = this.authService.findConnection(payload.username);
+	async validate(payload: Payload) {
+		const { password, server, port } = payload.sub;
 
-		return { connection };
+		const client = await this.authService.findConnection(
+			payload.username,
+			password,
+			server,
+			port
+		);
+
+		return {
+			client
+		};
 	}
 }

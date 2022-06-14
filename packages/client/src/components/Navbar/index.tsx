@@ -4,28 +4,27 @@ import { FunctionComponent } from "preact";
 
 import { useState } from "preact/hooks";
 
+import axios from "axios";
+
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
 import MenuIcon from "@mui/icons-material/Menu";
 
-const drawerItems: { text: string; icon: JSX.Element }[] = [
-	{ text: "Inbox", icon: <div></div> }
-];
+import Drawer from "@components/Navbar/Drawer";
 
 const Navbar: FunctionComponent = () => {
-	const [drawerState, setDrawerState] = useState(false);
+	const [customServerUrl] = useLocalStorageState<string>("customServerUrl");
 
-	const [, setLoggedIn] = useLocalStorageState<undefined>("jwtToken");
+	const [jwtToken, setLoggedIn] = useLocalStorageState<undefined | string>(
+		"jwtToken"
+	);
+
+	const [drawerState, setDrawerState] = useState(false);
 
 	const toggleDrawer =
 		(open: boolean) => (event: KeyboardEvent | MouseEvent) => {
@@ -39,6 +38,19 @@ const Navbar: FunctionComponent = () => {
 
 			setDrawerState(open);
 		};
+
+	const logout = () => {
+		// const data = await axios
+		// 	.get(`${customServerUrl}/auth/logout`, {
+		// 		headers: { Authorization: `Bearer ${jwtToken}` }
+		// 	})
+		// 	.then(({ data }) => data)
+		// 	.catch(() => "unauthorized");
+
+		// console.log(data);
+
+		setLoggedIn();
+	};
 
 	return (
 		<>
@@ -58,22 +70,13 @@ const Navbar: FunctionComponent = () => {
 						<Typography variant="h6" sx={{ flexGrow: 1 }}>
 							{import.meta.env.VITE_APP_NAME}
 						</Typography>
-						<Button onClick={() => setLoggedIn()} color="inherit">
+						<Button onClick={() => logout()} color="inherit">
 							Logout
 						</Button>
 					</Toolbar>
 				</AppBar>
 			</Box>
-			<Drawer anchor="left" open={drawerState} onClose={toggleDrawer(false)}>
-				{drawerItems.map((item) => (
-					<ListItem key={item.text} disablePadding>
-						<ListItemButton>
-							<ListItemIcon>{item.icon}</ListItemIcon>
-							<ListItemText primary={item.text} />
-						</ListItemButton>
-					</ListItem>
-				))}
-			</Drawer>
+			<Drawer drawerState={drawerState} toggleDrawer={toggleDrawer} />
 		</>
 	);
 };

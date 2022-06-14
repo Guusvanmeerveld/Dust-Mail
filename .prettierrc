@@ -6,6 +6,8 @@
 	"arrowParens": "always",
 	"importOrderSeparation": true,
 	"importOrder": [
+		"@rollup/.*",
+		"rollup-.*",
 		"^preact$",
 		"^preact.*",
 		"^axios.*",

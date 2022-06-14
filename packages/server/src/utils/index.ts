@@ -1,6 +1,5 @@
-import { Request } from "express";
-
 import { isBehindProxy } from "./constants";
+import { Request } from "express";
 
 export const parseIpAdressFromRequest = (req: Request): string => {
 	let ip: string;

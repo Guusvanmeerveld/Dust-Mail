@@ -4,10 +4,11 @@
 		"name": "Guus van Meerveld"
 	},
 	"scripts": {
-		"prettify": "prettier packages/client/src --write "
+		"prettify": "prettier packages/client/src packages/autodiscover/src --write"
 	},
 	"devDependencies": {
 		"@trivago/prettier-plugin-sort-imports": "^3.2.0",
 		"prettier": "^2.6.2"
-	}
+	},
+	"dependencies": {}
 }
