@@ -63,7 +63,7 @@ jobs:
         with:
           context: packages/client
           push: true
-          tags: guusvanmeerveld/mail-client:latest
+          tags: guusvanmeerveld/dust-mail:client
 
           # Cache
           cache-from: type=gha

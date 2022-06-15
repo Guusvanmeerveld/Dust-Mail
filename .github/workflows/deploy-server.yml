@@ -74,7 +74,7 @@ jobs:
         with:
           push: true
           context: packages/server
-          tags: guusvanmeerveld/mail-server:latest
+          tags: guusvanmeerveld/dust-mail:server
 
           # Cache
           cache-from: type=gha

@@ -1,4 +1,4 @@
-FROM node:16-alpine AS builder
+FROM node:12-alpine AS builder
 
 WORKDIR /app
 
@@ -7,6 +7,8 @@ COPY . .
 RUN yarn install --frozen-lockfile
 
 ENV NODE_ENV "production"
+
+ENV VITE_APP_NAME "Dust-Mail"
 
 RUN yarn build
 

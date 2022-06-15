@@ -3,6 +3,6 @@ version: '3.3'
 services:
   app:
     build: .
-    container_name: dust-mail-server
+    container_name: dust-mail
     ports:
-      - 3000:3000
+      - 3000:80
