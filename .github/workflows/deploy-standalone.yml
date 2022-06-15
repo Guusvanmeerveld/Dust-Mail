@@ -1,6 +1,12 @@
 name: Deploy Standalone
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/deploy-standalone.yml
+
   workflow_run:
     workflows: ["Deploy Client", "Deploy Server"]
     branches: [main]
