@@ -10,11 +10,11 @@
 		"lib": ["ES2021.String"],
 		"paths": {
 			"@src/*": ["./*"],
-			"@shared/*": ["../../shared/*"],
 			"@utils/*": ["utils/*"],
 			"@auth/*": ["auth/*"],
 			"@mail/*": ["mail/*"]
 		},
+		"resolveJsonModule": true,
 		"target": "es2017",
 		"sourceMap": true,
 		"outDir": "./dist",

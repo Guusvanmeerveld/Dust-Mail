@@ -1,4 +1,4 @@
-import Message, { FullMessage } from "@shared/message";
+import Message, { FullMessage } from "@utils/interfaces/message";
 
 import { State } from "./state.interface";
 

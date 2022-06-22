@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
-import Message from "@shared/message";
+import Message from "@interfaces/message";
 
 import useFetch from "@utils/axiosClient";
 import useStore from "@utils/createStore";

@@ -7,7 +7,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 
-import Message from "@shared/message";
+import Message from "@interfaces/message";
 
 import useStore from "@utils/createStore";
 import useTheme from "@utils/hooks/useTheme";

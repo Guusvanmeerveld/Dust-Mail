@@ -5,7 +5,7 @@ import { FunctionalComponent } from "preact";
 
 import Card from "@mui/material/Card";
 
-import { FullMessage } from "@shared/message";
+import { FullMessage } from "@interfaces/message";
 
 import useFetch from "@utils/axiosClient";
 import useStore from "@utils/createStore";
