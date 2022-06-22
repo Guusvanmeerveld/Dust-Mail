@@ -16,6 +16,8 @@ lerna-debug.log*
 
 .env.local
 
+.tsbuildinfo
+
 # Tests
 /coverage
 /.nyc_output

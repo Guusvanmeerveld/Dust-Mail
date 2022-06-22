@@ -18,6 +18,8 @@
 		"target": "es2017",
 		"sourceMap": true,
 		"outDir": "./dist",
+		"rootDir": "./src",
+		"tsBuildInfoFile": ".tsbuildinfo",
 		"baseUrl": "./src",
 		"incremental": true,
 		"skipLibCheck": true,
