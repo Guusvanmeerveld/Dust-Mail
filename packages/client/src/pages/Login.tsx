@@ -6,6 +6,8 @@ import { useState } from "preact/hooks";
 
 import axios from "axios";
 
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -18,6 +20,8 @@ import Settings from "@mui/icons-material/Settings";
 
 import Error from "@interfaces/error";
 
+import useFetch from "@utils/axiosClient";
+import createGravatarUrl from "@utils/createGravatarUrl";
 import useTheme from "@utils/hooks/useTheme";
 
 import Loading from "@components/Loading";
@@ -45,9 +49,15 @@ const Login = () => {
 		{ message: string; type: Error } | undefined
 	>();
 
-	const [, setJwtToken] = useLocalStorageState<string | undefined>("jwtToken");
+	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
 
-	const [, setBoxes] = useLocalStorageState<string | undefined>("boxes");
+	const [, setBoxes] = useLocalStorageState<string>("boxes");
+
+	const [, setUsername] = useLocalStorageState<string>("username");
+
+	const [, setAvatar] = useLocalStorageState<string>("avatar");
+
+	const fetcher = useFetch();
 
 	/**
 	 * Request the users inboxes and puts them in local storage
@@ -55,8 +65,8 @@ const Login = () => {
 	const fetchBoxes = async (token: string): Promise<void> => {
 		console.log("Fetching inboxes...");
 
-		const boxes = await axios
-			.get<string[]>(`${customServerUrl}/mail/boxes`, {
+		const boxes = await fetcher
+			.get<string[]>("/mail/boxes", {
 				headers: { Authorization: `Bearer ${token}` }
 			})
 			.then(({ data }) => data);
@@ -85,16 +95,38 @@ const Login = () => {
 		console.log("Sending login request...");
 
 		// Request the JWT token
-		const { data, status } = await axios.post(
-			`${customServerUrl}/auth/login`,
-			{
-				server,
-				port,
-				username: email,
-				password
-			},
-			{ validateStatus: () => true }
-		);
+		const res = await fetcher
+			.post(
+				"/auth/login",
+				{
+					server,
+					port,
+					username: email,
+					password
+				},
+				{ validateStatus: () => true }
+			)
+			.catch((error) => {
+				setFetching(false);
+
+				// Handle axios errors
+				if (error.code == "ERR_NETWORK") {
+					setError({
+						message:
+							"Could not connect to remote server, please check your connectivity",
+						type: Error.Misc
+					});
+				} else {
+					setError({
+						message: `An unknown error occured: ${error.message}`,
+						type: Error.Misc
+					});
+				}
+			});
+
+		if (!res) return;
+
+		const { status, data } = res;
 
 		// If there was anything wrong with the request, catch it
 		if (status == 400) {
@@ -104,7 +136,7 @@ const Login = () => {
 			console.log("An error occured when requesting the JWT token");
 
 			// Check the error type
-			switch (data.message as Error) {
+			switch (data.code as Error) {
 				case Error.Credentials:
 					setError({
 						message:
@@ -132,7 +164,10 @@ const Login = () => {
 					break;
 
 				default:
-					setError({ message: "Unknown error ocurred", type: Error.Misc });
+					setError({
+						message: `Unknown error ocurred: ${data.message}`,
+						type: Error.Misc
+					});
 					break;
 			}
 
@@ -144,6 +179,12 @@ const Login = () => {
 			console.log("Successfully logged in, redirecting soon");
 
 			await fetchBoxes(data);
+
+			setUsername(email);
+
+			console.log("Creating avatar...");
+
+			setAvatar(createGravatarUrl(email));
 
 			setJwtToken(data);
 
@@ -278,9 +319,10 @@ const Login = () => {
 						</Button>
 						{error &&
 							(error.type == Error.Timeout || error.type == Error.Misc) && (
-								<Typography color={theme.palette.error.main} variant="caption">
+								<Alert sx={{ textAlign: "left" }} severity="error">
+									<AlertTitle>Error</AlertTitle>
 									{error.message}
-								</Typography>
+								</Alert>
 							)}
 						<Button
 							variant="text"

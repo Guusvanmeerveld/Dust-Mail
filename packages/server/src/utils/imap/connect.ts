@@ -5,7 +5,7 @@ const connect = async (_client: Imap): Promise<void> => {
 		_client.connect();
 
 		_client.on("ready", () => resolve());
-		_client.on("err", (err) => reject(err));
+		_client.on("error", (error) => reject(error));
 	});
 };
 

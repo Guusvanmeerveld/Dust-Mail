@@ -21,6 +21,7 @@ export class LoggerMiddleware implements NestMiddleware {
 				parseIpAdressFromRequest(req) ?? "Unknown ip"
 			} [${gray(`${browser.name} ${browser.version}`)}]`
 		);
+
 		next();
 	}
 }

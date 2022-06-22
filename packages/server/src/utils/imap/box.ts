@@ -1,13 +1,15 @@
 import Imap from "imap";
 
-export const openBox = async (
+import { Box } from "../interfaces/client.interface";
+
+export const getBox = async (
 	_client: Imap,
 	name: string,
 	readOnly?: boolean
-): Promise<Imap.Box> => {
+): Promise<Box> => {
 	return new Promise((resolve, reject) =>
 		_client.openBox(name, readOnly ?? true, (err, box) => {
-			if (box) resolve(box);
+			if (box) resolve({ totalMessages: box.messages.total, name: box.name });
 			if (err) reject(err);
 		})
 	);

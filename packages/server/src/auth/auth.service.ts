@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import Client, { Config } from "../utils/imap";
+import Client, { Config } from "@utils/imap";
+
+import { Payload } from "./interfaces/payload.interface";
 
 @Injectable()
 export class AuthService {
@@ -15,21 +17,22 @@ export class AuthService {
 		server?: string,
 		port?: number
 	): Promise<string> {
-		const config = this.createConfig(username, password, server, port);
+		if (!this.clients.get(username)) {
+			const config = this.createConfig(username, password, server, port);
 
-		const client = new Client(config);
+			const client = new Client(config);
 
-		return await client.connect().then(() => {
-			const payload = { username: username, sub: { server, port, password } };
+			await client.connect().then(() => this.clients.set(username, client));
+		}
 
-			const access_token = this.jwtService.sign(payload);
+		const payload: Payload = {
+			username: username,
+			sub: { server, port, password }
+		};
 
-			if (!this.clients.get(username)) {
-				this.clients.set(username, client);
-			}
+		const access_token = this.jwtService.sign(payload);
 
-			return access_token;
-		});
+		return access_token;
 	}
 
 	private createConfig = (

@@ -1,14 +1,10 @@
-export interface Message {
+import { ParsedMail } from "mailparser";
+
+export default interface Message {
 	flags: string[];
 	date: Date;
-	headers: Header[];
-}
-
-export interface Header {
-	which: string;
-	size: number;
-	index: number;
-	result: {
-		[key: string]: string[];
-	};
+	bodies: {
+		which: string;
+		body: ParsedMail;
+	}[];
 }

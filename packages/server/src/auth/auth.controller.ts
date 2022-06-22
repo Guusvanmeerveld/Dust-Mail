@@ -15,7 +15,7 @@ import { MailValidationPipe } from "./pipes/mail.pipe";
 
 import { ThrottlerBehindProxyGuard } from "./throttler-proxy.guard";
 
-import handleError from "../utils/handleError";
+import handleError from "@utils/handleError";
 
 @Controller("auth")
 export class AuthController {

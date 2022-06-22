@@ -4,7 +4,7 @@ import { ThrottlerGuard } from "@nestjs/throttler";
 
 import { Request } from "express";
 
-import { parseIpAdressFromRequest } from "../utils";
+import { parseIpAdressFromRequest } from "@src/utils";
 
 @Injectable()
 export class ThrottlerBehindProxyGuard extends ThrottlerGuard {

@@ -1,12 +1,20 @@
 import { FunctionComponent } from "preact";
 
-import Navbar from "@components/Navbar";
+import useStore from "@utils/createStore";
 
-const Layout: FunctionComponent = ({ children }) => (
-	<>
-		<Navbar />
-		{children}
-	</>
-);
+import Navbar from "@components/Navbar";
+import Settings from "@components/Settings";
+
+const Layout: FunctionComponent = ({ children }) => {
+	const showSettings = useStore((state) => state.showSettings);
+
+	return (
+		<>
+			<Navbar />
+			{showSettings && <Settings />}
+			{children}
+		</>
+	);
+};
 
 export default Layout;

@@ -44,8 +44,8 @@ const Drawer: FunctionalComponent<{
 
 	const theme = useTheme();
 
-	const currentBox = useStore((state) => state.currentBox);
-	const setCurrentBox = useStore((state) => state.setCurrentBox);
+	const selectedBox = useStore((state) => state.selectedBox);
+	const setselectedBox = useStore((state) => state.setselectedBox);
 
 	const findBoxInPrimaryBoxesList = (item: string) =>
 		DEFAULT_PRIMARY_BOXES.find(
@@ -68,15 +68,18 @@ const Drawer: FunctionalComponent<{
 		.sort((a, b) => a.localeCompare(b))
 		.map((i) => ({ name: i, id: i }));
 
+	const switchBox = (e: MouseEvent, box: MailBox) => {
+		setselectedBox(box);
+
+		toggleDrawer(false)(e);
+
+		document.title = `${import.meta.env.VITE_APP_NAME} - ${box.name}`;
+	};
+
 	const createFolderTree = (boxes: MailBox[]) =>
 		boxes.map((box) => (
-			<ListItem selected={box.id == currentBox} disablePadding>
-				<ListItemButton
-					onClick={(e: MouseEvent) => {
-						setCurrentBox(box.id);
-						toggleDrawer(false)(e);
-					}}
-				>
+			<ListItem selected={box.id == selectedBox?.id} disablePadding>
+				<ListItemButton onClick={(e: MouseEvent) => switchBox(e, box)}>
 					<ListItemIcon>{box.icon ?? <Folder />}</ListItemIcon>
 					<ListItemText primary={box.name} />
 				</ListItemButton>

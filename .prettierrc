@@ -17,6 +17,7 @@
 		"^@src/.*",
 		"^@models/.*",
 		"^@interfaces/.*",
+		"^@shared/.*",
 		"^@utils/.*",
 		"^@components/.*",
 		".*sass$",
