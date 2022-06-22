@@ -28,11 +28,11 @@ jobs:
       - name: Build server
         run: yarn --cwd packages/server run build
 
-      - name: Run normal tests
-        run: yarn --cwd packages/server run test
+      # - name: Run normal tests
+      #   run: yarn --cwd packages/server run test
 
-      - name: Run end-to-end tests
-        run: yarn --cwd packages/server run test:e2e
+      # - name: Run end-to-end tests
+      #   run: yarn --cwd packages/server run test:e2e
 
   heroku:
     name: Deploy to Heroku
