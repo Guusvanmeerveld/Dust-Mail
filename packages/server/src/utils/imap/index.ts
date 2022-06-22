@@ -136,7 +136,7 @@ export default class Client extends EventEmitter implements MailClient {
 				...parseMessage(result.body),
 				content: {
 					html: result.body.html as string,
-					text: result.body.text
+					text: result.body.textAsHtml
 				},
 				to: Array.isArray(result.body.to)
 					? result.body.to

@@ -34,12 +34,15 @@ const MessageOverview: FunctionalComponent = () => {
 			{selectedMessage && data && (
 				<div
 					dangerouslySetInnerHTML={{
-						__html: sanitizeHtml(data.content.html, {
-							allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-								"img",
-								"style"
-							])
-						})
+						__html: sanitizeHtml(
+							data.content.html ? data.content.html : data.content.text,
+							{
+								allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+									"img",
+									"style"
+								])
+							}
+						)
 					}}
 				></div>
 			)}
