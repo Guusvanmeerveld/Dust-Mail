@@ -13,7 +13,7 @@ import useFetch from "@utils/axiosClient";
 import useStore from "@utils/createStore";
 
 import Loading from "@components/Loading";
-import MessageListItem from "@components/Message";
+import MessageListItem from "@components/Message/ListItem";
 
 const MessageList: FunctionalComponent = () => {
 	const fetcher = useFetch();
@@ -42,7 +42,7 @@ const MessageList: FunctionalComponent = () => {
 							box: selectedBox?.id
 						}
 					})
-					.then(({ data }) => data);
+					.then((res) => res.data);
 			},
 			{
 				getNextPageParam: (lastPage, pages) => {
@@ -59,7 +59,7 @@ const MessageList: FunctionalComponent = () => {
 	return (
 		<>
 			{(isFetching || isFetchingNextPage) && <Loading />}
-			{error && <div>{error}</div>}
+			{error && <div>{error.message}</div>}
 			{data &&
 				data.pages &&
 				data.pages.map((messages) =>

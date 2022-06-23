@@ -1,13 +1,13 @@
 import { ParsedMail } from "mailparser";
 
-import createGravatarUrl from "@utils/createGravatarUrl";
+import { Address } from "@utils/interfaces/message";
 
 const parseMessage = (
 	result: ParsedMail
 ): {
 	subject?: string;
 	id: string;
-	from: { displayName: string; email: string; avatar: string }[];
+	from: Address[];
 } => ({
 	from: result.from.value.map(createAddress),
 	subject: result.subject,
@@ -17,9 +17,7 @@ const parseMessage = (
 export const createAddress = (from: { name: string; address: string }) => {
 	const { name, address } = from;
 
-	const avatar = createGravatarUrl(address);
-
-	return { avatar, email: address, displayName: name };
+	return { email: address, displayName: name };
 };
 
 export default parseMessage;

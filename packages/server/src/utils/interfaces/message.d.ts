@@ -4,7 +4,6 @@
 export interface Address {
 	displayName: string;
 	email: string;
-	avatar: string;
 }
 
 /**

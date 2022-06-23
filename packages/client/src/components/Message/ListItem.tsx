@@ -1,6 +1,6 @@
 import { FunctionalComponent } from "preact";
 
-import { memo, useEffect } from "preact/compat";
+import { memo } from "preact/compat";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -11,6 +11,7 @@ import Message from "@interfaces/message";
 
 import useStore from "@utils/createStore";
 import useTheme from "@utils/hooks/useTheme";
+import useAvatar from "@utils/useAvatar";
 
 const UnMemoizedMessageListItem: FunctionalComponent<{
 	message: Message;
@@ -18,12 +19,13 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 }> = ({ message, selectedMessage }) => {
 	const theme = useTheme();
 
-	let from = message.from.map((from) => from.displayName).join(", ");
-	if (from == "") from = message.from.map((from) => from.email).join(", ");
-
-	const avatar = message.from[0].avatar;
+	let from = message.from
+		.map((from) => from.displayName || from.email)
+		.join(", ");
 
 	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
+
+	const avatar = useAvatar(message.from[0].email);
 
 	return (
 		<Card
@@ -43,12 +45,14 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 			>
 				<Box>
 					<Avatar
-						sx={{ bgcolor: theme.palette.secondary.main }}
+						sx={{ bgcolor: !avatar ? theme.palette.secondary.main : null }}
 						variant="rounded"
 						// imgProps={{ onError: () =>  }}
 						src={avatar}
-						alt={from.toUpperCase()}
-					/>
+						alt={from.charAt(0).toLocaleUpperCase()}
+					>
+						{!avatar && from.charAt(0).toLocaleUpperCase()}
+					</Avatar>
 				</Box>
 				<Box sx={{ ml: 2, flex: 1 }}>
 					<Typography noWrap textOverflow="ellipsis" variant="body2">
