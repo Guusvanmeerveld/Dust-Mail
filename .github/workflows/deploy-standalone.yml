@@ -17,10 +17,10 @@ jobs:
       - name: Setup
         uses: actions/checkout@v2
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1.2.0
-        with:
-          platforms: linux/amd64, linux/arm64
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v1.2.0
+      #   with:
+      #     platforms: linux/amd64, linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -40,7 +40,7 @@ jobs:
           context: .
 
           tags: guusvanmeerveld/dust-mail:standalone
-          platforms: linux/amd64, linux/arm64
+          # platforms: linux/amd64, linux/arm64
 
           # Cache
           cache-from: type=gha
