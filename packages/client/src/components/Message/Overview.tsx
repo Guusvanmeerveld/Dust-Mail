@@ -29,7 +29,7 @@ const MessageOverview: FunctionalComponent = () => {
 		() =>
 			fetcher
 				.get("/mail/message", {
-					params: { id: selectedMessage, box: selectedBox?.id }
+					params: { id: selectedMessage, box: selectedBox?.id, markRead: true }
 				})
 				.then(({ data }) => data),
 		{ enabled: selectedMessage != undefined }

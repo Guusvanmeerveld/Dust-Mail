@@ -37,17 +37,20 @@ export class AvatarService {
 
 		const gravatarUrl = this.createGravatarUrl(email);
 
-		const response = await axios
+		const data = await axios
 			.get<Readable>(gravatarUrl, {
 				responseType: "stream",
 				headers: {
 					Accept: "image/png"
 				}
 			})
+			.then((res) => res.data)
 			.catch(() => {
-				throw new NotFoundException();
+				return;
 			});
 
-		return response.data;
+		if (data) return data;
+
+		throw new NotFoundException();
 	};
 }

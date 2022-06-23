@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=node:12-alpine
+ARG BASE_IMAGE=node:16-alpine
 
 # Builder
 FROM $BASE_IMAGE AS builder
@@ -6,8 +6,6 @@ FROM $BASE_IMAGE AS builder
 WORKDIR /app
 
 COPY . .
-
-RUN apk add git
 
 RUN yarn install --frozen-lockfile
 
@@ -19,6 +17,8 @@ RUN yarn install --production --ignore-scripts --prefer-offline
 FROM $BASE_IMAGE AS runner
 
 WORKDIR /app
+
+COPY public public
 
 ENV NODE_ENV "production"
 

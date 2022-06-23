@@ -2,7 +2,7 @@
 # This Dockerfile combines both the client and the server into a single container
 # 
 
-ARG BASE_IMAGE=node:12-alpine
+ARG BASE_IMAGE=node:16-alpine
 
 # Build client
 FROM $BASE_IMAGE AS client-builder
@@ -56,5 +56,7 @@ COPY --from=server-builder /app/node_modules ./node_modules
 COPY --from=server-builder /app/package.json ./package.json
 
 COPY entrypoint.sh .
+
+COPY packages/server/public public
 
 CMD [ "./entrypoint.sh" ]

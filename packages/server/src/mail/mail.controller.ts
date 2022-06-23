@@ -2,6 +2,7 @@ import {
 	BadRequestException,
 	Controller,
 	Get,
+	ParseBoolPipe,
 	ParseIntPipe,
 	Query,
 	Req,
@@ -64,6 +65,7 @@ export class MailController {
 	@UseGuards(JwtAuthGuard)
 	async fetchMessage(
 		@Req() req: Request,
+		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
 		@Query("id") id?: string,
 		@Query("box") box?: string
 	) {
@@ -73,6 +75,6 @@ export class MailController {
 
 		const client = req.user.client;
 
-		return await client.getMessage(id, box).catch(handleError);
+		return await client.getMessage(id, box, markAsRead).catch(handleError);
 	}
 }

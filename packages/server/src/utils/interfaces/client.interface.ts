@@ -22,6 +22,10 @@ export default interface Client {
 		boxName: string,
 		options: { start: number; end: number }
 	) => Promise<Message[]>;
-	getMessage: (id: string, boxName: string) => Promise<FullMessage | void>;
+	getMessage: (
+		id: string,
+		boxName: string,
+		markAsRead: boolean
+	) => Promise<FullMessage | void>;
 	connect: () => Promise<void>;
 }

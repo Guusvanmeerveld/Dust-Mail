@@ -6,7 +6,7 @@ import Message from "./interfaces/message.interface";
 
 const fetch = async (
 	_client: Imap,
-	{ start, end, bodies, markAsSeen, id }: FetchOptions
+	{ start, end, bodies, markAsRead, id }: FetchOptions
 ): Promise<Message[]> => {
 	return new Promise((resolve, reject) => {
 		const toFetch = [];
@@ -16,7 +16,7 @@ const fetch = async (
 		if (id) toFetch.push(...id);
 
 		const query = _client.seq.fetch(toFetch, {
-			markSeen: markAsSeen ?? false,
+			markSeen: markAsRead ?? false,
 			bodies
 		});
 
@@ -54,16 +54,10 @@ const fetch = async (
 					messages.reverse().map(async (message) => ({
 						...message,
 						bodies: await Promise.all(
-							message.bodies.map(async (body) => {
-								const parsed = await simpleParser(body.stream);
-
-								// console.log(parsed);
-
-								return {
-									which: body.which,
-									body: parsed
-								};
-							})
+							message.bodies.map(async (body) => ({
+								which: body.which,
+								body: await simpleParser(body.stream)
+							}))
 						)
 					}))
 				)
@@ -89,7 +83,7 @@ export interface FetchOptions {
 	id?: number[];
 	includeMessageBody?: boolean;
 	bodies?: string[] | string;
-	markAsSeen?: boolean;
+	markAsRead?: boolean;
 }
 
 export type SearchOptions = { filters: (string | string[])[] };

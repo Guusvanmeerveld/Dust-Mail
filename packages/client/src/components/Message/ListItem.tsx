@@ -27,12 +27,17 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 
 	const avatar = useAvatar(message.from[0].email);
 
+	const unSeen = !message.flags.find((flag) => flag.match(/Seen/));
+
 	return (
 		<Card
 			onClick={() =>
 				selectedMessage ? setSelectedMessage() : setSelectedMessage(message.id)
 			}
-			sx={{ p: 1, my: 1, cursor: "pointer" }}
+			sx={{
+				my: 1,
+				cursor: "pointer"
+			}}
 			key={message.id}
 			raised={selectedMessage}
 		>
@@ -43,7 +48,16 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 					alignItems: "center"
 				}}
 			>
-				<Box>
+				{unSeen && (
+					<Box
+						sx={{
+							width: theme.spacing(1),
+							height: theme.spacing(9),
+							bgcolor: theme.palette.secondary.light
+						}}
+					></Box>
+				)}
+				<Box sx={{ m: 2 }}>
 					<Avatar
 						sx={{ bgcolor: !avatar ? theme.palette.secondary.main : null }}
 						variant="rounded"
@@ -54,11 +68,16 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 						{!avatar && from.charAt(0).toLocaleUpperCase()}
 					</Avatar>
 				</Box>
-				<Box sx={{ ml: 2, flex: 1 }}>
+				<Box sx={{ flex: 1, minWidth: 0 }}>
 					<Typography noWrap textOverflow="ellipsis" variant="body2">
 						{from} • {new Date(message.date).toLocaleDateString()}
 					</Typography>
-					<Typography noWrap textOverflow="ellipsis" variant="h6">
+					<Typography
+						noWrap
+						textOverflow="ellipsis"
+						variant="h6"
+						sx={{ fontWeight: unSeen ? "bold" : null }}
+					>
 						{!message.subject ||
 						(message.subject && message.subject.length == 0)
 							? "(No subject)"

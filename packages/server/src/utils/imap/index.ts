@@ -45,6 +45,10 @@ export default class Client extends EventEmitter implements MailClient {
 			this.state = State.NOT_READY;
 			this.emit("end");
 		});
+
+		this.on("end", () => {
+			this.connect();
+		});
 	}
 
 	public getBoxes = () => getBoxes(this._client);
@@ -107,7 +111,8 @@ export default class Client extends EventEmitter implements MailClient {
 
 	public getMessage = async (
 		id: string,
-		boxName: string
+		boxName: string,
+		markAsRead: boolean
 	): Promise<FullMessage | void> => {
 		await this.getBox(boxName);
 
@@ -121,7 +126,8 @@ export default class Client extends EventEmitter implements MailClient {
 
 		const messages = await this.fetch({
 			id: ids,
-			bodies: [body]
+			bodies: [body],
+			markAsRead
 		});
 
 		// await this.closeBox();

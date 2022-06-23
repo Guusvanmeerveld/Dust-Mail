@@ -5,6 +5,7 @@
 !/entrypoint.sh
 
 !/packages/server/src
+!/packages/server/public
 !/packages/server/package.json
 !/packages/server/yarn.lock
 !/packages/server/tsconfig.build.json

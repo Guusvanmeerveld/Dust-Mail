@@ -1,1 +1,1 @@
-/packages/server/public/assets filter=lfs diff=lfs merge=lfs -text
+/packages/server/public/assets/*.png filter=lfs diff=lfs merge=lfs -text
