@@ -9,9 +9,11 @@ FROM $BASE_IMAGE AS client-builder
 
 WORKDIR /app
 
-COPY ./packages/client .
+COPY ./packages/client/package.json ./packages/client/yarn.lock ./
 
 RUN yarn install --frozen-lockfile
+
+COPY ./packages/client .
 
 ENV NODE_ENV "production"
 
@@ -26,9 +28,11 @@ FROM $BASE_IMAGE AS server-builder
 
 WORKDIR /app
 
-COPY ./packages/server .
+COPY ./packages/server/package.json ./packages/server/yarn.lock  ./
 
 RUN yarn install --frozen-lockfile
+
+COPY ./packages/server .
 
 RUN yarn build
 

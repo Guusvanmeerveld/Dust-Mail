@@ -61,7 +61,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1.2.0
         with:
-          platforms: linux/amd64, linux/arm64, linux/arm/v7
+          platforms: linux/amd64, linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -81,7 +81,7 @@ jobs:
           context: packages/server
 
           tags: guusvanmeerveld/dust-mail:server
-          platforms: linux/amd64, linux/arm64, linux/arm/v7
+          platforms: linux/amd64, linux/arm64
 
           # Cache
           cache-from: type=gha
