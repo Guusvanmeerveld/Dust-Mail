@@ -26,7 +26,7 @@ jobs:
         run: yarn --cwd packages/client install
 
       - name: Build client
-        run: yarn --cwd packages/client run build --base=/Dust-Mail/
+        run: yarn --cwd packages/client run build
         env:
           VITE_DEFAULT_SERVER: https://dust-mail.herokuapp.com
 
