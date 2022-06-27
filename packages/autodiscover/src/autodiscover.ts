@@ -45,23 +45,19 @@ const fetchDataFromAutodiscoverURL = async (
 	port: number,
 	credentials?: Credentials
 ) => {
-	const data = await axios
-		.post(
-			`${
-				port == 443 ? "https" : "http"
-			}://${server}/Autodiscover/Autodiscover.svc`,
-			{},
-			{
-				auth: credentials,
-				headers: { "Content-Type": "text/xml; charset=utf-8" }
-			}
-		)
-		.then(({ data }) => data)
-		.catch((error) => {
-			console.log(error);
-		});
+	const data = await axios(
+		`${
+			port == 443 ? "https" : "http"
+		}://${server}/Autodiscover/Autodiscover.svc`,
+		{
+			method: "POST",
+			headers: { "Content-Type": "text/xml; charset=utf-8" }
+		}
+	).catch((error) => {
+		// console.log(error);
+	});
 
-	console.log(data);
+	// console.log(data);
 };
 
 export default fetchServerWithAutodiscover;

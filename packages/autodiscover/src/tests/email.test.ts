@@ -1,4 +1,4 @@
-import fetchServerFromEmail from "../src";
+import fetchServerFromEmail from "..";
 
 describe("Validate email tester", () => {
 	test("It will throw an error", async () => {
