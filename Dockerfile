@@ -9,7 +9,7 @@ FROM $BASE_IMAGE AS client-builder
 
 WORKDIR /app
 
-COPY ./packages/client/package.json ./packages/client/yarn.lock ./
+COPY ./packages/client/package.json ./
 
 RUN yarn install --frozen-lockfile
 

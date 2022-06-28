@@ -5,7 +5,7 @@ FROM $BASE_IMAGE AS builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json ./
 
 RUN yarn install --frozen-lockfile
 
