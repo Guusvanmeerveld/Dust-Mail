@@ -6,6 +6,10 @@ on:
       - main
     paths:
       - .github/workflows/deploy-standalone.yml
+      - Dockerfile
+      - entrypoint.sh
+      - nginx/**
+      - .dockerignore
       - packages/server/**
       - packages/client/**
 
