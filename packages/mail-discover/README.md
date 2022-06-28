@@ -2,6 +2,16 @@
 
 This is a simple NPM package to identify and lookup any imap, pop3, smtp or any other mail related servers related to an email address
 
+## Implementations:
+
+### Current
+
+- [Thunderbird autoconfig](https://wiki.mozilla.org/Thunderbird:Autoconfiguration)
+
+### WIP
+
+- [Microsoft autodiscover](https://docs.microsoft.com/en-us/Exchange/architecture/client-access/autodiscover)
+
 Example:
 
 ```js

@@ -1,6 +1,6 @@
 {
-	"name": "mail-discover",
-	"displayName": "Mail-Discover",
+	"name": "@dust-mail/autodiscover",
+	"displayName": "Dust Mail Discover",
 	"description": "A simple package to find any imap, pop3 and smtp servers related to an email address",
 	"author": {
 		"name": "Guus van Meerveld"

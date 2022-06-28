@@ -3,6 +3,10 @@
 	"author": {
 		"name": "Guus van Meerveld"
 	},
+	"workspaces": [
+		"packages/server",
+		"packages/mail-discover"
+	],
 	"scripts": {
 		"prettify": "prettier packages/client/src packages/autodiscover/src --write"
 	},

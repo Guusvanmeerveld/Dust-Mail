@@ -1,0 +1,32 @@
+name: Mail-Discover Tests
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - packages/mail-autodiscover/**
+      - .github/workflows/test-discover.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run tests
+    steps:
+      - name: Setup Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup NodeJS v12
+        uses: actions/setup-node@v2
+        with:
+          node-version: 12
+          cache: "yarn"
+
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Build package
+        run: yarn --cwd packages/mail-discover run build
+
+      - name: Run tests
+        run: yarn --cwd packages/mail-discover run test
