@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - packages/mail-autodiscover/**
+      - packages/mail-discover/**
       - .github/workflows/test-discover.yml
 
 jobs:
