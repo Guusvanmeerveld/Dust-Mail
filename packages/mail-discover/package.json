@@ -5,6 +5,9 @@
 	"author": {
 		"name": "Guus van Meerveld"
 	},
+	"publishConfig": {
+		"registry": "https://npm.pkg.github.com"
+	},
 	"license": "MIT",
 	"version": "0.1.0",
 	"main": "lib/index.cjs.js",

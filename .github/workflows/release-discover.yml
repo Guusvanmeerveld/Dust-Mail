@@ -6,8 +6,6 @@ on:
       - main
     paths:
       - .github/workflows/release-discover.yml
-  release:
-    types: [created]
 
 jobs:
   build:
