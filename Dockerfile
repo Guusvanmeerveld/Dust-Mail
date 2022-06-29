@@ -28,7 +28,7 @@ FROM $BASE_IMAGE AS server-builder
 
 WORKDIR /app
 
-COPY ./packages/server/package.json ./
+COPY ./packages/server/package.json ./packages/server/yarn.lock ./
 
 RUN yarn install --frozen-lockfile
 

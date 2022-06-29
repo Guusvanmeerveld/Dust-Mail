@@ -23,7 +23,7 @@ jobs:
           cache: "yarn"
 
       - name: Install Dependencies
-        run: yarn install
+        run: yarn --cwd packages/mail-discover install
 
       - name: Build package
         run: yarn --cwd packages/mail-discover run build
