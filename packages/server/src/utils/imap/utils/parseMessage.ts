@@ -1,6 +1,5 @@
-import { ParsedMail } from "mailparser";
-
 import { Address } from "@utils/interfaces/message";
+import { ParsedMail } from "mailparser";
 
 const parseMessage = (
 	result: ParsedMail

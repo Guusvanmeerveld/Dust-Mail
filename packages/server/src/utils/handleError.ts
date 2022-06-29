@@ -1,6 +1,5 @@
-import { BadRequestException } from "@nestjs/common";
-
 import UserError, { PackageError } from "./interfaces/error.interface";
+import { BadRequestException } from "@nestjs/common";
 
 export const parseError = (error: PackageError): UserError => {
 	// console.log(error);

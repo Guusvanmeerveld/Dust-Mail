@@ -31,6 +31,7 @@
 		"helmet": "^5.1.0",
 		"imap": "^0.8.19",
 		"kleur": "^4.1.4",
+		"mail-discover": "^0.1.2",
 		"mailparser": "^3.5.0",
 		"passport": "^0.6.0",
 		"passport-jwt": "^4.0.0",

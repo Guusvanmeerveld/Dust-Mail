@@ -1,6 +1,5 @@
-import Message, { FullMessage } from "@utils/interfaces/message";
-
 import { State } from "./state.interface";
+import Message, { FullMessage } from "@utils/interfaces/message";
 
 export interface Config {
 	user: {

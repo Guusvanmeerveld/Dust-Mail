@@ -18,6 +18,7 @@
 		"target": "es2017",
 		"sourceMap": true,
 		"outDir": "./dist",
+		"composite": true,
 		"rootDir": "./src",
 		"tsBuildInfoFile": ".tsbuildinfo",
 		"baseUrl": "./src",

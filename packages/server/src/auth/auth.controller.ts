@@ -17,6 +17,8 @@ import { ThrottlerBehindProxyGuard } from "./throttler-proxy.guard";
 
 import handleError from "@utils/handleError";
 
+import mailDiscover from "mail-discover";
+
 @Controller("auth")
 export class AuthController {
 	private allowedDomains?: string[];
@@ -44,6 +46,19 @@ export class AuthController {
 				!this.allowedDomains.includes(server)
 			) {
 				throw new UnauthorizedException("Mail server is not on whitelist");
+			}
+
+			if (!server) {
+				const result = await mailDiscover(username).catch(() => {
+					return;
+				});
+
+				if (result) {
+					const [incomingServer] = result;
+
+					server = incomingServer.server;
+					port = incomingServer.port;
+				}
 			}
 
 			const token = await this.authService

@@ -1,8 +1,6 @@
-import Imap, { ImapMessageBodyInfo } from "imap";
-
-import { simpleParser } from "mailparser";
-
 import Message from "./interfaces/message.interface";
+import Imap, { ImapMessageBodyInfo } from "imap";
+import { simpleParser } from "mailparser";
 
 const fetch = async (
 	_client: Imap,

@@ -16,11 +16,13 @@ RUN yarn build
 RUN yarn install --production --ignore-scripts --prefer-offline
 
 # Runner
-FROM $BASE_IMAGE AS runner
+FROM alpine AS runner
 
 WORKDIR /app
 
 COPY public public
+
+RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.11/main/ nodejs=12.22.6-r0
 
 ENV NODE_ENV "production"
 
@@ -28,4 +30,4 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
-CMD ["yarn", "start:prod"]
+CMD ["node", "dist/main"]

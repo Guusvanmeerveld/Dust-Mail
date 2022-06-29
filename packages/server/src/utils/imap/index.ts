@@ -1,22 +1,17 @@
-import Imap from "imap";
-
-import { EventEmitter } from "events";
-
-import Message, { FullMessage } from "@utils/interfaces/message";
-
-import { Config } from "./interfaces/config.interface";
+import MailClient from "../interfaces/client.interface";
 import { State } from "../interfaces/state.interface";
-
-import connect from "./connect";
 import { getBox, closeBox, getBoxes } from "./box";
+import connect from "./connect";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
+import { Config } from "./interfaces/config.interface";
+import parseMessage, { createAddress } from "./utils/parseMessage";
+import Message, { FullMessage } from "@utils/interfaces/message";
+import { EventEmitter } from "events";
+import Imap from "imap";
 
 export { Config } from "./interfaces/config.interface";
 
 export { State } from "../interfaces/state.interface";
-import MailClient from "../interfaces/client.interface";
-
-import parseMessage, { createAddress } from "./utils/parseMessage";
 
 export default class Client extends EventEmitter implements MailClient {
 	private readonly _client: Imap;
