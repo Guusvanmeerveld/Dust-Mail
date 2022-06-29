@@ -3,7 +3,7 @@ name: Mail-Discover Tests
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - packages/mail-discover/**
       - .github/workflows/test-discover.yml
