@@ -1,6 +1,11 @@
 name: Publish Mail-Discover package to NPM
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/release-discover.yml
   release:
     types: [created]
 
@@ -15,7 +20,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 12
-          registry-url: "https://registry.npmjs.org"
+          registry-url: "https://npm.pkg.github.com"
           cache: "yarn"
 
       - name: Install Dependencies
@@ -27,4 +32,4 @@ jobs:
       - name: Publish package
         run: yarn --cwd packages/mail-discover publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
