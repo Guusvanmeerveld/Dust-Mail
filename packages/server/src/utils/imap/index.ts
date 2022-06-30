@@ -1,15 +1,12 @@
-import MailClient from "../interfaces/client.interface";
+import MailClient, { Config } from "../interfaces/client.interface";
 import { State } from "../interfaces/state.interface";
 import { getBox, closeBox, getBoxes } from "./box";
 import connect from "./connect";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
-import { Config } from "./interfaces/config.interface";
 import parseMessage, { createAddress } from "./utils/parseMessage";
 import Message, { FullMessage } from "@utils/interfaces/message";
 import { EventEmitter } from "events";
 import Imap from "imap";
-
-export { Config } from "./interfaces/config.interface";
 
 export { State } from "../interfaces/state.interface";
 
@@ -18,17 +15,15 @@ export default class Client extends EventEmitter implements MailClient {
 
 	public state = State.NOT_READY;
 
-	constructor(config: Config) {
+	constructor(private readonly config: Config) {
 		super();
 
-		const tls = config.port == 993;
-
 		this._client = new Imap({
-			user: config.user.name,
-			password: config.user.password,
-			host: config.server,
-			port: config.port ?? 25,
-			tls
+			user: this.config.user.name,
+			password: this.config.user.password,
+			host: this.config.incoming.server,
+			port: this.config.incoming.port,
+			tls: this.config.incoming.security != "NONE"
 		});
 
 		this._client.on("ready", () => {
@@ -39,10 +34,6 @@ export default class Client extends EventEmitter implements MailClient {
 		this._client.on("end", () => {
 			this.state = State.NOT_READY;
 			this.emit("end");
-		});
-
-		this.on("end", () => {
-			this.connect();
 		});
 	}
 

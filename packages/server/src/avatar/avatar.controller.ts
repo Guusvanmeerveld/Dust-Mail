@@ -3,10 +3,12 @@ import {
 	Controller,
 	Get,
 	Query,
+	UseGuards,
 	UseInterceptors
 } from "@nestjs/common";
 
 import { MailValidationPipe } from "@auth/pipes/mail.pipe";
+import { JwtAuthGuard } from "@auth/jwt-auth.guard";
 
 import { AvatarService } from "./avatar.service";
 
@@ -15,6 +17,7 @@ export class AvatarController {
 	constructor(private readonly avatarService: AvatarService) {}
 
 	@Get("/")
+	@UseGuards(JwtAuthGuard)
 	@UseInterceptors(CacheInterceptor)
 	async findAvatarForAddress(
 		@Query("address", MailValidationPipe) address: string

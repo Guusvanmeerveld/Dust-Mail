@@ -18,6 +18,8 @@ import { ThrottlerBehindProxyGuard } from "./throttler-proxy.guard";
 import handleError from "@utils/handleError";
 
 import mailDiscover from "mail-discover";
+import UserError from "@utils/interfaces/error.interface";
+import { SecurityType } from "./interfaces/server.interface";
 
 @Controller("auth")
 export class AuthController {
@@ -30,39 +32,81 @@ export class AuthController {
 	@Post("login")
 	@UseGuards(ThrottlerBehindProxyGuard)
 	async login(
-		@Body("server")
-		server?: string,
-		@Body("port")
-		port?: number,
 		@Body("username", MailValidationPipe)
 		username?: string,
 		@Body("password")
-		password?: string
+		password?: string,
+		@Body("incoming_server")
+		incomingServer?: string,
+		@Body("incoming_port")
+		incomingPort?: number,
+		@Body("incoming_security")
+		incomingSecurity?: SecurityType,
+		@Body("outgoing_server")
+		outgoingServer?: string,
+		@Body("outgoing_port")
+		outgoingPort?: number,
+		@Body("outgoing_security")
+		outgoingSecurity?: SecurityType
 	) {
 		if (username && password) {
 			if (
-				server &&
 				this.allowedDomains &&
-				!this.allowedDomains.includes(server)
+				((incomingServer && !this.allowedDomains.includes(incomingServer)) ||
+					(outgoingServer && !this.allowedDomains.includes(outgoingServer)))
 			) {
-				throw new UnauthorizedException("Mail server is not on whitelist");
+				throw new UnauthorizedException({
+					code: UserError.Misc,
+					message: "Mail server is not on whitelist"
+				});
 			}
 
-			if (!server) {
-				const result = await mailDiscover(username).catch(() => {
-					return;
+			if (!incomingServer || !outgoingServer) {
+				const result = await mailDiscover(username).catch((e: Error) => {
+					if (!incomingServer) {
+						throw new BadRequestException({
+							code: UserError.Misc,
+							message: e.message
+						});
+					}
 				});
 
 				if (result) {
-					const [incomingServer] = result;
+					const [foundIncomingServer, foundOutgoingServer] = result;
 
-					server = incomingServer.server;
-					port = incomingServer.port;
+					if (!incomingServer) {
+						incomingServer = foundIncomingServer.server;
+						incomingPort = foundIncomingServer.port;
+						incomingSecurity = foundIncomingServer.security;
+					}
+
+					if (!outgoingServer) {
+						outgoingServer = foundOutgoingServer.server;
+						outgoingPort = foundOutgoingServer.port;
+						outgoingSecurity = foundOutgoingServer.security;
+					}
 				}
 			}
 
+			if (!incomingPort) incomingPort = 143;
+			if (!incomingSecurity) incomingSecurity = "NONE";
+
+			if (!outgoingPort) outgoingPort = 25;
+			if (!outgoingSecurity) outgoingSecurity = "NONE";
+
 			const token = await this.authService
-				.login(username, password, server, port)
+				.login(username, password, {
+					incoming: {
+						server: incomingServer,
+						port: incomingPort,
+						security: incomingSecurity
+					},
+					outgoing: {
+						server: outgoingServer,
+						port: outgoingPort,
+						security: outgoingSecurity
+					}
+				})
 				.then((token) => token)
 				.catch(handleError);
 

@@ -1,8 +1,9 @@
 import preact from "@preact/preset-vite";
-import alias from "@rollup/plugin-alias";
 import { resolve } from "path";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+
+import alias from "@rollup/plugin-alias";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,6 +19,9 @@ export default defineConfig({
 		}),
 		tsconfigPaths()
 	],
+	esbuild: {
+		logOverride: { "this-is-undefined-in-esm": "silent" }
+	},
 	build: {
 		sourcemap: true,
 		outDir: "dist",

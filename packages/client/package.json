@@ -3,6 +3,9 @@
 	"displayName": "Dust Mail Client",
 	"description": "A simple and fast mail client",
 	"version": "0.0.0",
+	"repository": {
+		"url": "https://github.com/Guusvanmeerveld/Dust-Mail"
+	},
 	"size-limit": [
 		{
 			"path": "dist/assets/*.js",
@@ -19,11 +22,12 @@
 		"tauri": "tauri"
 	},
 	"dependencies": {
-		"@emotion/react": "^11.9.0",
-		"@emotion/styled": "^11.8.1",
+		"@emotion/react": "^11.9.3",
+		"@emotion/styled": "^11.9.3",
 		"@fontsource/roboto": "^4.5.7",
 		"@mui/icons-material": "^5.8.0",
 		"@mui/material": "^5.8.0",
+		"@mui/styled-engine": "^5.8.0",
 		"@tauri-apps/api": "^1.0.0-rc.5",
 		"axios": "^0.27.2",
 		"js-md5": "^0.7.3",

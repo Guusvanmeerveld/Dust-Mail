@@ -1,8 +1,9 @@
 import create from "zustand";
 
 import Box from "@interfaces/box";
+import AdvancedLogin, { ServerType } from "@interfaces/login";
 
-const useStore = create<{
+interface Store {
 	selectedBox: Box | undefined;
 	setselectedBox: (newBox: Box) => void;
 	showSettings: boolean;
@@ -10,7 +11,11 @@ const useStore = create<{
 	toggleShowSettings: () => void;
 	selectedMessage: string | undefined;
 	setSelectedMessage: (messageId?: string) => void;
-}>((set) => ({
+	advancedLoginSettings: Record<ServerType, AdvancedLogin>;
+	setAdvancedLoginSettings: (type: ServerType, settings: AdvancedLogin) => void;
+}
+
+const useStore = create<Store>((set) => ({
 	selectedBox: undefined,
 	setselectedBox: (newBox) => set({ selectedBox: newBox }),
 	showSettings: false,
@@ -18,7 +23,18 @@ const useStore = create<{
 	toggleShowSettings: () =>
 		set(({ showSettings }) => ({ showSettings: !showSettings })),
 	selectedMessage: undefined,
-	setSelectedMessage: (messageId) => set({ selectedMessage: messageId })
+	setSelectedMessage: (messageId) => set({ selectedMessage: messageId }),
+	advancedLoginSettings: {
+		incoming: {},
+		outgoing: {}
+	},
+	setAdvancedLoginSettings: (type, settings) =>
+		set(({ advancedLoginSettings }) => ({
+			advancedLoginSettings: {
+				...advancedLoginSettings,
+				[type]: { ...advancedLoginSettings[type], ...settings }
+			}
+		}))
 }));
 
 export default useStore;

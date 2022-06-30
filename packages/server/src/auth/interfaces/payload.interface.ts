@@ -1,8 +1,10 @@
+import Server from "./server.interface";
+
 export interface Payload {
 	username: string;
 	sub: {
-		server: string;
-		port: number;
+		incoming: Server;
+		outgoing: Server;
 		password: string;
 	};
 }

@@ -1,3 +1,4 @@
+import { version } from "../../package.json";
 import useLocalStorageState from "use-local-storage-state";
 
 import axios, { AxiosError } from "axios";
@@ -11,7 +12,9 @@ const useFetch = () => {
 
 	const instance = axios.create({
 		baseURL: customServerUrl,
-		headers: { Authorization: `Bearer ${token}` }
+		headers: {
+			Authorization: `Bearer ${token}`
+		}
 	});
 
 	instance.interceptors.response.use(

@@ -1,11 +1,16 @@
-import { State } from "./state.interface";
+import Server from "@auth/interfaces/server.interface";
+
 import Message, { FullMessage } from "@utils/interfaces/message";
+
+import { State } from "./state.interface";
 
 export interface Config {
 	user: {
 		name: string;
 		password: string;
 	};
+	incoming: Server;
+	outgoing: Server;
 }
 
 export interface Box {

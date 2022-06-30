@@ -1,14 +1,12 @@
 import json from "@rollup/plugin-json";
 
-import { terser } from "rollup-plugin-terser";
-import tsConfigPaths from "rollup-plugin-ts-paths";
 import typescript from "rollup-plugin-typescript2";
 
 // import { OutputOptions, RollupOptions } from "rollup";
 
 import pkg from "./package.json";
 
-const plugins = [json(), typescript(), tsConfigPaths(), terser()];
+const plugins = [json(), typescript()];
 
 const external = [
 	...Object.keys(pkg.dependencies || {}),

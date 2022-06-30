@@ -1,49 +1,205 @@
-import { description } from "../../package.json";
+import { description, repository } from "../../package.json";
 import useLocalStorageState from "use-local-storage-state";
 
-import { TargetedEvent } from "preact/compat";
-import { useState } from "preact/hooks";
+import { FunctionalComponent } from "preact";
 
-import axios from "axios";
+import { TargetedEvent } from "preact/compat";
+import { useEffect, useState } from "preact/hooks";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import FormControl from "@mui/material/FormControl";
+import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import Link from "@mui/material/Link";
+import MenuItem from "@mui/material/MenuItem";
 import Modal from "@mui/material/Modal";
+import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { SxProps, Theme } from "@mui/material/styles";
 
 import Settings from "@mui/icons-material/Settings";
 
 import Error from "@interfaces/error";
+import { SecurityType, ServerType } from "@interfaces/login";
 
 import useFetch from "@utils/axiosClient";
 import createGravatarUrl from "@utils/createGravatarUrl";
+import useStore from "@utils/createStore";
 import useTheme from "@utils/hooks/useTheme";
 
 import Loading from "@components/Loading";
 
-const Login = () => {
+const modalStyles: (theme: Theme) => SxProps = (theme) => ({
+	position: "absolute",
+	top: "50%",
+	left: "50%",
+	transform: "translate(-50%, -50%)",
+	border: 0,
+	bgcolor: theme.palette.background.paper,
+	p: 4
+});
+
+const LoginSettingsMenu: FunctionalComponent = () => {
 	const theme = useTheme();
 
-	const [advanced, setAdvanced] = useState(false);
+	const [isOpen, setOpen] = useState(false);
 
-	const [settingsModalState, setSettingsModalState] = useState(false);
 	const [customServerUrl, setCustomServerUrl] = useLocalStorageState(
 		"customServerUrl",
 		{ defaultValue: import.meta.env.VITE_DEFAULT_SERVER }
 	);
 
+	return (
+		<>
+			<Box sx={{ position: "absolute", right: "1rem", top: "1rem" }}>
+				<IconButton
+					onClick={() => setOpen(true)}
+					aria-label="Open custom server settings"
+				>
+					<Settings />
+				</IconButton>
+			</Box>
+			<Modal onClose={() => setOpen(false)} open={isOpen}>
+				<Box sx={modalStyles(theme)}>
+					<Typography gutterBottom variant="h5">
+						Set custom {import.meta.env.VITE_APP_NAME} backend server
+					</Typography>
+					<Typography color={theme.palette.text.secondary} variant="subtitle1">
+						Only update this value if you know what you are doing!
+					</Typography>
+
+					<Typography color={theme.palette.text.secondary} variant="subtitle1">
+						For more information visit{" "}
+						<Link href={repository.url} target="_blank" rel="noreferrer">
+							the Github repo
+						</Link>
+						.
+					</Typography>
+					<br />
+					<TextField
+						fullWidth
+						onChange={(e) => setCustomServerUrl(e.currentTarget.value)}
+						defaultValue={customServerUrl}
+						id="custom-server"
+						label="Custom server url/path"
+						variant="outlined"
+						type="text"
+					/>
+				</Box>
+			</Modal>
+		</>
+	);
+};
+
+const ServerPropertiesColumn: FunctionalComponent<{ type: ServerType }> = ({
+	type
+}) => {
+	const setSettings = useStore((state) => state.setAdvancedLoginSettings);
+
+	const security = useStore(
+		(state) => state.advancedLoginSettings[type].security
+	);
+
+	const server = useStore((state) => state.advancedLoginSettings[type].server);
+
+	const port = useStore((state) => state.advancedLoginSettings[type].port);
+
+	return (
+		<Grid item xs={6}>
+			<Stack direction="column" spacing={2}>
+				<Typography variant="h6" textAlign="center">
+					{type == "incoming" ? "IMAP / POP3" : "SMTP"}
+				</Typography>
+				<TextField
+					fullWidth
+					id={`${type}-server`}
+					onChange={(e) => setSettings(type, { server: e.currentTarget.value })}
+					defaultValue={server}
+					label="Server url/ip"
+					variant="outlined"
+					type="text"
+				/>
+
+				<TextField
+					fullWidth
+					id={`${type}-server-port`}
+					onChange={(e) =>
+						setSettings(type, { port: parseInt(e.currentTarget.value) })
+					}
+					defaultValue={port}
+					label="Port"
+					helperText={`Default: ${type == "incoming" ? 143 : 25}`}
+					variant="outlined"
+					min="1"
+					type="number"
+				/>
+
+				<FormControl fullWidth>
+					<InputLabel id={`${type}-server-security-label`}>Security</InputLabel>
+					<Select
+						labelId={`${type}-server-security-label`}
+						id={`${type}-server-security`}
+						label="Security"
+						value={security ?? "NONE"}
+						onChange={(e: any) =>
+							setSettings(type, { security: e.target.value as SecurityType })
+						}
+					>
+						<MenuItem value="NONE">None (Not secure)</MenuItem>
+						<MenuItem value="STARTTLS">STARTTLS (Upgrades to secure)</MenuItem>
+						<MenuItem value="TLS">TLS (Secure)</MenuItem>
+					</Select>
+				</FormControl>
+			</Stack>
+		</Grid>
+	);
+};
+
+const AdvancedLoginMenu: FunctionalComponent = () => {
+	const theme = useTheme();
+
+	const [isOpen, setOpen] = useState(false);
+
+	return (
+		<>
+			<Button variant="text" onClick={() => setOpen((state) => !state)}>
+				Advanced login
+			</Button>
+			<Modal open={isOpen} onClose={() => setOpen(false)}>
+				<Box sx={modalStyles(theme)}>
+					<Typography variant="h5" textAlign="center">
+						Custom mail server settings
+					</Typography>
+					<Typography variant="subtitle1" textAlign="center">
+						Customize which mail servers that you want to connect to.
+					</Typography>
+					<br />
+					<Grid container spacing={2}>
+						<ServerPropertiesColumn type="incoming" />
+						<ServerPropertiesColumn type="outgoing" />
+					</Grid>
+				</Box>
+			</Modal>
+		</>
+	);
+};
+
+const LoginForm: FunctionalComponent<{
+	setFetching: (fetching: boolean) => void;
+	fetching: boolean;
+}> = ({ setFetching, fetching }) => {
+	useEffect(() => {
+		document.title = `${import.meta.env.VITE_APP_NAME} - Login`;
+	}, []);
+
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-
-	const [server, setServer] = useState("");
-	const [port, setPort] = useState<number>();
-
-	const [fetching, setFetching] = useState(false);
 
 	const [error, setError] = useState<
 		{ message: string; type: Error } | undefined
@@ -74,6 +230,12 @@ const Login = () => {
 		setBoxes(boxes);
 	};
 
+	const missingFields = !email || !password;
+
+	const advancedLoginSettings = useStore(
+		(state) => state.advancedLoginSettings
+	);
+
 	/**
 	 * Runs when the form should be submitted to the server
 	 */
@@ -81,7 +243,7 @@ const Login = () => {
 		e.preventDefault();
 
 		// Reject the form if there any fields empty
-		if (!email || !password || (advanced && (!server || !port))) {
+		if (missingFields) {
 			setError({ message: "Missing required fields", type: Error.Misc });
 			return;
 		}
@@ -99,10 +261,14 @@ const Login = () => {
 			.post(
 				"/auth/login",
 				{
-					server,
-					port,
 					username: email,
-					password
+					password,
+					incoming_server: advancedLoginSettings.incoming.server,
+					incoming_port: advancedLoginSettings.incoming.port,
+					incoming_security: advancedLoginSettings.incoming.security,
+					outgoing_server: advancedLoginSettings.outgoing.server,
+					outgoing_port: advancedLoginSettings.outgoing.port,
+					outgoing_security: advancedLoginSettings.outgoing.security
 				},
 				{ validateStatus: () => true }
 			)
@@ -112,8 +278,9 @@ const Login = () => {
 				// Handle axios errors
 				if (error.code == "ERR_NETWORK") {
 					setError({
-						message:
-							"Could not connect to remote server, please check your connectivity",
+						message: `Could not connect to remote ${
+							import.meta.env.VITE_APP_NAME
+						} server, please check your connectivity`,
 						type: Error.Misc
 					});
 				} else {
@@ -200,49 +367,59 @@ const Login = () => {
 	};
 
 	return (
+		<form onSubmit={onSubmit}>
+			<Stack direction="column" spacing={2}>
+				<Typography variant="h2">{import.meta.env.VITE_APP_NAME}</Typography>
+				<Typography variant="h5">{description}</Typography>
+
+				<TextField
+					required
+					onChange={(e) => setEmail(e.currentTarget.value)}
+					id="username"
+					error={error && error.type == Error.Credentials}
+					helperText={error && error.type == Error.Credentials && error.message}
+					label="Email address"
+					variant="outlined"
+					type="email"
+				/>
+
+				<TextField
+					required
+					onChange={(e) => setPassword(e.currentTarget.value)}
+					error={error && error.type == Error.Credentials}
+					id="password"
+					label="Password"
+					variant="outlined"
+					type="password"
+				/>
+
+				<Button
+					fullWidth
+					disabled={fetching || missingFields}
+					onClick={onSubmit}
+					variant="contained"
+				>
+					Login
+				</Button>
+				{error && (error.type == Error.Timeout || error.type == Error.Misc) && (
+					<Alert sx={{ textAlign: "left" }} severity="error">
+						<AlertTitle>Error</AlertTitle>
+						{error.message}
+					</Alert>
+				)}
+				<AdvancedLoginMenu />
+			</Stack>
+		</form>
+	);
+};
+
+const Login: FunctionalComponent = () => {
+	const [fetching, setFetching] = useState(false);
+
+	return (
 		<>
 			{fetching && <Loading />}
-			<Box sx={{ position: "absolute", right: "1rem", top: "1rem" }}>
-				<IconButton
-					onClick={() => setSettingsModalState(true)}
-					aria-label="Open custom server settings"
-				>
-					<Settings />
-				</IconButton>
-			</Box>
-			<Modal
-				onClose={() => setSettingsModalState(false)}
-				open={settingsModalState}
-			>
-				<Box
-					sx={{
-						position: "absolute",
-						top: "50%",
-						left: "50%",
-						transform: "translate(-50%, -50%)",
-						border: 0,
-						bgcolor: theme.palette.background.paper,
-						p: 4
-					}}
-				>
-					<Typography gutterBottom variant="h5">
-						Set custom {import.meta.env.VITE_APP_NAME} backend server
-					</Typography>
-					<Typography color={theme.palette.text.secondary} variant="subtitle1">
-						Only update this value if you know what you are doing!
-					</Typography>
-					<br />
-					<TextField
-						fullWidth
-						onChange={(e) => setCustomServerUrl(e.currentTarget.value)}
-						defaultValue={customServerUrl}
-						id="custom-server"
-						label="Custom server url/path"
-						variant="outlined"
-						type="text"
-					/>
-				</Box>
-			</Modal>
+			<LoginSettingsMenu />
 			<Box
 				sx={{
 					textAlign: "center",
@@ -253,85 +430,7 @@ const Login = () => {
 					m: "auto"
 				}}
 			>
-				<form onSubmit={onSubmit}>
-					<Stack direction="column" spacing={2}>
-						<Typography variant="h2">
-							{import.meta.env.VITE_APP_NAME}
-						</Typography>
-						<Typography variant="h5">{description}</Typography>
-						{advanced && (
-							<>
-								<TextField
-									required
-									onChange={(e) => setServer(e.currentTarget.value)}
-									error={error && error.type == Error.Network}
-									helperText={
-										error && error.type == Error.Network && error.message
-									}
-									id="server"
-									label="IMAP server"
-									variant="outlined"
-									type="text"
-								/>
-
-								<TextField
-									required
-									onChange={(e) => setPort(parseInt(e.currentTarget.value))}
-									error={error && error.type == Error.Network}
-									id="port"
-									label="Port"
-									variant="outlined"
-									type="number"
-								/>
-							</>
-						)}
-
-						<TextField
-							required
-							onChange={(e) => setEmail(e.currentTarget.value)}
-							id="username"
-							error={error && error.type == Error.Credentials}
-							helperText={
-								error && error.type == Error.Credentials && error.message
-							}
-							label="Email address"
-							variant="outlined"
-							type="email"
-						/>
-
-						<TextField
-							required
-							onChange={(e) => setPassword(e.currentTarget.value)}
-							error={error && error.type == Error.Credentials}
-							id="password"
-							label="Password"
-							variant="outlined"
-							type="password"
-						/>
-
-						<Button
-							fullWidth
-							disabled={fetching}
-							onClick={onSubmit}
-							variant="contained"
-						>
-							Login
-						</Button>
-						{error &&
-							(error.type == Error.Timeout || error.type == Error.Misc) && (
-								<Alert sx={{ textAlign: "left" }} severity="error">
-									<AlertTitle>Error</AlertTitle>
-									{error.message}
-								</Alert>
-							)}
-						<Button
-							variant="text"
-							onClick={() => setAdvanced((state) => !state)}
-						>
-							{advanced ? "Normal login" : "Advanced login"}
-						</Button>
-					</Stack>
-				</form>
+				<LoginForm setFetching={setFetching} fetching={fetching} />
 			</Box>
 		</>
 	);

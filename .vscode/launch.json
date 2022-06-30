@@ -18,6 +18,13 @@
 			"url": "http://localhost:3000"
 		},
 		{
+			"name": "Cypress: open",
+			"type": "node-terminal",
+			"request": "launch",
+			"command": "yarn run cypress:open",
+			"cwd": "${workspaceFolder}/packages/client"
+		}
+		{
 			"name": "Server: start server",
 			"type": "node-terminal",
 			"request": "launch",
