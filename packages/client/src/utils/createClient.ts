@@ -1,7 +1,7 @@
 import { QueryClient } from "react-query";
 
 const queryClient = new QueryClient({
-	defaultOptions: { queries: { refetchOnWindowFocus: import.meta.env.DEV } }
+	defaultOptions: { queries: { refetchOnWindowFocus: false } }
 });
 
 export default queryClient;

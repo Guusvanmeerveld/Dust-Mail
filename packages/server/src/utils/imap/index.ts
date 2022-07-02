@@ -1,14 +1,18 @@
+import Imap from "imap";
+
+import { EventEmitter } from "events";
+
+import Message, { ContentType, FullMessage } from "@utils/interfaces/message";
+import parseMessage, { createAddress } from "@utils/imap/utils/parseMessage";
+import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
+
 import MailClient, { Config } from "../interfaces/client.interface";
 import { State } from "../interfaces/state.interface";
+export { State } from "../interfaces/state.interface";
+
 import { getBox, closeBox, getBoxes } from "./box";
 import connect from "./connect";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
-import parseMessage, { createAddress } from "./utils/parseMessage";
-import Message, { FullMessage } from "@utils/interfaces/message";
-import { EventEmitter } from "events";
-import Imap from "imap";
-
-export { State } from "../interfaces/state.interface";
 
 export default class Client extends EventEmitter implements MailClient {
 	private readonly _client: Imap;
@@ -100,7 +104,7 @@ export default class Client extends EventEmitter implements MailClient {
 		boxName: string,
 		markAsRead: boolean
 	): Promise<FullMessage | void> => {
-		await this.getBox(boxName);
+		await this.getBox(boxName, false);
 
 		const body = "";
 
@@ -127,19 +131,30 @@ export default class Client extends EventEmitter implements MailClient {
 			.map((result) => ({
 				...parseMessage(result.body),
 				content: {
-					html: result.body.html as string,
-					text: result.body.textAsHtml
+					html: result.body.html
+						? cleanMainHtml(result.body.html)
+						: cleanTextHtml(result.body.textAsHtml),
+					type: (result.body.html ? "html" : "text") as ContentType
 				},
+				cc: Array.isArray(result.body.cc)
+					? result.body.cc
+							.map((address) => address.value.map(createAddress))
+							.flat()
+					: result.body.cc?.value.map(createAddress),
+				bcc: Array.isArray(result.body.bcc)
+					? result.body.bcc
+							.map((address) => address.value.map(createAddress))
+							.flat()
+					: result.body.bcc?.value.map(createAddress),
 				to: Array.isArray(result.body.to)
 					? result.body.to
 							.map((address) => address.value.map(createAddress))
 							.flat()
-					: result.body.to.value.map(createAddress)
+					: result.body.to?.value.map(createAddress)
 			}));
 
 		return {
 			...headers.shift(),
-
 			date: message.date,
 			flags: message.flags
 		};

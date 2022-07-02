@@ -8,6 +8,8 @@
 	"importOrder": [
 		"@rollup/.*",
 		"rollup-.*",
+		"^./.*",
+		"^react.*",
 		"^preact$",
 		"^preact.*",
 		"^axios.*",

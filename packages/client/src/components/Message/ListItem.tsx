@@ -16,7 +16,8 @@ import useAvatar from "@utils/useAvatar";
 const UnMemoizedMessageListItem: FunctionalComponent<{
 	message: Message;
 	selectedMessage: boolean;
-}> = ({ message, selectedMessage }) => {
+	unSeen?: boolean;
+}> = ({ message, selectedMessage, unSeen }) => {
 	const theme = useTheme();
 
 	let from = message.from
@@ -27,12 +28,15 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 
 	const avatar = useAvatar(message.from[0].email);
 
-	const unSeen = !message.flags.find((flag) => flag.match(/Seen/));
+	if (unSeen === undefined)
+		unSeen = !message.flags.find((flag) => flag.match(/Seen/));
 
 	return (
 		<Card
 			onClick={() =>
-				selectedMessage ? setSelectedMessage() : setSelectedMessage(message.id)
+				selectedMessage
+					? setSelectedMessage()
+					: setSelectedMessage({ id: message.id, flags: message.flags })
 			}
 			sx={{
 				my: 1,

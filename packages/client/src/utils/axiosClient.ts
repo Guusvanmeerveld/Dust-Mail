@@ -1,4 +1,3 @@
-import { version } from "../../package.json";
 import useLocalStorageState from "use-local-storage-state";
 
 import axios, { AxiosError } from "axios";

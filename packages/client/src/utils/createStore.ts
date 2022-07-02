@@ -9,8 +9,8 @@ interface Store {
 	showSettings: boolean;
 	setShowSettings: (show: boolean) => void;
 	toggleShowSettings: () => void;
-	selectedMessage: string | undefined;
-	setSelectedMessage: (messageId?: string) => void;
+	selectedMessage?: { id: string | undefined; flags: string[] };
+	setSelectedMessage: (message?: { id: string; flags: string[] }) => void;
 	advancedLoginSettings: Record<ServerType, AdvancedLogin>;
 	setAdvancedLoginSettings: (type: ServerType, settings: AdvancedLogin) => void;
 }
@@ -23,7 +23,7 @@ const useStore = create<Store>((set) => ({
 	toggleShowSettings: () =>
 		set(({ showSettings }) => ({ showSettings: !showSettings })),
 	selectedMessage: undefined,
-	setSelectedMessage: (messageId) => set({ selectedMessage: messageId }),
+	setSelectedMessage: (message) => set({ selectedMessage: message }),
 	advancedLoginSettings: {
 		incoming: {},
 		outgoing: {}

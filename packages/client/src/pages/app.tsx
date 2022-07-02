@@ -1,8 +1,10 @@
+import useLocalStorageState from "use-local-storage-state";
+
 import Index from "./Index";
 import Login from "./Login";
+
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
-import useLocalStorageState from "use-local-storage-state";
 
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
@@ -20,7 +22,7 @@ const App = () => {
 			<QueryClientProvider client={queryClient}>
 				<ReactQueryDevtools initialIsOpen={false} />
 				<CssBaseline />
-				{isLoggedIn && <Index />}
+				{!!isLoggedIn && <Index />}
 				{!isLoggedIn && <Login />}
 			</QueryClientProvider>
 		</ThemeProvider>

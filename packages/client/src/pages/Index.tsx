@@ -1,6 +1,10 @@
-import Grid from "@mui/material/Grid";
+import useLocalStorageState from "use-local-storage-state";
+
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
 
 import useTheme from "@utils/hooks/useTheme";
+import useWindowWidth from "@utils/hooks/useWindowWidth";
 
 import Layout from "@components/Layout";
 import MessageList from "@components/Message/List";
@@ -9,23 +13,78 @@ import MessageOverview from "@components/Message/Overview";
 const Index = () => {
 	const theme = useTheme();
 
+	const [messageListWidth, setMesageListWidth] = useLocalStorageState<number>(
+		"messageListWidth",
+		{
+			defaultValue: 400
+		}
+	);
+
+	const appBarHeight = theme.spacing(8);
+
+	const fullpageHeight = `calc(100vh - ${appBarHeight})`;
+
+	const windowWidth = useWindowWidth();
+
+	const grabberWidth = 2;
+
+	const handleDragStart = (originalWidth: number, dragEvent: MouseEvent) => {
+		const pageX = dragEvent.pageX;
+
+		const run = (moveEvent: MouseEvent) => {
+			const difference = pageX - moveEvent.pageX;
+
+			const newWidth = originalWidth - difference;
+
+			if (newWidth >= 200 && newWidth <= 600) setMesageListWidth(newWidth);
+		};
+
+		const unsub = () => {
+			document.removeEventListener("mousemove", run);
+			document.removeEventListener("mouseup", unsub);
+		};
+
+		document.addEventListener("mousemove", run);
+		document.addEventListener("mouseup", unsub);
+	};
+
 	return (
 		<Layout>
-			<Grid container spacing={0}>
-				<Grid
-					item
-					xs={4}
+			<Stack direction="row" sx={{ height: fullpageHeight }}>
+				<Box
 					sx={{
-						px: 3,
-						borderRight: `${theme.palette.divider} 1px solid`
+						width: messageListWidth,
+						overflowY: "scroll",
+						px: 3
 					}}
 				>
 					<MessageList />
-				</Grid>
-				<Grid item xs={8} sx={{ px: 3, py: 1 }}>
+				</Box>
+
+				<Box
+					onMouseDown={(e: MouseEvent) => handleDragStart(messageListWidth, e)}
+					sx={{
+						width: grabberWidth,
+						bgcolor: theme.palette.divider,
+						cursor: "col-resize"
+					}}
+				/>
+
+				<Stack
+					direction="column"
+					spacing={2}
+					sx={{
+						width: windowWidth - messageListWidth - grabberWidth,
+						transition: theme.transitions.create(["width", "transform"], {
+							duration: theme.transitions.duration.standard
+						}),
+						px: 3,
+						py: 1
+					}}
+				>
 					<MessageOverview />
-				</Grid>
-			</Grid>
+				</Stack>
+			</Stack>
 		</Layout>
 	);
 };

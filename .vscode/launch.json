@@ -12,18 +12,21 @@
 			"cwd": "${workspaceFolder}/packages/client"
 		},
 		{
+			"name": "Client: start tauri server",
+			"type": "node-terminal",
+			"request": "launch",
+			"env": {
+				"VITE_DEFAULT_SERVER": "http://localhost:4000"
+			},
+			"command": "yarn run tauri dev",
+			"cwd": "${workspaceFolder}/packages/client"
+		},
+		{
 			"name": "Client: start client",
 			"type": "pwa-chrome",
 			"request": "launch",
 			"url": "http://localhost:3000"
 		},
-		{
-			"name": "Cypress: open",
-			"type": "node-terminal",
-			"request": "launch",
-			"command": "yarn run cypress:open",
-			"cwd": "${workspaceFolder}/packages/client"
-		}
 		{
 			"name": "Server: start server",
 			"type": "node-terminal",

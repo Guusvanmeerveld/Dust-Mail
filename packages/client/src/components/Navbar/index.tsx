@@ -55,35 +55,33 @@ const Navbar: FunctionalComponent = () => {
 
 	return (
 		<>
-			<Box sx={{ flexGrow: 1 }}>
-				<AppBar position="fixed" enableColorOnDark>
-					<Toolbar>
-						<IconButton
-							size="large"
-							edge="start"
-							color="inherit"
-							aria-label="menu"
-							sx={{ mr: 2 }}
-							onClick={toggleDrawer(true)}
-						>
-							<MenuIcon />
-						</IconButton>
-						<Typography variant="h6" sx={{ flexGrow: 1 }}>
-							{import.meta.env.VITE_APP_NAME}
-							{breadcrumbs && (
-								<Breadcrumbs
-									separator={<NavigateNext fontSize="small" />}
-									aria-label="breadcrumb"
-								>
-									{breadcrumbs}
-								</Breadcrumbs>
-							)}
-						</Typography>
-						<Avatar />
-					</Toolbar>
-				</AppBar>
-			</Box>
-			<Box sx={{ width: "100%", height: 64 }} />
+			<AppBar position="static">
+				<Toolbar>
+					<IconButton
+						size="large"
+						edge="start"
+						color="inherit"
+						aria-label="menu"
+						sx={{ mr: 2 }}
+						onClick={toggleDrawer(true)}
+					>
+						<MenuIcon />
+					</IconButton>
+					<Typography variant="h6" sx={{ flexGrow: 1 }}>
+						{import.meta.env.VITE_APP_NAME}
+						{breadcrumbs && (
+							<Breadcrumbs
+								separator={<NavigateNext fontSize="small" />}
+								aria-label="breadcrumb"
+							>
+								{breadcrumbs}
+							</Breadcrumbs>
+						)}
+					</Typography>
+					<Avatar />
+				</Toolbar>
+			</AppBar>
+
 			<Drawer drawerState={drawerState} toggleDrawer={toggleDrawer} />
 		</>
 	);

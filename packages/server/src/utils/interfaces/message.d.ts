@@ -17,12 +17,14 @@ export default interface Message {
 	id: string;
 }
 
+export type ContentType = "html" | "text";
+
 export interface FullMessage extends Message {
 	to?: Address[];
-	bcc?: string[];
-	cc?: string[];
+	bcc?: Address[];
+	cc?: Address[];
 	content: {
-		text: string;
-		html: string;
+		type?: ContentType;
+		html?: string;
 	};
 }

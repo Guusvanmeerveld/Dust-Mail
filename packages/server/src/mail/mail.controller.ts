@@ -75,6 +75,6 @@ export class MailController {
 
 		const client = req.user.client;
 
-		return await client.getMessage(id, box, markAsRead).catch(handleError);
+		return await client.getMessage(id, box, markAsRead);
 	}
 }

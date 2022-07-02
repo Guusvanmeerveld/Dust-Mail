@@ -2,11 +2,16 @@ import { useInfiniteQuery } from "react-query";
 
 import { FunctionalComponent } from "preact";
 
+import { memo } from "preact/compat";
+
+import { AxiosError } from "axios";
+
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
+import Error from "@interfaces/error";
 import Message from "@interfaces/message";
 
 import useFetch from "@utils/axiosClient";
@@ -15,7 +20,7 @@ import useStore from "@utils/createStore";
 import Loading from "@components/Loading";
 import MessageListItem from "@components/Message/ListItem";
 
-const MessageList: FunctionalComponent = () => {
+const UnMemoizedMessageList: FunctionalComponent = () => {
 	const fetcher = useFetch();
 
 	// The amount of messages to load per request
@@ -27,7 +32,7 @@ const MessageList: FunctionalComponent = () => {
 
 	// Request the messages using react-query
 	const { data, error, fetchNextPage, isFetching, isFetchingNextPage } =
-		useInfiniteQuery<Message[], Error>(
+		useInfiniteQuery<Message[], AxiosError<{ code: Error; message: string }>>(
 			["box", selectedBox?.id],
 			({ pageParam = 0 }) => {
 				if (pageParam === false) {
@@ -59,17 +64,28 @@ const MessageList: FunctionalComponent = () => {
 	return (
 		<>
 			{(isFetching || isFetchingNextPage) && <Loading />}
-			{error && <div>{error.message}</div>}
+			{error && error.response?.data && (
+				<div>{error.response.data.message}</div>
+			)}
 			{data &&
 				data.pages &&
 				data.pages.map((messages) =>
-					messages.map((message) => (
-						<MessageListItem
-							key={message.id}
-							selectedMessage={selectedMessage == message.id}
-							message={message}
-						/>
-					))
+					messages.map((message) => {
+						const selected = selectedMessage?.id == message.id;
+
+						return (
+							<MessageListItem
+								key={message.id}
+								selectedMessage={selected}
+								message={message}
+								unSeen={
+									selected
+										? !selectedMessage?.flags.find((flag) => flag.match(/Seen/))
+										: undefined
+								}
+							/>
+						);
+					})
 				)}
 			{(isFetching || isFetchingNextPage) && (
 				<Box
@@ -88,11 +104,16 @@ const MessageList: FunctionalComponent = () => {
 				<Typography>Mail box is empty</Typography>
 			)}
 
-			<Button sx={{ mx: "auto" }} onClick={() => fetchNextPage()}>
-				Load More
-			</Button>
+			{/* Show a load more button, unless the last page doesn't have a full set of items */}
+			{data && data.pages[data.pages.length - 1].length == messageCountForPage && (
+				<Button sx={{ mx: "auto" }} onClick={() => fetchNextPage()}>
+					Load More
+				</Button>
+			)}
 		</>
 	);
 };
+
+const MessageList = memo(UnMemoizedMessageList);
 
 export default MessageList;
