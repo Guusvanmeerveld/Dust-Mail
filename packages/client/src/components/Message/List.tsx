@@ -3,6 +3,7 @@ import { useInfiniteQuery } from "react-query";
 import { FunctionalComponent } from "preact";
 
 import { memo } from "preact/compat";
+import { useRef, useState } from "preact/hooks";
 
 import { AxiosError } from "axios";
 
@@ -61,12 +62,31 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 			}
 		);
 
+	const rightClickMenuBox = useRef(null);
+
+	const [rightClickMenuAnchor, setRightClickMenuAnchor] = useState<{
+		x: number;
+		y: number;
+		id?: string;
+	}>({ x: 0, y: 0 });
+
 	return (
 		<>
 			{(isFetching || isFetchingNextPage) && <Loading />}
+
 			{error && error.response?.data && (
 				<div>{error.response.data.message}</div>
 			)}
+
+			<Box
+				sx={{
+					position: "absolute",
+					left: rightClickMenuAnchor.x,
+					top: rightClickMenuAnchor.y
+				}}
+				ref={rightClickMenuBox}
+			/>
+
 			{data &&
 				data.pages &&
 				data.pages.map((messages) =>
@@ -83,10 +103,17 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 										? !selectedMessage?.flags.find((flag) => flag.match(/Seen/))
 										: undefined
 								}
+								rightClickMenuBox={rightClickMenuBox}
+								rightClickMenuOpen={
+									rightClickMenuAnchor.id == message.id &&
+									(rightClickMenuAnchor.x != 0 || rightClickMenuAnchor.y != 0)
+								}
+								setRightClickMenuAnchor={setRightClickMenuAnchor}
 							/>
 						);
 					})
 				)}
+
 			{(isFetching || isFetchingNextPage) && (
 				<Box
 					sx={{
@@ -100,13 +127,21 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 				</Box>
 			)}
 
+			{!selectedBox && (
+				<Typography variant="h6" sx={{ textAlign: "center", mt: 1 }}>
+					No mail box selected.
+				</Typography>
+			)}
+
 			{data && data.pages && data.pages[0].length == 0 && (
-				<Typography>Mail box is empty</Typography>
+				<Typography variant="h6" sx={{ textAlign: "center", mt: 1 }}>
+					Mail box is empty
+				</Typography>
 			)}
 
 			{/* Show a load more button, unless the last page doesn't have a full set of items */}
 			{data && data.pages[data.pages.length - 1].length == messageCountForPage && (
-				<Button sx={{ mx: "auto" }} onClick={() => fetchNextPage()}>
+				<Button fullWidth sx={{ mb: 1 }} onClick={() => fetchNextPage()}>
 					Load More
 				</Button>
 			)}

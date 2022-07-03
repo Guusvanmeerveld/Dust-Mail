@@ -32,6 +32,8 @@ const Index = () => {
 		const pageX = dragEvent.pageX;
 
 		const run = (moveEvent: MouseEvent) => {
+			moveEvent.preventDefault();
+
 			const difference = pageX - moveEvent.pageX;
 
 			const newWidth = originalWidth - difference;
@@ -53,6 +55,16 @@ const Index = () => {
 			<Stack direction="row" sx={{ height: fullpageHeight }}>
 				<Box
 					sx={{
+						"&::-webkit-scrollbar": {
+							width: theme.spacing(1)
+						},
+						"&::-webkit-scrollbar-track": {
+							bgcolor: "transparent"
+						},
+						"&::-webkit-scrollbar-thumb": {
+							backgroundImage:
+								"linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
+						},
 						width: messageListWidth,
 						overflowY: "scroll",
 						px: 3

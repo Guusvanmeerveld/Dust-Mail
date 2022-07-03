@@ -4,10 +4,10 @@ import { AxiosError } from "axios";
 
 import useFetch from "@utils/axiosClient";
 
-const useAvatar = (email: string) => {
+const useAvatar = (email: string): { data?: string; isLoading: boolean } => {
 	const fetcher = useFetch();
 
-	const { data } = useQuery<string>(
+	const { data, isLoading } = useQuery<string>(
 		["avatar", email],
 		() =>
 			fetcher("/avatar", {
@@ -21,7 +21,7 @@ const useAvatar = (email: string) => {
 		{ retry: false }
 	);
 
-	return data;
+	return { data, isLoading };
 };
 
 export default useAvatar;

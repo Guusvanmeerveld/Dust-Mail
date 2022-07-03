@@ -2,7 +2,7 @@
 	"name": "@dust-mail/client",
 	"displayName": "Dust Mail Client",
 	"description": "A simple and fast mail client",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"repository": {
 		"url": "https://github.com/Guusvanmeerveld/Dust-Mail"
 	},

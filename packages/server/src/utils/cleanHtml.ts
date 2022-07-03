@@ -19,6 +19,8 @@ const cleanMainHtml = (dirty: string): string =>
 				"cellpadding",
 				"colspan",
 				"id",
+				"target",
+				"data-x-style-url",
 				"class",
 				"align"
 			]
