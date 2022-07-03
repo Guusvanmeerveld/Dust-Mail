@@ -7,7 +7,7 @@
 		"distDir": "../dist"
 	},
 	"package": {
-		"productName": "dust-mail",
+		"productName": "dust-mail-client",
 		"version": "0.1.0"
 	},
 	"tauri": {
