@@ -39,7 +39,7 @@
 				"signingIdentity": null
 			},
 			"resources": [],
-			"shortDescription": "",
+			"shortDescription": "A simple and fast mail client",
 			"targets": "all",
 			"windows": {
 				"certificateThumbprint": null,
@@ -55,18 +55,9 @@
 		},
 		"windows": [
 			{
-				"fullscreen": false,
-				"height": 600,
+				"maximized": true,
 				"resizable": true,
-				"title": "Dust-Mail",
-				"width": 800
-			},
-			{
-				"width": 400,
-				"height": 200,
-				"decorations": false,
-				"url": "splashscreen.html",
-				"label": "splashscreen"
+				"title": "Dust-Mail"
 			}
 		]
 	}
