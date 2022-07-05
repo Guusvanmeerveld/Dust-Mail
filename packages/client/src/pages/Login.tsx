@@ -214,6 +214,8 @@ const LoginForm: FunctionalComponent<{
 	setFetching: (fetching: boolean) => void;
 	fetching: boolean;
 }> = ({ setFetching, fetching }) => {
+	const theme = useTheme();
+
 	useEffect(() => {
 		document.title = `${import.meta.env.VITE_APP_NAME} - Login`;
 	}, []);
@@ -389,6 +391,12 @@ const LoginForm: FunctionalComponent<{
 	return (
 		<form onSubmit={onSubmit}>
 			<Stack direction="column" spacing={2}>
+				<img
+					style={{ width: theme.spacing(15), margin: "auto" }}
+					src="/android-chrome-512x512.png"
+					alt="logo"
+				/>
+
 				<Typography variant="h2">{import.meta.env.VITE_APP_NAME}</Typography>
 				<Typography variant="h5">{description}</Typography>
 
