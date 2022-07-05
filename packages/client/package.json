@@ -15,7 +15,6 @@
 	"license": "MIT",
 	"scripts": {
 		"dev": "vite",
-		"cypress:open": "cypress open",
 		"size": "size-limit",
 		"build": "tsc && vite build",
 		"preview": "vite preview",
@@ -41,13 +40,14 @@
 		"@preact/preset-vite": "^2.1.5",
 		"@rollup/plugin-alias": "^3.1.9",
 		"@size-limit/preset-app": "^7.0.8",
-		"@tauri-apps/cli": "^1.0.0-rc.10",
+		"@tauri-apps/cli": "^1.0.2",
 		"@types/jest": "^28.1.4",
 		"@types/js-md5": "^0.4.3",
 		"@types/node": "^17.0.35",
 		"size-limit": "^7.0.8",
 		"typescript": "^4.5.4",
 		"vite": "^2.9.9",
+		"vite-plugin-pwa": "^0.12.2",
 		"vite-tsconfig-paths": "^3.4.1"
 	}
 }

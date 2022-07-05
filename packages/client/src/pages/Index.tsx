@@ -84,7 +84,7 @@ const Index = () => {
 
 				<Stack
 					direction="column"
-					spacing={2}
+					spacing={1}
 					sx={{
 						width: windowWidth - messageListWidth - grabberWidth,
 						transition: theme.transitions.create(["width", "transform"], {

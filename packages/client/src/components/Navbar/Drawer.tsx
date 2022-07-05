@@ -2,6 +2,8 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { FunctionalComponent, JSX } from "preact";
 
+import { useEffect } from "preact/hooks";
+
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import MUIDrawer from "@mui/material/Drawer";
@@ -45,11 +47,22 @@ const Drawer: FunctionalComponent<{
 	const theme = useTheme();
 
 	const selectedBox = useStore((state) => state.selectedBox);
-	const setselectedBox = useStore((state) => state.setselectedBox);
+	const setSelectedBox = useStore((state) => state.setSelectedBox);
+
+	const [defaultBox] = useLocalStorageState("defaultBox", {
+		defaultValue: "INBOX"
+	});
+
+	useEffect(() => {
+		setSelectedBox({
+			name: defaultBox,
+			id: defaultBox
+		});
+	}, []);
 
 	const findBoxInPrimaryBoxesList = (item: string) =>
 		DEFAULT_PRIMARY_BOXES.find(
-			(box) => box.name.toLocaleLowerCase() == item.toLocaleLowerCase()
+			(box) => box.name.toLowerCase() == item.toLowerCase()
 		);
 
 	// Find all of the primary boxes and sort them alphabetically
@@ -69,7 +82,7 @@ const Drawer: FunctionalComponent<{
 		.map((i) => ({ name: i, id: i }));
 
 	const switchBox = (e: MouseEvent, box: MailBox) => {
-		setselectedBox(box);
+		setSelectedBox(box);
 
 		toggleDrawer(false)(e);
 

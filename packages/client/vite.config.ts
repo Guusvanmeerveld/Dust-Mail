@@ -1,6 +1,7 @@
 import preact from "@preact/preset-vite";
 import { resolve } from "path";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 import alias from "@rollup/plugin-alias";
@@ -8,6 +9,37 @@ import alias from "@rollup/plugin-alias";
 // https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [
+		VitePWA({
+			includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png"],
+			registerType: "autoUpdate",
+			manifest: {
+				short_name: "dust-mail",
+				name: "Dust Mail",
+				icons: [
+					{
+						src: "android-chrome-192x192.png",
+						sizes: "192x192",
+						type: "image/png"
+					},
+					{
+						src: "android-chrome-512x512.png",
+						sizes: "512x512",
+						type: "image/png"
+					},
+					{
+						src: "android-chrome-512x512.png",
+						sizes: "512x512",
+						type: "image/png",
+						purpose: "any maskable"
+					}
+				],
+				start_url: "/",
+				theme_color: "#2196F3",
+				background_color: "#121212",
+				display: "standalone",
+				scope: "/"
+			}
+		}),
 		preact(),
 		alias({
 			entries: [

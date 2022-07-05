@@ -88,11 +88,19 @@ export class AuthController {
 				}
 			}
 
-			if (!incomingPort) incomingPort = 143;
 			if (!incomingSecurity) incomingSecurity = "NONE";
+			if (!incomingPort) {
+				if (incomingSecurity == "TLS" || incomingSecurity == "STARTTLS")
+					incomingPort = 993;
+				if (incomingSecurity == "NONE") incomingPort = 143;
+			}
 
-			if (!outgoingPort) outgoingPort = 25;
 			if (!outgoingSecurity) outgoingSecurity = "NONE";
+			if (!outgoingPort) {
+				if (outgoingSecurity == "TLS") outgoingPort = 465;
+				if (outgoingSecurity == "STARTTLS") outgoingPort = 587;
+				if (outgoingSecurity == "NONE") outgoingPort = 25;
+			}
 
 			const token = await this.authService
 				.login(username, password, {

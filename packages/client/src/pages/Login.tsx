@@ -91,6 +91,16 @@ const LoginSettingsMenu: FunctionalComponent = () => {
 						variant="outlined"
 						type="text"
 					/>
+
+					<Button
+						sx={{ mt: 1 }}
+						onClick={() =>
+							setCustomServerUrl(import.meta.env.VITE_DEFAULT_SERVER)
+						}
+						disabled={customServerUrl == import.meta.env.VITE_DEFAULT_SERVER}
+					>
+						Reset to default value
+					</Button>
 				</Box>
 			</Modal>
 		</>
@@ -126,20 +136,6 @@ const ServerPropertiesColumn: FunctionalComponent<{ type: ServerType }> = ({
 					type="text"
 				/>
 
-				<TextField
-					fullWidth
-					id={`${type}-server-port`}
-					onChange={(e) =>
-						setSettings(type, { port: parseInt(e.currentTarget.value) })
-					}
-					defaultValue={port}
-					label="Port"
-					helperText={`Default: ${type == "incoming" ? 143 : 25}`}
-					variant="outlined"
-					min="1"
-					type="number"
-				/>
-
 				<FormControl fullWidth>
 					<InputLabel id={`${type}-server-security-label`}>Security</InputLabel>
 					<Select
@@ -156,6 +152,30 @@ const ServerPropertiesColumn: FunctionalComponent<{ type: ServerType }> = ({
 						<MenuItem value="TLS">TLS (Secure)</MenuItem>
 					</Select>
 				</FormControl>
+
+				<TextField
+					fullWidth
+					id={`${type}-server-port`}
+					onChange={(e) =>
+						setSettings(type, { port: parseInt(e.currentTarget.value) })
+					}
+					defaultValue={port}
+					label="Port"
+					helperText={`Default: ${
+						type == "incoming"
+							? security == "STARTTLS" || security == "TLS"
+								? 993
+								: 143
+							: security == "STARTTLS"
+							? 587
+							: security == "TLS"
+							? 465
+							: 25
+					}`}
+					variant="outlined"
+					min="1"
+					type="number"
+				/>
 			</Stack>
 		</Grid>
 	);

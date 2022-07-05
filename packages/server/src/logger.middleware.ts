@@ -17,7 +17,7 @@ export class LoggerMiddleware implements NestMiddleware {
 		const browser = userAgent.getBrowser();
 
 		this.logger.log(
-			`${req.method} ${req.baseUrl} ${
+			`${req.method} ${req.protocol}://${req.get("host")}${req.originalUrl} ${
 				parseIpAdressFromRequest(req) ?? "Unknown ip"
 			} [${gray(`${browser.name} ${browser.version}`)}]`
 		);

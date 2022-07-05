@@ -5,7 +5,7 @@ import AdvancedLogin, { ServerType } from "@interfaces/login";
 
 interface Store {
 	selectedBox: Box | undefined;
-	setselectedBox: (newBox: Box) => void;
+	setSelectedBox: (newBox: Box) => void;
 	showSettings: boolean;
 	setShowSettings: (show: boolean) => void;
 	toggleShowSettings: () => void;
@@ -17,7 +17,7 @@ interface Store {
 
 const useStore = create<Store>((set) => ({
 	selectedBox: undefined,
-	setselectedBox: (newBox) => set({ selectedBox: newBox }),
+	setSelectedBox: (newBox) => set({ selectedBox: newBox }),
 	showSettings: false,
 	setShowSettings: (show) => set({ showSettings: show }),
 	toggleShowSettings: () =>
