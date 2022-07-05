@@ -2,10 +2,25 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<link rel="icon" type="image/svg+xml" href="/assets/favicon.17e50649.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="description" content="A simple and fast mail client" />
 		<title>Dust Mail</title>
+		<meta name="description" content="A simple and fast mail client" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="32x32"
+			href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABWVBMVEUAAAC4+/+1+/+2+v8vr/owrvkwrfmi8v+g8P+W3ftnufdlt/Zltvdltvdlt/ZnufeF0fpPrvZjtfZjtfZRrvYmmfRcsvZdsvYmmvQhlvMunPRQrPVktfZSrfYvnfQhlvMlmPNApfVesvZfs/ZBpfUxnfRTrfZUrvYynvQmmPNDpvVgs/ZEp/UnmfMzn/RVrvZWr/Y0n/QhlvMnmfRGp/VhtPZHqPUomfQilvM2oPRXr/ZYsPY3oPQglvMolu9IpPBitPZJpPAplu8gkO0eieYgieU0lus1l+sgieYdiOYfkO0hlfIfjuseiOUhlPEfjOofjOkglPEgk/Afi+gei+ggke8eiucgke4hl/Mhl/MhlfAfi+gfi+chlfAjlOQfi+YfiuYfieYfieYfiuYfi+YikuUup/IupvBltfZktfY9o/U+pPUglvMhlvNltvYeiOUdh+Ugk/D////9Qsf7AAAAaHRSTlMAAAAAAAAAAQEBL4OhooUyAUjb3UvK/f7O+v39/v39+/78/v78/f39/f78/vz+/f39/f7+/P78/f78/f38/vv8/vz7/P7+/Pz+/vz+/P79/P39/f39/P38y9BK3d9PATOJpqeLNQECAqCytZIAAAABYktHRHI2Dg1YAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH5gcFDwkuj3+PpgAAAR5JREFUOMtjYBgMgJGRnQMHYGdiZmDg5OLm4cUBePj4BRgEhTIycYIMYREG0SwxnCoyxLMlGCRzpKRlcCiQlcuVZ8jNzVFQVMJiSIayikJObi5QARCoqmEqUNcAS0EU5GhqKaMYkqGto5uDpAAI9PSRFRgYGkHF4QpyjE1MoYZkmJqZ5+SiK8jNtbC0AqvIsLaxgMsjK8i1tbN3yMtzcHSyRRJEUmDk7OLq5ujo7uHpZYRNgbePb35+ARj5+nhjKvDzz0cCAYHoCoKC81FASBCqgtCwfDQQFm6EUAB0Xj4GcIE4lQHmPEwAcSqDJJrz0JwqzxBRGJyPE4QURjJERefjATGxDHHxCYlJuEBySioDAwtLWjoOkMbKNtCZEgwA3wgSM64RfF4AAAAldEVYdGRhdGU6Y3JlYXRlADIwMjItMDctMDVUMTU6MDk6NDYrMDA6MDCJBLtAAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIyLTA3LTA1VDE1OjA5OjQ2KzAwOjAw+FkD/AAAAFd6VFh0UmF3IHByb2ZpbGUgdHlwZSBpcHRjAAB4nOPyDAhxVigoyk/LzEnlUgADIwsuYwsTIxNLkxQDEyBEgDTDZAMjs1Qgy9jUyMTMxBzEB8uASKBKLgDqFxF08kI1lQAAAABJRU5ErkJggg=="
+		/>
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="16x16"
+			href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAolBMVEUAAABtu/dmt/ZltvZltvZmt/ZtuvdEp/Vfs/ZltfZktfZgs/ZFp/Uil/M0n/RWr/Y1n/QomfNHqPVhtPZIqPU3oPRYsPYqmvNJpvJhs/VKp/IhlfIfj+wgiuYxlOofjeoglPEfjOkhlvMgku8eiucgke4eiuceiOUgke4fiuYeieYfieYfiuZktfZltfYhlvMglvNhtPYilvMeiOUdh+X////F4gDzAAAALXRSTlMAGk9aWVAbu/r+/vu9/f7+/v7+/v7+/v79/v3+/v7+/v7+/f7+vPv+vxtSXByjuWVpAAAAAWJLR0Q13rbZawAAAAlwSFlzAAAN1wAADdcBQiibeAAAAAd0SU1FB+YHBQ8JLo9/j6YAAACGSURBVBjThc9dG0JAEIbhKX0pkgqxvkml2p2M///bWspeztxH7zxnAzBpNtcWirZcwXqjbxV9Z4C5t94Dbh1MEGgfT7w/P2cbBQiBjePKwl2nQdEFmbyL7wcedrsPLIziOArZEFhC1LZECfuFNKO/LJUhL0pSyiKHa3Ubqe7wqJ8j9Wv62S8t1BogksQXUgAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMi0wNy0wNVQxNTowOTo0NiswMDowMIkEu0AAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjItMDctMDVUMTU6MDk6NDYrMDA6MDD4WQP8AAAAV3pUWHRSYXcgcHJvZmlsZSB0eXBlIGlwdGMAAHic4/IMCHFWKCjKT8vMSeVSAAMjCy5jCxMjE0uTFAMTIESANMNkAyOzVCDL2NTIxMzEHMQHy4BIoEouAOoXEXTyQjWVAAAAAElFTkSuQmCC"
+		/>
+		<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+		<meta name="msapplication-TileColor" content="#da532c" />
+		<meta name="theme-color" content="#ffffff" />
 		<base target="_parent" />
 		<style>
 			body {
@@ -13,9 +28,9 @@
 				color: white;
 			}
 		</style>
-		<script type="module" crossorigin src="/assets/main.3ada4a11.js"></script>
+		<script type="module" crossorigin src="/assets/main.63804174.js"></script>
 		<link rel="stylesheet" href="/assets/main.69b2a1de.css">
-	</head>
+	<link rel="manifest" href="/manifest.webmanifest"><script src="/registerSW.js"></script></head>
 	<body>
 		<div id="app"></div>
 		
