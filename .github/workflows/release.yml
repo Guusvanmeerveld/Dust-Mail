@@ -36,6 +36,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         config:
           - os: ubuntu-latest
@@ -81,12 +82,18 @@ jobs:
         env:
           VITE_DEFAULT_SERVER: ${{ secrets.CLIENT_DEFAULT_SERVER }}
 
+      - name: Zip output
+        uses: vimtor/action-zip@v1
+        with:
+          files: ./packages/client/src-tauri/target/release/bundle
+          dest: ./bundle.zip
+
       - name: Upload release assets
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_name: dust-mail-${{ matrix.config.os }}
-          asset_path: ./packages/client/src-tauri/target/release/dust-mail-client
-          asset_content_type: application/octet-stream
+          asset_name: dust-mail-${{ matrix.config.os }}.zip
+          asset_path: ./bundle.zip
+          asset_content_type: application/zip
