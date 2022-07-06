@@ -59,6 +59,11 @@ jobs:
           default: true
           override: true
 
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: ./packages/client/src-tauri
+
       - name: Install NPM dependencies
         run: yarn --cwd packages/client install
 
