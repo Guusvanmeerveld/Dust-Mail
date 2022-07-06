@@ -28,7 +28,7 @@ jobs:
       - name: Build client
         run: yarn --cwd packages/client run build
         env:
-          VITE_DEFAULT_SERVER: https://dust-mail.herokuapp.com
+          VITE_DEFAULT_SERVER: ${{ secrets.CLIENT_DEFAULT_SERVER }}
 
       - name: Check size
         run: yarn --cwd packages/client run size
