@@ -30,7 +30,7 @@
 				"icons/icon.ico"
 			],
 			"identifier": "dust.guusvanmeerveld.dev",
-			"longDescription": "",
+			"longDescription": "An opensource mail client supporting multiple platforms.",
 			"macOS": {
 				"entitlements": null,
 				"exceptionDomain": "",

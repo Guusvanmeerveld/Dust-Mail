@@ -15,8 +15,8 @@ import Typography from "@mui/material/Typography";
 import Error from "@interfaces/error";
 import Message from "@interfaces/message";
 
-import useFetch from "@utils/axiosClient";
-import useStore from "@utils/createStore";
+import useFetch from "@utils/hooks/useFetch";
+import useStore from "@utils/hooks/useStore";
 
 import Loading from "@components/Loading";
 import MessageListItem from "@components/Message/ListItem";

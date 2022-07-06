@@ -26,10 +26,10 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 
 import { Address, FullMessage } from "@interfaces/message";
 
-import useFetch from "@utils/axiosClient";
-import useStore from "@utils/createStore";
+import useAvatar from "@utils/hooks/useAvatar";
+import useFetch from "@utils/hooks/useFetch";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import useAvatar from "@utils/useAvatar";
 
 const AddressList: FunctionalComponent<{
 	data: Address[];
@@ -115,7 +115,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 
 	const [showImages, setShowImages] = useState(false);
 
-	const { data, isLoading } = useQuery<FullMessage>(
+	const { data, error, isLoading } = useQuery<FullMessage>(
 		["message", selectedMessage?.id],
 		() =>
 			fetcher
@@ -188,7 +188,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 							</Stack>
 						</Stack>
 					</Card>
-					<Card sx={{ p: data?.content.type == "text" ? 2 : 0, flexGrow: 2 }}>
+					<Card sx={{ p: data?.content?.type == "text" ? 2 : 0, flexGrow: 2 }}>
 						{(isLoading || !data) && (
 							<Skeleton
 								animation="wave"
@@ -196,15 +196,19 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 								variant="rectangular"
 							/>
 						)}
-						{!isLoading && data?.content.type == "text" && (
-							<Box
-								dangerouslySetInnerHTML={{
-									__html: data.content.html
-								}}
-							/>
-						)}
-						{!isLoading && data?.content.type == "html" && (
-							<MessageDisplay content={data.content.html as string} />
+						{!isLoading && data?.content && (
+							<>
+								{data.content.type == "text" && (
+									<Box
+										dangerouslySetInnerHTML={{
+											__html: data.content.html
+										}}
+									/>
+								)}
+								{data.content.type == "html" && (
+									<MessageDisplay content={data.content.html as string} />
+								)}
+							</>
 						)}
 					</Card>
 				</>

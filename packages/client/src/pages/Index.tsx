@@ -7,6 +7,7 @@ import useTheme from "@utils/hooks/useTheme";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
 import Layout from "@components/Layout";
+import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
 
@@ -97,6 +98,8 @@ const Index = () => {
 					<MessageOverview />
 				</Stack>
 			</Stack>
+
+			<MessageActionButton />
 		</Layout>
 	);
 };

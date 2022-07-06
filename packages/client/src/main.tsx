@@ -7,4 +7,7 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
+if ("registerProtocolHandler" in navigator)
+	navigator.registerProtocolHandler("mailto", "/?newEmailTo=%s");
+
 render(<App />, document.getElementById("app")!);

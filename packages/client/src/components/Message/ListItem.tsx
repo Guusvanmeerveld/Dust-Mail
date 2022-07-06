@@ -1,7 +1,7 @@
 import { FunctionalComponent } from "preact";
 
 import { memo } from "preact/compat";
-import { MutableRef, useRef, useState } from "preact/hooks";
+import { MutableRef } from "preact/hooks";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -20,9 +20,10 @@ import DetailsIcon from "@mui/icons-material/Info";
 
 import Message from "@interfaces/message";
 
-import useStore from "@utils/createStore";
+import useAvatar from "@utils/hooks/useAvatar";
+import useMessageActions from "@utils/hooks/useMessageActions";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import useAvatar from "@utils/useAvatar";
 
 const UnMemoizedMessageListItem: FunctionalComponent<{
 	message: Message;
@@ -45,20 +46,21 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 }) => {
 	const theme = useTheme();
 
+	const messageActions = useMessageActions(message.id);
+
 	let from = message.from
 		.map((from) => from.displayName || from.email)
 		.join(", ");
 
 	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
 
-	const { data: avatar, isLoading: isLoadingAvatar } = useAvatar(
-		message.from[0].email
-	);
+	const avatar = useAvatar(from.length != 0 ? message.from[0].email : null);
 
 	if (unSeen === undefined)
 		unSeen = !message.flags.find((flag) => flag.match(/Seen/));
 
 	const handleClick = () => {
+		if (!message.id) return;
 		if (selectedMessage) setSelectedMessage();
 		else setSelectedMessage({ id: message.id, flags: message.flags });
 	};
@@ -83,26 +85,17 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 						"aria-labelledby": "message-context-menu-button"
 					}}
 				>
-					<MenuItem onClick={handleMenuClose}>
-						<ListItemIcon>
-							<FolderMoveIcon fontSize="small" />
-						</ListItemIcon>
-						<ListItemText>Move to</ListItemText>
-					</MenuItem>
-
-					<MenuItem onClick={handleMenuClose}>
-						<ListItemIcon>
-							<DeleteIcon fontSize="small" />
-						</ListItemIcon>
-						<ListItemText>Delete</ListItemText>
-					</MenuItem>
-
-					<MenuItem onClick={handleMenuClose}>
-						<ListItemIcon>
-							<DetailsIcon fontSize="small" />
-						</ListItemIcon>
-						<ListItemText>Details</ListItemText>
-					</MenuItem>
+					{messageActions.map((action) => (
+						<MenuItem
+							onClick={() => {
+								handleMenuClose();
+								action.handler();
+							}}
+						>
+							<ListItemIcon>{action.icon}</ListItemIcon>
+							<ListItemText>{action.name}</ListItemText>
+						</MenuItem>
+					))}
 
 					<MenuItem onClick={handleMenuClose}>
 						<ListItemIcon>
@@ -140,25 +133,27 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 						></Box>
 					)}
 					<Box sx={{ m: 2 }}>
-						{isLoadingAvatar ? (
+						{avatar?.isLoading ? (
 							<Skeleton variant="rectangular">
 								<Avatar />
 							</Skeleton>
 						) : (
 							<Avatar
-								sx={{ bgcolor: !avatar ? theme.palette.secondary.main : null }}
+								sx={{
+									bgcolor: !avatar?.data ? theme.palette.secondary.main : null
+								}}
 								variant="rounded"
-								// imgProps={{ onError: () =>  }}
-								src={avatar}
-								alt={from.charAt(0).toLocaleUpperCase()}
+								src={avatar?.data}
+								alt={from.charAt(0).toUpperCase()}
 							>
-								{!avatar && from.charAt(0).toLocaleUpperCase()}
+								{!avatar?.data && from.charAt(0).toUpperCase()}
 							</Avatar>
 						)}
 					</Box>
 					<Box sx={{ flex: 1, minWidth: 0 }}>
 						<Typography noWrap textOverflow="ellipsis" variant="body2">
-							{from} • {new Date(message.date).toLocaleDateString()}
+							{from || "(Unknown sender)"} •{" "}
+							{new Date(message.date).toLocaleDateString()}
 						</Typography>
 						<Typography
 							noWrap

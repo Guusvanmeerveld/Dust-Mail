@@ -37,7 +37,13 @@ export default defineConfig({
 				theme_color: "#2196F3",
 				background_color: "#121212",
 				display: "standalone",
-				scope: "/"
+				scope: "/",
+				protocol_handlers: [
+					{
+						protocol: "mailto",
+						url: "/?newEmailTo=%s"
+					}
+				]
 			}
 		}),
 		preact(),
@@ -55,7 +61,7 @@ export default defineConfig({
 		logOverride: { "this-is-undefined-in-esm": "silent" }
 	},
 	build: {
-		sourcemap: true,
+		sourcemap: false,
 		outDir: "dist",
 		rollupOptions: {
 			input: {

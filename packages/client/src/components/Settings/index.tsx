@@ -9,7 +9,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import useStore from "@utils/createStore";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 const Setting: FunctionalComponent<{

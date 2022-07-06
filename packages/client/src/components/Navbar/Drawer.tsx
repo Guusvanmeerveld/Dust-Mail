@@ -1,6 +1,6 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { FunctionalComponent, JSX } from "preact";
+import { FunctionalComponent } from "preact";
 
 import { useEffect } from "preact/hooks";
 
@@ -13,30 +13,14 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 
-import Archive from "@mui/icons-material/Archive";
-import ChangeCircle from "@mui/icons-material/ChangeCircle";
-import ChevronLeft from "@mui/icons-material/ChevronLeft";
-import Dangerous from "@mui/icons-material/Dangerous";
-import Delete from "@mui/icons-material/Delete";
-import Drafts from "@mui/icons-material/Drafts";
-import Folder from "@mui/icons-material/Folder";
-import Inbox from "@mui/icons-material/Inbox";
-import Send from "@mui/icons-material/Send";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import FolderIcon from "@mui/icons-material/Folder";
 
 import MailBox from "@interfaces/box";
 
-import useStore from "@utils/createStore";
+import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-
-const DEFAULT_PRIMARY_BOXES: { name: string; icon: JSX.Element }[] = [
-	{ name: "Inbox", icon: <Inbox /> },
-	{ name: "Sent", icon: <Send /> },
-	{ name: "Drafts", icon: <Drafts /> },
-	{ name: "Spam", icon: <Dangerous /> },
-	{ name: "Trash", icon: <Delete /> },
-	{ name: "Archive", icon: <Archive /> },
-	{ name: "Junk", icon: <ChangeCircle /> }
-];
 
 const Drawer: FunctionalComponent<{
 	toggleDrawer: (open: boolean) => (event: KeyboardEvent | MouseEvent) => void;
@@ -54,16 +38,16 @@ const Drawer: FunctionalComponent<{
 	});
 
 	useEffect(() => {
-		setSelectedBox({
-			name: defaultBox,
-			id: defaultBox
-		});
+		const box = findBoxInPrimaryBoxesList(defaultBox);
+
+		if (box) setSelectedBox({ ...box, id: box.name });
+		else setSelectedBox({ id: defaultBox, name: defaultBox });
 	}, []);
 
-	const findBoxInPrimaryBoxesList = (item: string) =>
-		DEFAULT_PRIMARY_BOXES.find(
-			(box) => box.name.toLowerCase() == item.toLowerCase()
-		);
+	useEffect(() => {
+		if (selectedBox)
+			document.title = `${import.meta.env.VITE_APP_NAME} - ${selectedBox.name}`;
+	}, [selectedBox?.name]);
 
 	// Find all of the primary boxes and sort them alphabetically
 	const primaryBoxes: MailBox[] | undefined = boxes
@@ -85,15 +69,13 @@ const Drawer: FunctionalComponent<{
 		setSelectedBox(box);
 
 		toggleDrawer(false)(e);
-
-		document.title = `${import.meta.env.VITE_APP_NAME} - ${box.name}`;
 	};
 
 	const createFolderTree = (boxes: MailBox[]) =>
 		boxes.map((box) => (
 			<ListItem selected={box.id == selectedBox?.id} disablePadding>
 				<ListItemButton onClick={(e: MouseEvent) => switchBox(e, box)}>
-					<ListItemIcon>{box.icon ?? <Folder />}</ListItemIcon>
+					<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
 					<ListItemText primary={box.name} />
 				</ListItemButton>
 			</ListItem>
@@ -116,7 +98,7 @@ const Drawer: FunctionalComponent<{
 				}}
 			>
 				<IconButton onClick={toggleDrawer(false)}>
-					<ChevronLeft />
+					<ChevronLeftIcon />
 				</IconButton>
 			</Box>
 			<Divider />

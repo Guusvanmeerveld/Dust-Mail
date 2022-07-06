@@ -2,9 +2,19 @@ import { useQuery } from "react-query";
 
 import { AxiosError } from "axios";
 
-import useFetch from "@utils/axiosClient";
+import useFetch from "@utils/hooks/useFetch";
 
-const useAvatar = (email: string): { data?: string; isLoading: boolean } => {
+function useAvatar(email: null): void;
+function useAvatar(email: string): {
+	data?: string;
+	isLoading: boolean;
+};
+function useAvatar(
+	email: string | null
+): { data?: string; isLoading: boolean } | void;
+function useAvatar(
+	email: string | null
+): { data?: string; isLoading: boolean } | void {
 	const fetcher = useFetch();
 
 	const { data, isLoading } = useQuery<string>(
@@ -18,10 +28,12 @@ const useAvatar = (email: string): { data?: string; isLoading: boolean } => {
 					if (error.response?.status == 404) {
 					}
 				}),
-		{ retry: false }
+		{ retry: false, enabled: email !== null }
 	);
 
+	if (email === null) return;
+
 	return { data, isLoading };
-};
+}
 
 export default useAvatar;

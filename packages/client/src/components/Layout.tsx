@@ -1,6 +1,6 @@
 import { FunctionComponent } from "preact";
 
-import useStore from "@utils/createStore";
+import useStore from "@utils/hooks/useStore";
 
 import Navbar from "@components/Navbar";
 import Settings from "@components/Settings";

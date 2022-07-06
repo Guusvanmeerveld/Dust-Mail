@@ -14,7 +14,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Logout from "@mui/icons-material/Logout";
 import Settings from "@mui/icons-material/Settings";
 
-import useStore from "@utils/createStore";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 const Avatar: FunctionalComponent = () => {

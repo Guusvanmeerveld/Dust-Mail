@@ -28,9 +28,9 @@ import Settings from "@mui/icons-material/Settings";
 import Error from "@interfaces/error";
 import { SecurityType, ServerType } from "@interfaces/login";
 
-import useFetch from "@utils/axiosClient";
 import createGravatarUrl from "@utils/createGravatarUrl";
-import useStore from "@utils/createStore";
+import useFetch from "@utils/hooks/useFetch";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 import Loading from "@components/Loading";
