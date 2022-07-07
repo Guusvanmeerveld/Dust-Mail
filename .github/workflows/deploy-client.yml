@@ -48,31 +48,11 @@ jobs:
       - name: Setup
         uses: actions/checkout@v2
 
-      # - name: Set up QEMU
-      #   uses: docker/setup-qemu-action@v1.2.0
-      #   with:
-      #     platforms: linux/amd64, linux/arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      # Login
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
+      - name: Build and push to Docker hub
+        uses: guusvanmeerveld/actions/docker@main
         with:
           username: guusvanmeerveld
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # Build & Push
-      - name: Build Dockerfile and push
-        uses: docker/build-push-action@v2
-        with:
-          context: packages/client
-          push: true
-
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
           tags: guusvanmeerveld/dust-mail:client
-          # platforms: linux/amd64, linux/arm64
-
-          # Cache
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          context: packages/client
+          platforms: linux/amd64,linux/arm64

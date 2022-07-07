@@ -18,6 +18,10 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
 
     steps:
+      - name: Get latest tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF:10}
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -28,6 +32,29 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
+
+  docker-client:
+    name: Build Docker image for client
+    runs-on: ubuntu-latest
+
+    needs: create_release
+
+    strategy:
+      matrix:
+        type: [server, client]
+
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Build and push to Docker hub
+        uses: guusvanmeerveld/actions/docker@main
+        with:
+          username: guusvanmeerveld
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          tags: guusvanmeerveld/dust-mail:${{ needs.steps.vars.output.tag }}-${{ matrix.type }}
+          context: packages/${{ matrix.type }}
+          platforms: linux/amd64,linux/arm64
 
   release_assets:
     name: Release assets
@@ -85,7 +112,7 @@ jobs:
       - name: Zip output
         uses: vimtor/action-zip@v1
         with:
-          files: ./packages/client/src-tauri/target/release/bundle
+          files: ./packages/client/src-tauri/target/release/bundle/
           dest: ./bundle.zip
 
       - name: Upload release assets
