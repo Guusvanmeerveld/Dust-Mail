@@ -16,13 +16,8 @@ jobs:
 
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
-      tag: ${{ steps.vars.outputs.tag }}
 
     steps:
-      - name: Get latest tag
-        id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF:10}
-
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -53,7 +48,7 @@ jobs:
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:${{ needs.create_release.outputs.tag }}-${{ matrix.type }}
+          tags: guusvanmeerveld/dust-mail:${{ github.ref }}-${{ matrix.type }}
           context: packages/${{ matrix.type }}
           platforms: linux/amd64,linux/arm64
 
