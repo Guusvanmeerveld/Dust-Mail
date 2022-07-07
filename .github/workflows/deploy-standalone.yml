@@ -26,5 +26,5 @@ jobs:
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:standalone
+          tags: guusvanmeerveld/dust-mail:git-standalone
           platforms: linux/amd64,linux/arm64

@@ -63,6 +63,6 @@ jobs:
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:server
+          tags: guusvanmeerveld/dust-mail:git-server
           context: packages/server
           platforms: linux/amd64,linux/arm64

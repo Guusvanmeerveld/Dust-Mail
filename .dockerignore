@@ -8,6 +8,7 @@
 !/packages/server/public
 !/packages/server/package.json
 !/packages/server/yarn.lock
+!/packages/server/.yarnrc
 !/packages/server/tsconfig.build.json
 !/packages/server/tsconfig.json
 
@@ -18,4 +19,5 @@
 !/packages/client/tsconfig.node.json
 !/packages/client/vite.config.ts
 !/packages/client/package.json
+!/packages/client/.yarnrc
 !/packages/client/yarn.lock

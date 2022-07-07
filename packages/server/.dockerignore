@@ -2,6 +2,7 @@
 
 !/src
 !/package.json
+!/.yarnrc
 !/yarn.lock
 !/tsconfig.build.json
 !/tsconfig.json

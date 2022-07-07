@@ -7,4 +7,5 @@
 !/tsconfig.node.json
 !/vite.config.ts
 !/package.json
+!/.yarnrc
 !/yarn.lock
