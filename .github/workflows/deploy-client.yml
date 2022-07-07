@@ -10,7 +10,7 @@ on:
 
 jobs:
   pages:
-    name: Build pages
+    name: Test client
     runs-on: ubuntu-latest
     steps:
       - name: Setup
