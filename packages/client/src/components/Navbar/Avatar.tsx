@@ -2,20 +2,42 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { FunctionalComponent } from "preact";
 
+import { ChangeEvent } from "preact/compat";
 import { useState } from "preact/hooks";
 
 import MUIAvatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
+import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
 
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
 import Logout from "@mui/icons-material/Logout";
 import Settings from "@mui/icons-material/Settings";
 
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
+
+const DarkModeListItem = () => {
+	const [darkMode, setDarkMode] = useLocalStorageState<boolean>("darkMode");
+
+	const handleClick = () => {
+		setDarkMode(!darkMode);
+	};
+
+	return (
+		<MenuItem onClick={handleClick}>
+			<ListItemIcon>
+				{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
+			</ListItemIcon>
+			<ListItemText>{darkMode ? "Dark mode" : "Light mode"}</ListItemText>
+		</MenuItem>
+	);
+};
 
 const Avatar: FunctionalComponent = () => {
 	const theme = useTheme();
@@ -63,11 +85,12 @@ const Avatar: FunctionalComponent = () => {
 			</IconButton>
 
 			<Menu
-				id="basic-menu"
+				id="avatar menu"
 				anchorEl={menuAnchor}
 				open={open}
 				onClose={() => setMenuAnchor(null)}
 			>
+				<DarkModeListItem />
 				{menuItems.map((item) => (
 					<MenuItem onClick={item.onClick}>
 						<ListItemIcon>{item.icon}</ListItemIcon>

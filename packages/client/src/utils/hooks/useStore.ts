@@ -15,7 +15,7 @@ interface Store {
 	setAdvancedLoginSettings: (type: ServerType, settings: AdvancedLogin) => void;
 }
 
-const useStore = create<Store>((set) => ({
+const createStore = create<Store>((set) => ({
 	selectedBox: undefined,
 	setSelectedBox: (newBox) => set({ selectedBox: newBox }),
 	showSettings: false,
@@ -37,4 +37,4 @@ const useStore = create<Store>((set) => ({
 		}))
 }));
 
-export default useStore;
+export default createStore;

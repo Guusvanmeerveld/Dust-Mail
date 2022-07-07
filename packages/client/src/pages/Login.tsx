@@ -1,4 +1,5 @@
 import { description, repository } from "../../package.json";
+import modalStyles from "@styles/modal";
 import useLocalStorageState from "use-local-storage-state";
 
 import { FunctionalComponent } from "preact";
@@ -13,17 +14,21 @@ import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Modal from "@mui/material/Modal";
+import OutlinedInput from "@mui/material/OutlinedInput";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { SxProps, Theme } from "@mui/material/styles";
 
 import Settings from "@mui/icons-material/Settings";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import Error from "@interfaces/error";
 import { SecurityType, ServerType } from "@interfaces/login";
@@ -33,17 +38,8 @@ import useFetch from "@utils/hooks/useFetch";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
+import DarkModeSwitch from "@components/DarkModeSwitch";
 import Loading from "@components/Loading";
-
-const modalStyles: (theme: Theme) => SxProps = (theme) => ({
-	position: "absolute",
-	top: "50%",
-	left: "50%",
-	transform: "translate(-50%, -50%)",
-	border: 0,
-	bgcolor: theme.palette.background.paper,
-	p: 4
-});
 
 const LoginSettingsMenu: FunctionalComponent = () => {
 	const theme = useTheme();
@@ -57,7 +53,13 @@ const LoginSettingsMenu: FunctionalComponent = () => {
 
 	return (
 		<>
-			<Box sx={{ position: "absolute", right: "1rem", top: "1rem" }}>
+			<Box
+				sx={{
+					position: "absolute",
+					right: theme.spacing(2),
+					top: theme.spacing(2)
+				}}
+			>
 				<IconButton
 					onClick={() => setOpen(true)}
 					aria-label="Open custom server settings"
@@ -85,7 +87,7 @@ const LoginSettingsMenu: FunctionalComponent = () => {
 					<TextField
 						fullWidth
 						onChange={(e) => setCustomServerUrl(e.currentTarget.value)}
-						defaultValue={customServerUrl}
+						server={customServerUrl}
 						id="custom-server"
 						label="Custom server url/path"
 						variant="outlined"
@@ -121,7 +123,7 @@ const ServerPropertiesColumn: FunctionalComponent<{ type: ServerType }> = ({
 	const port = useStore((state) => state.advancedLoginSettings[type].port);
 
 	return (
-		<Grid item xs={6}>
+		<Grid item xs={12} md={6}>
 			<Stack direction="column" spacing={2}>
 				<Typography variant="h6" textAlign="center">
 					{type == "incoming" ? "IMAP / POP3" : "SMTP"}
@@ -130,7 +132,7 @@ const ServerPropertiesColumn: FunctionalComponent<{ type: ServerType }> = ({
 					fullWidth
 					id={`${type}-server`}
 					onChange={(e) => setSettings(type, { server: e.currentTarget.value })}
-					defaultValue={server}
+					value={server}
 					label="Server url/ip"
 					variant="outlined"
 					type="text"
@@ -159,7 +161,7 @@ const ServerPropertiesColumn: FunctionalComponent<{ type: ServerType }> = ({
 					onChange={(e) =>
 						setSettings(type, { port: parseInt(e.currentTarget.value) })
 					}
-					defaultValue={port}
+					value={port}
 					label="Port"
 					helperText={`Default: ${
 						type == "incoming"
@@ -235,6 +237,8 @@ const LoginForm: FunctionalComponent<{
 
 	const [, setAvatar] = useLocalStorageState<string>("avatar");
 
+	const [showPassword, setShowPassword] = useState(false);
+
 	const fetcher = useFetch();
 
 	/**
@@ -261,8 +265,8 @@ const LoginForm: FunctionalComponent<{
 	/**
 	 * Runs when the form should be submitted to the server
 	 */
-	const onSubmit = async (e: TargetedEvent) => {
-		e.preventDefault();
+	const onSubmit = async (e?: TargetedEvent) => {
+		if (e) e.preventDefault();
 
 		// Reject the form if there any fields empty
 		if (missingFields) {
@@ -388,6 +392,12 @@ const LoginForm: FunctionalComponent<{
 		});
 	};
 
+	const handleKeyDown = async (e: KeyboardEvent) => {
+		if (e.key == "Enter") {
+			await onSubmit();
+		}
+	};
+
 	return (
 		<form onSubmit={onSubmit}>
 			<Stack direction="column" spacing={2}>
@@ -411,15 +421,34 @@ const LoginForm: FunctionalComponent<{
 					type="email"
 				/>
 
-				<TextField
-					required
-					onChange={(e) => setPassword(e.currentTarget.value)}
+				<FormControl
 					error={error && error.type == Error.Credentials}
-					id="password"
-					label="Password"
 					variant="outlined"
-					type="password"
-				/>
+				>
+					<InputLabel htmlFor="password">Password</InputLabel>
+					<OutlinedInput
+						required
+						onKeyDown={handleKeyDown}
+						onChange={(e) => setPassword(e.currentTarget.value)}
+						endAdornment={
+							<InputAdornment position="end">
+								<Tooltip title={`${showPassword ? "Hide" : "Show"} password`}>
+									<IconButton
+										aria-label="toggle password visibility"
+										onClick={() => setShowPassword((state) => !state)}
+										onMouseDown={() => setShowPassword((state) => !state)}
+										edge="end"
+									>
+										{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+									</IconButton>
+								</Tooltip>
+							</InputAdornment>
+						}
+						id="password"
+						label="Password"
+						type={showPassword ? "text" : "password"}
+					/>
+				</FormControl>
 
 				<Button
 					fullWidth
@@ -429,6 +458,7 @@ const LoginForm: FunctionalComponent<{
 				>
 					Login
 				</Button>
+
 				{error && (error.type == Error.Timeout || error.type == Error.Misc) && (
 					<Alert sx={{ textAlign: "left" }} severity="error">
 						<AlertTitle>Error</AlertTitle>
@@ -443,10 +473,21 @@ const LoginForm: FunctionalComponent<{
 
 const Login: FunctionalComponent = () => {
 	const [fetching, setFetching] = useState(false);
+	const theme = useTheme();
 
 	return (
 		<>
 			{fetching && <Loading />}
+			<Box
+				sx={{
+					position: "absolute",
+					left: theme.spacing(2),
+					top: theme.spacing(2)
+				}}
+			>
+				<DarkModeSwitch />
+			</Box>
+
 			<LoginSettingsMenu />
 			<Box
 				sx={{

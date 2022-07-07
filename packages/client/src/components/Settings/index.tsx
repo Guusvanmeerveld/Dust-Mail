@@ -1,3 +1,4 @@
+import modalStyles from "@styles/modal";
 import useLocalStorageState from "use-local-storage-state";
 
 import { FunctionalComponent } from "preact";
@@ -46,20 +47,7 @@ const Settings: FunctionalComponent = () => {
 
 	return (
 		<Modal open={showSettings} onClose={handleClose}>
-			<Box
-				sx={{
-					position: "absolute",
-					top: "50%",
-					left: "50%",
-					minWidth: "30rem",
-					width: "60vw",
-					transform: "translate(-50%, -50%)",
-					bgcolor: theme.palette.background.paper,
-					border: "2px solid #000",
-					boxShadow: 24,
-					p: 4
-				}}
-			>
+			<Box sx={modalStyles(theme)}>
 				<Typography gutterBottom variant="h3">
 					Settings
 				</Typography>
