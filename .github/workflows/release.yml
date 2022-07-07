@@ -33,8 +33,8 @@ jobs:
           draft: false
           prerelease: false
 
-  docker-client:
-    name: Build Docker image for client
+  docker:
+    name: Build Docker image for client and server
     runs-on: ubuntu-latest
 
     needs: create_release
@@ -55,6 +55,49 @@ jobs:
           tags: guusvanmeerveld/dust-mail:${{ needs.steps.vars.output.tag }}-${{ matrix.type }}
           context: packages/${{ matrix.type }}
           platforms: linux/amd64,linux/arm64
+
+  deploy_to_heroku:
+    name: Deploy to Heroku
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Push to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "dust-mail"
+          heroku_email: "${{secrets.HEROKU_EMAIL}}"
+          appdir: "packages/server"
+
+  deploy_to_pages:
+    name: Build pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+          cache: "yarn"
+
+      - name: Install NPM dependencies
+        run: yarn --cwd packages/client install
+
+      - name: Build client
+        run: yarn --cwd packages/client run build
+        env:
+          VITE_DEFAULT_SERVER: ${{ secrets.CLIENT_DEFAULT_SERVER }}
+
+      - name: Deploy to pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./packages/client/dist
+          cname: dust-mail.guusvanmeerveld.dev
 
   release_assets:
     name: Release assets

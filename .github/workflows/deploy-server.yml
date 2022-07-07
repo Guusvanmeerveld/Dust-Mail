@@ -1,4 +1,4 @@
-name: Deploy Server
+name: Test and deploy Server
 
 on:
   push:
@@ -33,22 +33,6 @@ jobs:
 
       # - name: Run end-to-end tests
       #   run: yarn --cwd packages/server run test:e2e
-
-  heroku:
-    name: Deploy to Heroku
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Setup
-        uses: actions/checkout@v2
-
-      - name: Push to Heroku
-        uses: akhileshns/heroku-deploy@v3.12.12
-        with:
-          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: "dust-mail"
-          heroku_email: "${{secrets.HEROKU_EMAIL}}"
-          appdir: "packages/server"
 
   docker:
     name: Build Docker image
