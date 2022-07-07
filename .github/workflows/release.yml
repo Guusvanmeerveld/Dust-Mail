@@ -48,7 +48,7 @@ jobs:
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:${{ github.ref }}-${{ matrix.type }}
+          tags: guusvanmeerveld/dust-mail:${{ env.GITHUB_REF_NAME }}-${{ matrix.type }}
           context: packages/${{ matrix.type }}
           platforms: linux/amd64,linux/arm64
 
