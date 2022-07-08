@@ -52,7 +52,7 @@ jobs:
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:${{ steps.vars.outputs.tag}}-${{ matrix.type }}
+          tags: guusvanmeerveld/dust-mail:${{ steps.vars.outputs.tag }}-${{ matrix.type }}
           context: packages/${{ matrix.type }}
           platforms: linux/amd64,linux/arm64
 
@@ -89,8 +89,6 @@ jobs:
 
       - name: Build client
         run: yarn --cwd packages/client run build
-        env:
-          VITE_DEFAULT_SERVER: ${{ secrets.CLIENT_DEFAULT_SERVER }}
 
       - name: Deploy to pages
         uses: peaceiris/actions-gh-pages@v3
@@ -149,8 +147,6 @@ jobs:
 
       - name: Build application
         run: yarn --cwd packages/client run tauri build
-        env:
-          VITE_DEFAULT_SERVER: ${{ secrets.CLIENT_DEFAULT_SERVER }}
 
       - name: Zip output
         uses: vimtor/action-zip@v1
