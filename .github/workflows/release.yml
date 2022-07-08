@@ -43,12 +43,16 @@ jobs:
       - name: Setup
         uses: actions/checkout@v2
 
+      - name: Get latest tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF:10}
+
       - name: Build and push to Docker hub
         uses: guusvanmeerveld/actions/docker@main
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:${{ env.GITHUB_REF_NAME }}-${{ matrix.type }}
+          tags: guusvanmeerveld/dust-mail:${{ steps.vars.outputs.tag}}-${{ matrix.type }}
           context: packages/${{ matrix.type }}
           platforms: linux/amd64,linux/arm64
 
