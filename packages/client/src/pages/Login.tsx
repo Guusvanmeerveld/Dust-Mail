@@ -87,7 +87,7 @@ const LoginSettingsMenu: FunctionalComponent = () => {
 					<TextField
 						fullWidth
 						onChange={(e) => setCustomServerUrl(e.currentTarget.value)}
-						server={customServerUrl}
+						value={customServerUrl}
 						id="custom-server"
 						label="Custom server url/path"
 						variant="outlined"
