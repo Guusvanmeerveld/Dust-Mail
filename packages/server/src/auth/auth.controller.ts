@@ -3,7 +3,6 @@ import {
 	Body,
 	Controller,
 	Post,
-	UnauthorizedException,
 	UseGuards
 } from "@nestjs/common";
 
@@ -53,20 +52,7 @@ export class AuthController {
 		@Body("outgoing_security")
 		outgoingSecurity?: SecurityType
 	) {
-		console.log("yeet");
-
 		if (incomingUsername && incomingPassword) {
-			if (
-				this.allowedDomains &&
-				((incomingServer && !this.allowedDomains.includes(incomingServer)) ||
-					(outgoingServer && !this.allowedDomains.includes(outgoingServer)))
-			) {
-				throw new UnauthorizedException({
-					code: UserError.Misc,
-					message: "Mail server is not on whitelist"
-				});
-			}
-
 			if (!incomingServer || !outgoingServer) {
 				const result = await mailDiscover(incomingUsername).catch(
 					(e: Error) => {
@@ -94,6 +80,17 @@ export class AuthController {
 						outgoingSecurity = foundOutgoingServer.security;
 					}
 				}
+			}
+
+			if (
+				this.allowedDomains &&
+				((incomingServer && !this.allowedDomains.includes(incomingServer)) ||
+					(outgoingServer && !this.allowedDomains.includes(outgoingServer)))
+			) {
+				throw new BadRequestException({
+					code: UserError.Misc,
+					message: "Mail server is not on whitelist"
+				});
 			}
 
 			if (!incomingSecurity) incomingSecurity = "NONE";

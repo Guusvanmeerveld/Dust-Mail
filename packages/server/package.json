@@ -4,7 +4,7 @@
 	"version": "0.1.2",
 	"license": "MIT",
 	"scripts": {
-		"prebuild": "rimraf dist",
+		"prebuild": "rimraf dist && rimraf .tsbuildinfo",
 		"build": "nest build",
 		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
 		"start": "nest start",

@@ -13,10 +13,12 @@ const parseMessage = (
 	id: result.messageId
 });
 
-export const createAddress = (from: { name: string; address: string }) => {
-	const { name, address } = from;
-
-	return { email: address, displayName: name };
-};
+export const createAddress = ({
+	name,
+	address
+}: {
+	name: string;
+	address?: string;
+}): Address => ({ email: address, displayName: name });
 
 export default parseMessage;

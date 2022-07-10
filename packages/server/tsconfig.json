@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
+		"strict": true,
 		"declaration": true,
 		"removeComments": true,
 		"emitDecoratorMetadata": true,
@@ -22,6 +23,7 @@
 		"rootDir": "./src",
 		"baseUrl": "./src",
 		"incremental": true,
+		"tsBuildInfoFile": ".tsbuildinfo",
 		"skipLibCheck": true,
 		"strictNullChecks": false,
 		"noImplicitAny": false,
