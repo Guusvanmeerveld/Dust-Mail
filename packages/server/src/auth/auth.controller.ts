@@ -32,16 +32,20 @@ export class AuthController {
 	@Post("login")
 	@UseGuards(ThrottlerBehindProxyGuard)
 	async login(
-		@Body("username", MailValidationPipe)
-		username?: string,
-		@Body("password")
-		password?: string,
+		@Body("incoming_username", MailValidationPipe)
+		incomingUsername?: string,
+		@Body("incoming_password")
+		incomingPassword?: string,
 		@Body("incoming_server")
 		incomingServer?: string,
 		@Body("incoming_port")
 		incomingPort?: number,
 		@Body("incoming_security")
 		incomingSecurity?: SecurityType,
+		@Body("outgoing_username", MailValidationPipe)
+		outgoingUsername?: string,
+		@Body("outgoing_password")
+		outgoingPassword?: string,
 		@Body("outgoing_server")
 		outgoingServer?: string,
 		@Body("outgoing_port")
@@ -49,7 +53,9 @@ export class AuthController {
 		@Body("outgoing_security")
 		outgoingSecurity?: SecurityType
 	) {
-		if (username && password) {
+		console.log("yeet");
+
+		if (incomingUsername && incomingPassword) {
 			if (
 				this.allowedDomains &&
 				((incomingServer && !this.allowedDomains.includes(incomingServer)) ||
@@ -62,14 +68,16 @@ export class AuthController {
 			}
 
 			if (!incomingServer || !outgoingServer) {
-				const result = await mailDiscover(username).catch((e: Error) => {
-					if (!incomingServer) {
-						throw new BadRequestException({
-							code: UserError.Misc,
-							message: e.message
-						});
+				const result = await mailDiscover(incomingUsername).catch(
+					(e: Error) => {
+						if (!incomingServer) {
+							throw new BadRequestException({
+								code: UserError.Misc,
+								message: e.message
+							});
+						}
 					}
-				});
+				);
 
 				if (result) {
 					const [foundIncomingServer, foundOutgoingServer] = result;
@@ -102,14 +110,21 @@ export class AuthController {
 				if (outgoingSecurity == "NONE") outgoingPort = 25;
 			}
 
+			if (!outgoingUsername) outgoingUsername = incomingUsername;
+			if (!outgoingPassword) outgoingPassword = outgoingPassword;
+
 			const token = await this.authService
-				.login(username, password, {
+				.login({
 					incoming: {
+						username: incomingUsername,
+						password: incomingPassword,
 						server: incomingServer,
 						port: incomingPort,
 						security: incomingSecurity
 					},
 					outgoing: {
+						username: outgoingUsername,
+						password: outgoingPassword,
 						server: outgoingServer,
 						port: outgoingPort,
 						security: outgoingSecurity

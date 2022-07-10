@@ -6,7 +6,7 @@ import Message, { ContentType, FullMessage } from "@utils/interfaces/message";
 import parseMessage, { createAddress } from "@utils/imap/utils/parseMessage";
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 
-import MailClient, { Config } from "../interfaces/client.interface";
+import MailClient, { Config } from "../interfaces/client/incoming.interface";
 import { State } from "../interfaces/state.interface";
 export { State } from "../interfaces/state.interface";
 
@@ -25,9 +25,9 @@ export default class Client extends EventEmitter implements MailClient {
 		this._client = new Imap({
 			user: this.config.user.name,
 			password: this.config.user.password,
-			host: this.config.incoming.server,
-			port: this.config.incoming.port,
-			tls: this.config.incoming.security != "NONE"
+			host: this.config.server,
+			port: this.config.port,
+			tls: this.config.security != "NONE"
 		});
 
 		this._client.on("ready", () => {

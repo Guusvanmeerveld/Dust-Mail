@@ -14,9 +14,6 @@ import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
 
 import CloseIcon from "@mui/icons-material/Close";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FolderMoveIcon from "@mui/icons-material/DriveFileMove";
-import DetailsIcon from "@mui/icons-material/Info";
 
 import Message from "@interfaces/message";
 

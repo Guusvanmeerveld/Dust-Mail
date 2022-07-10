@@ -20,7 +20,6 @@
 		"outDir": "./dist",
 		"composite": true,
 		"rootDir": "./src",
-		"tsBuildInfoFile": ".tsbuildinfo",
 		"baseUrl": "./src",
 		"incremental": true,
 		"skipLibCheck": true,

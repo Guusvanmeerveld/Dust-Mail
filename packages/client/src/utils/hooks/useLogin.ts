@@ -1,0 +1,178 @@
+import useLocalStorageState from "use-local-storage-state";
+
+import Error from "@interfaces/error";
+import AdvancedLogin from "@interfaces/login";
+
+import createGravatarUrl from "@utils/createGravatarUrl";
+import useFetch from "@utils/hooks/useFetch";
+import useStore from "@utils/hooks/useStore";
+
+/**
+ * Request the users inboxes and puts them in local storage
+ */
+const useFetchBoxes = () => {
+	const fetcher = useFetch();
+
+	const [, setBoxes] = useLocalStorageState<string>("boxes");
+
+	return async (token: string): Promise<void> => {
+		console.log("Fetching inboxes...");
+
+		const boxes = await fetcher
+			.get<string[]>("/mail/boxes", {
+				headers: { Authorization: `Bearer ${token}` }
+			})
+			.then(({ data }) => data);
+
+		setBoxes(boxes);
+	};
+};
+
+const useLogin = () => {
+	const [, setUsername] = useLocalStorageState<string>("username");
+	const [, setAvatar] = useLocalStorageState<string>("avatar");
+
+	const appVersion = useStore((state) => state.appVersion);
+	const setFetching = useStore((state) => state.setFetching);
+
+	const fetcher = useFetch();
+
+	const fetchBoxes = useFetchBoxes();
+
+	return async (config: {
+		incoming: AdvancedLogin;
+		outgoing?: AdvancedLogin;
+	}): Promise<string | void> => {
+		if (!config.incoming.username || !config.incoming.password) return;
+
+		// Show the fetching animation
+		setFetching(true);
+
+		console.log("Checking if server version matches with client version...");
+
+		const versionResponse = await fetcher
+			.get("/system/version")
+			.catch((error) => {
+				setFetching(false);
+
+				// Handle axios errors
+				if (error.code == "ERR_NETWORK") {
+					throw {
+						message: `Could not connect to remote ${
+							import.meta.env.VITE_APP_NAME
+						} server, please check your connectivity`,
+						type: Error.Misc
+					};
+				} else {
+					throw {
+						message: `An unknown error occured: ${error.message}`,
+						type: Error.Misc
+					};
+				}
+			});
+
+		if (!versionResponse) return;
+
+		const {
+			version: serverVersion,
+			type: serverVersionType
+		}: { version: string; type: "git" | "stable" } = versionResponse.data;
+
+		if (
+			serverVersion != appVersion.title ||
+			serverVersionType != appVersion.type
+		) {
+			setFetching(false);
+
+			throw {
+				message: `Server and client versions did not match, server has version ${serverVersion} (${serverVersionType}) while client has version ${appVersion.title} (${appVersion.type})`,
+				type: Error.Misc
+			};
+		}
+
+		console.log("Sending login request...");
+
+		// Request the JWT token
+		const res = await fetcher.post(
+			"/auth/login",
+			{
+				incoming_username: config.incoming.username,
+				incoming_password: config.incoming.password,
+				incoming_server: config.incoming.server,
+				incoming_port: config.incoming.port,
+				incoming_security: config.incoming.security,
+				outgoing_username:
+					config.outgoing?.username ?? config.incoming.username,
+				outgoing_password:
+					config.outgoing?.password ?? config.incoming.password,
+				outgoing_server: config.outgoing?.server ?? config.incoming.server,
+				outgoing_port: config.outgoing?.port,
+				outgoing_security: config.outgoing?.security
+			},
+			{ validateStatus: () => true }
+		);
+
+		if (!res) return;
+
+		const { status, data } = res;
+
+		// If there was anything wrong with the request, catch it
+		if (status == 400) {
+			// Hide the fetching animation
+			setFetching(false);
+
+			console.log("An error occured when requesting the JWT token");
+
+			// Check the error type
+			switch (data.code as Error) {
+				case Error.Credentials:
+					throw {
+						message: `Failed to authorize with server, please check your credentials: ${data.message}`,
+						type: Error.Credentials
+					};
+
+				case Error.Timeout:
+					throw {
+						message: "Server connection timed out",
+						type: Error.Timeout
+					};
+
+				case Error.Network:
+					throw {
+						message: `Failed to connect to remote imap server, please check your configuration: ${data.message}`,
+						type: Error.Network
+					};
+
+				default:
+					throw {
+						message: `Unknown error ocurred: ${data.message}`,
+						type: Error.Misc
+					};
+			}
+		}
+
+		// Check if the request was successfull
+		if (status == 201) {
+			console.log("Successfully logged in, redirecting soon");
+
+			await fetchBoxes(data);
+
+			setUsername(config.incoming.username);
+
+			console.log("Creating avatar...");
+
+			setAvatar(createGravatarUrl(config.incoming.username));
+
+			return data;
+		}
+
+		setFetching(false);
+
+		throw {
+			message: `Unknown error with status code ${status} occured`,
+			type: Error.Misc
+		};
+	};
+};
+
+export default useLogin;

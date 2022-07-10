@@ -52,7 +52,7 @@ const Index = () => {
 	};
 
 	return (
-		<Layout>
+		<Layout withNavbar>
 			<Stack direction="row" sx={{ height: fullpageHeight }}>
 				<Box
 					sx={{

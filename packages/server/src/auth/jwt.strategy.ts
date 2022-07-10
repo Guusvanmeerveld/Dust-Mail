@@ -19,16 +19,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	}
 
 	async validate(payload: Payload) {
-		const { password, ...config } = payload.sub;
-
-		const client = await this.authService.findConnection(
-			payload.username,
-			password,
-			config
-		);
+		const [incomingClient, outgoingClient] =
+			await this.authService.findConnection(payload.sub);
 
 		return {
-			client
+			incomingClient,
+			outgoingClient
 		};
 	}
 }

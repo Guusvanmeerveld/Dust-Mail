@@ -1,4 +1,6 @@
 export default interface AdvancedLogin {
+	username?: string;
+	password?: string;
 	server?: string;
 	port?: number;
 	security?: SecurityType;

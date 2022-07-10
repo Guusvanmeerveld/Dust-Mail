@@ -1,4 +1,3 @@
-import modalStyles from "@styles/modal";
 import useLocalStorageState from "use-local-storage-state";
 
 import { FunctionalComponent } from "preact";
@@ -9,6 +8,8 @@ import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+
+import modalStyles from "@styles/modal";
 
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -45,18 +46,19 @@ const Settings: FunctionalComponent = () => {
 
 	const handleClose = () => setShowSettings(false);
 
-	return (
-		<Modal open={showSettings} onClose={handleClose}>
-			<Box sx={modalStyles(theme)}>
-				<Typography gutterBottom variant="h3">
-					Settings
-				</Typography>
-				<Stack direction="column" spacing={2}>
-					<Setting
-						title="Message box selected by default"
-						subtitle="The message box that should show when the application loads"
-					>
-						{/* {boxes && (
+	if (showSettings)
+		return (
+			<Modal open={showSettings} onClose={handleClose}>
+				<Box sx={modalStyles(theme)}>
+					<Typography gutterBottom variant="h3">
+						Settings
+					</Typography>
+					<Stack direction="column" spacing={2}>
+						<Setting
+							title="Message box selected by default"
+							subtitle="The message box that should show when the application loads"
+						>
+							{/* {boxes && (
 							<Autocomplete
 								disablePortal
 								id="default-message-box"
@@ -77,11 +79,12 @@ const Settings: FunctionalComponent = () => {
 								)}
 							/>
 						)} */}
-					</Setting>
-				</Stack>
-			</Box>
-		</Modal>
-	);
+						</Setting>
+					</Stack>
+				</Box>
+			</Modal>
+		);
+	else return <></>;
 };
 
 export default Settings;

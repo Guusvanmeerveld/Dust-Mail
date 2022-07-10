@@ -1,4 +1,4 @@
-import { Box } from "../interfaces/client.interface";
+import { Box } from "../interfaces/client/incoming.interface";
 import Imap from "imap";
 
 export const getBox = async (

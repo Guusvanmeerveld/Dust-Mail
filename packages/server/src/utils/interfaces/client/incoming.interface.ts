@@ -1,16 +1,17 @@
-import Server from "@auth/interfaces/server.interface";
+import { SecurityType } from "@auth/interfaces/server.interface";
 
 import Message, { FullMessage } from "@utils/interfaces/message";
 
-import { State } from "./state.interface";
+import { State } from "../state.interface";
 
 export interface Config {
 	user: {
 		name: string;
 		password: string;
 	};
-	incoming: Server;
-	outgoing: Server;
+	server: string;
+	port: number;
+	security: SecurityType;
 }
 
 export interface Box {
@@ -18,7 +19,7 @@ export interface Box {
 	name: string;
 }
 
-export default interface Client {
+export default interface IncomingClient {
 	state: State;
 	getBoxes: () => Promise<string[]>;
 	getBox: (boxName: string, readOnly?: boolean) => Promise<Box>;

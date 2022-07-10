@@ -108,6 +108,8 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 
 	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
 
+	const setFetching = useStore((state) => state.setFetching);
+
 	const [darkMode, setDarkMode] = useLocalStorageState<boolean>(
 		"messageDarkMode",
 		{ defaultValue: false }
@@ -115,7 +117,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 
 	const [showImages, setShowImages] = useState(false);
 
-	const { data, error, isLoading } = useQuery<FullMessage>(
+	const { data, error, isFetching } = useQuery<FullMessage>(
 		["message", selectedMessage?.id],
 		() =>
 			fetcher
@@ -130,6 +132,8 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 		{ enabled: selectedMessage != undefined }
 	);
 
+	useEffect(() => setFetching(isFetching), [isFetching]);
+
 	// useEffect(() => {
 	// 	if (data) setSelectedMessage({ id: data.id, flags: data.flags });
 	// }, [data?.id]);
@@ -143,7 +147,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 							<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
 								<Box>
 									<Typography variant="h5">
-										{isLoading || !data ? (
+										{isFetching || !data ? (
 											<Skeleton />
 										) : (
 											data.subject ?? "(No subject)"
@@ -153,7 +157,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 										variant="subtitle1"
 										color={theme.palette.text.secondary}
 									>
-										{isLoading || !data ? (
+										{isFetching || !data ? (
 											<Skeleton />
 										) : (
 											`${new Date(data.date).toLocaleDateString()} - ${new Date(
@@ -189,14 +193,14 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 						</Stack>
 					</Card>
 					<Card sx={{ p: data?.content?.type == "text" ? 2 : 0, flexGrow: 2 }}>
-						{(isLoading || !data) && (
+						{(isFetching || !data) && (
 							<Skeleton
 								animation="wave"
 								sx={{ height: "100%" }}
 								variant="rectangular"
 							/>
 						)}
-						{!isLoading && data?.content && (
+						{!isFetching && data?.content && (
 							<>
 								{data.content.type == "text" && (
 									<Box

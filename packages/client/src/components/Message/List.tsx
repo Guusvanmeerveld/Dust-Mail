@@ -3,7 +3,7 @@ import { useInfiniteQuery } from "react-query";
 import { FunctionalComponent } from "preact";
 
 import { memo } from "preact/compat";
-import { useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import { AxiosError } from "axios";
 
@@ -23,6 +23,8 @@ import MessageListItem from "@components/Message/ListItem";
 
 const UnMemoizedMessageList: FunctionalComponent = () => {
 	const fetcher = useFetch();
+
+	const setFetching = useStore((state) => state.setFetching);
 
 	// The amount of messages to load per request
 	const messageCountForPage = import.meta.env.VITE_MESSAGE_COUNT_PAGE ?? 20;
@@ -61,6 +63,11 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 				enabled: selectedBox != undefined
 			}
 		);
+
+	useEffect(
+		() => setFetching(isFetching || isFetchingNextPage),
+		[isFetching, isFetchingNextPage]
+	);
 
 	const rightClickMenuBox = useRef(null);
 

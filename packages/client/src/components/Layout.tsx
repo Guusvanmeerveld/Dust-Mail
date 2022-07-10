@@ -1,17 +1,19 @@
-import { FunctionComponent } from "preact";
+import Loading from "./Loading";
 
-import useStore from "@utils/hooks/useStore";
+import { FunctionComponent } from "preact";
 
 import Navbar from "@components/Navbar";
 import Settings from "@components/Settings";
 
-const Layout: FunctionComponent = ({ children }) => {
-	const showSettings = useStore((state) => state.showSettings);
-
+const Layout: FunctionComponent<{ withNavbar?: boolean }> = ({
+	children,
+	withNavbar
+}) => {
 	return (
 		<>
-			<Navbar />
-			{showSettings && <Settings />}
+			<Loading />
+			{withNavbar && <Navbar />}
+			<Settings />
 			{children}
 		</>
 	);

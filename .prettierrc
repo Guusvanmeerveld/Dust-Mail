@@ -8,7 +8,7 @@
 	"importOrder": [
 		"@rollup/.*",
 		"rollup-.*",
-		"^./.*",
+		"^..?/.*",
 		"^react.*",
 		"^preact$",
 		"^preact.*",
@@ -19,6 +19,7 @@
 		"^@src/.*",
 		"^@models/.*",
 		"^@interfaces/.*",
+		"^@styles/.*",
 		"^@shared/.*",
 		"^@utils/.*",
 		"^@components/.*",

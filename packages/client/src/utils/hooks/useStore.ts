@@ -1,9 +1,12 @@
 import create from "zustand";
 
+import { version as appVersion } from "../../../package.json";
+
 import Box from "@interfaces/box";
-import AdvancedLogin, { ServerType } from "@interfaces/login";
 
 interface Store {
+	fetching: boolean;
+	setFetching: (fetching: boolean) => void;
 	selectedBox: Box | undefined;
 	setSelectedBox: (newBox: Box) => void;
 	showSettings: boolean;
@@ -11,11 +14,14 @@ interface Store {
 	toggleShowSettings: () => void;
 	selectedMessage?: { id: string | undefined; flags: string[] };
 	setSelectedMessage: (message?: { id: string; flags: string[] }) => void;
-	advancedLoginSettings: Record<ServerType, AdvancedLogin>;
-	setAdvancedLoginSettings: (type: ServerType, settings: AdvancedLogin) => void;
+	showMessageComposer: boolean;
+	setShowMessageComposer: (open: boolean) => void;
+	appVersion: { title: string; type: "git" | "stable" };
 }
 
 const createStore = create<Store>((set) => ({
+	fetching: false,
+	setFetching: (fetching: boolean) => set({ fetching }),
 	selectedBox: undefined,
 	setSelectedBox: (newBox) => set({ selectedBox: newBox }),
 	showSettings: false,
@@ -24,17 +30,12 @@ const createStore = create<Store>((set) => ({
 		set(({ showSettings }) => ({ showSettings: !showSettings })),
 	selectedMessage: undefined,
 	setSelectedMessage: (message) => set({ selectedMessage: message }),
-	advancedLoginSettings: {
-		incoming: {},
-		outgoing: {}
-	},
-	setAdvancedLoginSettings: (type, settings) =>
-		set(({ advancedLoginSettings }) => ({
-			advancedLoginSettings: {
-				...advancedLoginSettings,
-				[type]: { ...advancedLoginSettings[type], ...settings }
-			}
-		}))
+	showMessageComposer: false,
+	setShowMessageComposer: (open) => set({ showMessageComposer: open }),
+	appVersion: {
+		title: appVersion,
+		type: import.meta.env.VITE_UNSTABLE != undefined ? "git" : "stable"
+	}
 }));
 
 export default createStore;

@@ -18,15 +18,15 @@ import handleError from "@utils/handleError";
 
 @Controller("mail")
 export class MailController {
-	@Get("/boxes")
+	@Get("boxes")
 	@UseGuards(JwtAuthGuard)
 	async fetchBoxes(@Req() req: Request) {
-		const client = req.user.client;
+		const client = req.user.incomingClient;
 
 		return await client.getBoxes().catch(handleError);
 	}
 
-	@Get("/box")
+	@Get("box")
 	@UseGuards(JwtAuthGuard)
 	async fetchBox(
 		@Req() req: Request,
@@ -48,7 +48,7 @@ export class MailController {
 			throw new BadRequestException("Page can't be lower than 0");
 		}
 
-		const client = req.user.client;
+		const client = req.user.incomingClient;
 
 		const start = page * limit;
 		const end = page * limit + limit - 1;
@@ -61,7 +61,7 @@ export class MailController {
 			.catch(handleError);
 	}
 
-	@Get("/message")
+	@Get("message")
 	@UseGuards(JwtAuthGuard)
 	async fetchMessage(
 		@Req() req: Request,
@@ -73,7 +73,7 @@ export class MailController {
 
 		if (!box) throw new BadRequestException("Missing message `box` param");
 
-		const client = req.user.client;
+		const client = req.user.incomingClient;
 
 		return await client.getMessage(id, box, markAsRead);
 	}

@@ -5,6 +5,5 @@ export interface Payload {
 	sub: {
 		incoming: Server;
 		outgoing: Server;
-		password: string;
 	};
 }
