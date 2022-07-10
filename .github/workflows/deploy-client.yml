@@ -9,7 +9,7 @@ on:
       - .github/workflows/deploy-client.yml
 
 jobs:
-  pages:
+  test:
     name: Test client
     runs-on: ubuntu-latest
     steps:
@@ -23,20 +23,21 @@ jobs:
           cache: "yarn"
 
       - name: Install NPM dependencies
-        run: yarn --cwd packages/client install
+        working-directory: ./packages/client
+        run: yarn install
 
       - name: Build client
-        run: yarn --cwd packages/client run build
-        env:
-          VITE_DEFAULT_SERVER: ${{ secrets.CLIENT_DEFAULT_SERVER }}
+        working-directory: ./packages/client
+        run: yarn run build
 
       - name: Check size
-        run: yarn --cwd packages/client run size
+        working-directory: ./packages/client
+        run: yarn run size
 
   docker:
     name: Build Docker image
     runs-on: ubuntu-latest
-    needs: pages
+    needs: test
     steps:
       - name: Setup
         uses: actions/checkout@v2

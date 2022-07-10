@@ -85,10 +85,12 @@ jobs:
           cache: "yarn"
 
       - name: Install NPM dependencies
-        run: yarn --cwd packages/client install
+        working-directory: ./packages/client
+        run: yarn install
 
       - name: Build client
-        run: yarn --cwd packages/client run build
+        working-directory: ./packages/client
+        run: yarn run build
 
       - name: Deploy to pages
         uses: peaceiris/actions-gh-pages@v3
@@ -134,10 +136,12 @@ jobs:
           working-directory: ./packages/client/src-tauri
 
       - name: Install NPM dependencies
-        run: yarn --cwd packages/client install
+        working-directory: ./packages/client
+        run: yarn install
 
       - name: Fetch crates
-        run: cd packages/client/src-tauri && cargo fetch --locked
+        working-directory: ./packages/client/src-tauri
+        run: cargo fetch --locked
 
       - name: Install dependencies (linux only)
         if: matrix.config.os == 'ubuntu-latest'
@@ -148,6 +152,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           projectPath: packages/client
           releaseId: ${{ needs.create_release.outputs.release_id }}

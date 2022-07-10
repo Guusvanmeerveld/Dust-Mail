@@ -23,10 +23,12 @@ jobs:
           cache: "yarn"
 
       - name: Install NPM dependencies
-        run: yarn --cwd packages/server install
+        working-directory: ./packages/server
+        run: yarn install
 
       - name: Build server
-        run: yarn --cwd packages/server run build
+        working-directory: ./packages/server
+        run: yarn run build
 
       # - name: Run normal tests
       #   run: yarn --cwd packages/server run test
