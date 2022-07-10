@@ -5,6 +5,7 @@ import IncomingClient from "@utils/interfaces/client/incoming.interface";
 import OutgoingClient from "@utils/interfaces/client/outgoing.interface";
 
 import ImapClient from "@utils/imap";
+import SmtpClient from "@utils/smtp";
 
 import { Payload } from "./interfaces/payload.interface";
 import Server from "./interfaces/server.interface";
@@ -22,6 +23,10 @@ export class AuthService {
 	}): Promise<string> {
 		await this.createIncomingClient(config.incoming).then((client) =>
 			this.incomingClients.set(config.incoming.username, client)
+		);
+
+		await this.createOutgoingClient(config.outgoing).then((client) =>
+			this.outgoingClients.set(config.outgoing.username, client)
 		);
 
 		const payload: Payload = {
@@ -48,17 +53,41 @@ export class AuthService {
 		return client;
 	}
 
+	private async createOutgoingClient(config: Server): Promise<OutgoingClient> {
+		const client = new SmtpClient({
+			user: {
+				name: config.username,
+				password: config.password
+			},
+			...config
+		});
+
+		await client.connect();
+
+		return client;
+	}
+
 	public async findConnection(config: {
 		incoming: Server;
 		outgoing: Server;
 	}): Promise<[IncomingClient, OutgoingClient]> {
 		let incomingClient = this.incomingClients.get(config.incoming.username);
-		const outgoingClient = this.outgoingClients.get(config.outgoing.username);
+		let outgoingClient = this.outgoingClients.get(config.outgoing.username);
 
 		if (!incomingClient) {
 			incomingClient = await this.createIncomingClient(config.incoming).then(
 				(client) => {
 					this.incomingClients.set(config.incoming.username, client);
+
+					return client;
+				}
+			);
+		}
+
+		if (!outgoingClient) {
+			outgoingClient = await this.createOutgoingClient(config.outgoing).then(
+				(client) => {
+					this.outgoingClients.set(config.outgoing.username, client);
 
 					return client;
 				}

@@ -33,6 +33,8 @@ const Drawer: FunctionalComponent<{
 	const selectedBox = useStore((state) => state.selectedBox);
 	const setSelectedBox = useStore((state) => state.setSelectedBox);
 
+	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
+
 	const [defaultBox] = useLocalStorageState("defaultBox", {
 		defaultValue: "INBOX"
 	});
@@ -45,8 +47,10 @@ const Drawer: FunctionalComponent<{
 	}, []);
 
 	useEffect(() => {
-		if (selectedBox)
+		if (selectedBox) {
 			document.title = `${import.meta.env.VITE_APP_NAME} - ${selectedBox.name}`;
+			setSelectedMessage();
+		}
 	}, [selectedBox?.name]);
 
 	// Find all of the primary boxes and sort them alphabetically

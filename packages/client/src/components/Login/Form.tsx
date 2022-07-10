@@ -212,6 +212,8 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 
 	const setProperty = createLoginSettingsStore((state) => state.setProperty);
 
+	const error = createLoginSettingsStore((state) => state.incoming.error);
+
 	const incoming = createLoginSettingsStore((state) => state.incoming);
 	const outgoing = createLoginSettingsStore((state) => state.outgoing);
 
@@ -227,7 +229,9 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 			return;
 		}
 
-		const token = await login({ incoming, outgoing }).catch((e) => {});
+		const token = await login({ incoming, outgoing }).catch((e) => {
+			setProperty("incoming")("error")(e);
+		});
 
 		setJwtToken(token);
 	};
@@ -251,7 +255,22 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 							<ServerPropertiesColumn type={type} />
 						))}
 					</Grid>
+
 					<br />
+
+					{error &&
+						(error.type == Error.Timeout ||
+							error.type == Error.Misc ||
+							error.type == Error.Network) && (
+							<>
+								<Alert sx={{ textAlign: "left" }} severity="error">
+									<AlertTitle>Error</AlertTitle>
+									{error.message}
+								</Alert>
+								<br />
+							</>
+						)}
+
 					<Button
 						disabled={missingFields}
 						onClick={submit}
@@ -352,6 +371,7 @@ const LoginForm: FunctionalComponent = () => {
 							{error.message}
 						</Alert>
 					)}
+
 				<AdvancedLoginMenu />
 			</Stack>
 		</form>

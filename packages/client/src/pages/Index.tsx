@@ -67,8 +67,7 @@ const Index = () => {
 								"linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
 						},
 						width: messageListWidth,
-						overflowY: "scroll",
-						px: 3
+						overflowY: "scroll"
 					}}
 				>
 					<MessageList />

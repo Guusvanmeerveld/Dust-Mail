@@ -1,9 +1,11 @@
 import {
 	BadRequestException,
+	Body,
 	Controller,
 	Get,
 	ParseBoolPipe,
 	ParseIntPipe,
+	Post,
 	Query,
 	Req,
 	UseGuards
@@ -14,7 +16,11 @@ import { JwtAuthGuard } from "@auth/jwt-auth.guard";
 import { mailDefaultLimit, mailFetchLimit } from "./constants";
 
 import { Request } from "@auth/interfaces/request.interface";
+
 import handleError from "@utils/handleError";
+import { Address } from "@utils/interfaces/message";
+
+import { AddressValidationPipe } from "./pipes/address.pipe";
 
 @Controller("mail")
 export class MailController {
@@ -37,6 +43,10 @@ export class MailController {
 		if (!limit) limit = mailDefaultLimit;
 
 		if (!box) box = "INBOX";
+
+		if (typeof box != "string") {
+			throw new BadRequestException("`box` property must be a string");
+		}
 
 		if (limit < 0 || limit > mailFetchLimit) {
 			throw new BadRequestException(
@@ -73,8 +83,50 @@ export class MailController {
 
 		if (!box) throw new BadRequestException("Missing message `box` param");
 
+		if (typeof id != "string" || typeof box != "string") {
+			throw new BadRequestException("`id` or `box` property must be a string");
+		}
+
 		const client = req.user.incomingClient;
 
 		return await client.getMessage(id, box, markAsRead);
+	}
+
+	@Post("send")
+	@UseGuards(JwtAuthGuard)
+	async sendMessage(
+		@Req() req: Request,
+		@Body("from", AddressValidationPipe) from: Address,
+		@Body("to", AddressValidationPipe) to: Address | Address[],
+		@Body("cc", AddressValidationPipe) cc: Address | Address[],
+		@Body("bcc", AddressValidationPipe) bcc: Address | Address[],
+		@Body("content") content: string,
+		@Body("subject") subject: string
+	) {
+		const client = req.user.outgoingClient;
+
+		if (Array.isArray(from)) {
+			throw new BadRequestException("`from` property can't be an array");
+		}
+
+		if (!content)
+			throw new BadRequestException("Missing message `content` param");
+
+		if (!subject)
+			throw new BadRequestException("Missing message `subject` param");
+
+		if (typeof content != "string") {
+			throw new BadRequestException("`content` property must be a string");
+		}
+
+		if (typeof subject != "string") {
+			throw new BadRequestException("`subject` property must be a string");
+		}
+
+		await client
+			.send({ from, to, cc, bcc, content, subject })
+			.catch(handleError);
+
+		return "ok";
 	}
 }

@@ -2,32 +2,37 @@ import Imap from "imap";
 
 import { EventEmitter } from "events";
 
-import Message, { ContentType, FullMessage } from "@utils/interfaces/message";
+import {
+	IncomingMessage,
+	ContentType,
+	FullIncomingMessage
+} from "@utils/interfaces/message";
 import parseMessage, { createAddress } from "@utils/imap/utils/parseMessage";
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 
-import MailClient, { Config } from "../interfaces/client/incoming.interface";
-import { State } from "../interfaces/state.interface";
-export { State } from "../interfaces/state.interface";
+import IncomingClient, {
+	Config
+} from "@utils/interfaces/client/incoming.interface";
+import { State } from "@utils/interfaces/state.interface";
 
 import { getBox, closeBox, getBoxes } from "./box";
 import connect from "./connect";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
 
-export default class Client extends EventEmitter implements MailClient {
+export default class Client extends EventEmitter implements IncomingClient {
 	private readonly _client: Imap;
 
 	public state = State.NOT_READY;
 
-	constructor(private readonly config: Config) {
+	constructor(config: Config) {
 		super();
 
 		this._client = new Imap({
-			user: this.config.user.name,
-			password: this.config.user.password,
-			host: this.config.server,
-			port: this.config.port,
-			tls: this.config.security != "NONE"
+			user: config.user.name,
+			password: config.user.password,
+			host: config.server,
+			port: config.port,
+			tls: config.security != "NONE"
 		});
 
 		this._client.on("ready", () => {
@@ -67,7 +72,7 @@ export default class Client extends EventEmitter implements MailClient {
 	public getBoxMessages = async (
 		boxName: string,
 		{ start, end }: { start: number; end: number }
-	): Promise<Message[]> => {
+	): Promise<IncomingMessage[]> => {
 		const box = await this.getBox(boxName);
 
 		const totalMessages = box.totalMessages;
@@ -103,7 +108,7 @@ export default class Client extends EventEmitter implements MailClient {
 		id: string,
 		boxName: string,
 		markAsRead: boolean
-	): Promise<FullMessage | void> => {
+	): Promise<FullIncomingMessage | void> => {
 		await this.getBox(boxName, false);
 
 		const body = "";

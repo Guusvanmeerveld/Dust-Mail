@@ -1,6 +1,9 @@
 import { SecurityType } from "@auth/interfaces/server.interface";
 
-import Message, { FullMessage } from "@utils/interfaces/message";
+import {
+	IncomingMessage,
+	FullIncomingMessage
+} from "@utils/interfaces/message";
 
 import { State } from "../state.interface";
 
@@ -26,11 +29,11 @@ export default interface IncomingClient {
 	getBoxMessages: (
 		boxName: string,
 		options: { start: number; end: number }
-	) => Promise<Message[]>;
+	) => Promise<IncomingMessage[]>;
 	getMessage: (
 		id: string,
 		boxName: string,
 		markAsRead: boolean
-	) => Promise<FullMessage | void>;
+	) => Promise<FullIncomingMessage | void>;
 	connect: () => Promise<void>;
 }

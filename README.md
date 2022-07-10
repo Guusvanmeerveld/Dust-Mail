@@ -14,6 +14,8 @@
     
 </div>
 
-<p align="center">Dust Mail is an opensource, fast and elegant mail client. It is still in active development and currently only has support for imap, with planned support for pop3, smtp, jmap and even Protonmail.</p>
+<p align="center">Dust Mail is an opensource, fast and elegant mail client. It is still in active development and currently only has support for imap and smtp, with planned support for pop3, jmap and even Protonmail.</p>
+
+<p align="center">If you do encounter any issues, please report the on the <a href="https://github.com/Guusvanmeerveld/Dust-Mail/issues">issues</a> page, as there will be quite a lot of bugs and breakages in this early stage of development.</p>
 
 <p align="center">Currently, to get started with Dust Mail, you must setup the server and download / setup a client. For more information about this setup process, please visit the <a href="https://github.com/Guusvanmeerveld/Dust-Mail/wiki">wiki</a>.</p>

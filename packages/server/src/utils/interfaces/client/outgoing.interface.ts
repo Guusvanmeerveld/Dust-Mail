@@ -1,5 +1,7 @@
 import { SecurityType } from "@auth/interfaces/server.interface";
 
+import { OutgoingMessage } from "@utils/interfaces/message";
+
 import { State } from "../state.interface";
 
 export interface Config {
@@ -14,4 +16,6 @@ export interface Config {
 
 export default interface OutgoingClient {
 	state: State;
+	connect: () => Promise<void>;
+	send: (message: OutgoingMessage) => Promise<void>;
 }

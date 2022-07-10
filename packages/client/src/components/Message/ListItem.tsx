@@ -103,15 +103,18 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 				</Menu>
 			)}
 
-			<Card
+			<Box
 				onClick={handleClick}
 				onContextMenu={handleContextMenu}
 				sx={{
-					my: 1,
-					cursor: "pointer"
+					cursor: "pointer",
+					backgroundImage: selectedMessage
+						? "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
+						: null,
+
+					borderBottom: `${theme.palette.divider} 1px solid`
 				}}
 				key={message.id}
-				raised={selectedMessage}
 			>
 				<Box
 					sx={{
@@ -129,7 +132,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 							}}
 						></Box>
 					)}
-					<Box sx={{ m: 2 }}>
+					<Box sx={{ m: 2, ml: 3 }}>
 						{avatar?.isLoading ? (
 							<Skeleton variant="rectangular">
 								<Avatar />
@@ -147,7 +150,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 							</Avatar>
 						)}
 					</Box>
-					<Box sx={{ flex: 1, minWidth: 0 }}>
+					<Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
 						<Typography noWrap textOverflow="ellipsis" variant="body2">
 							{from || "(Unknown sender)"} •{" "}
 							{new Date(message.date).toLocaleDateString()}
@@ -168,7 +171,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 					</Typography> */}
 					</Box>
 				</Box>
-			</Card>
+			</Box>
 		</>
 	);
 };
