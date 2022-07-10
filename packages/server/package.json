@@ -1,7 +1,7 @@
 {
 	"name": "@dust-mail/server",
 	"displayName": "Dust Mail Server",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"license": "MIT",
 	"scripts": {
 		"prebuild": "rimraf dist && rimraf .tsbuildinfo",
