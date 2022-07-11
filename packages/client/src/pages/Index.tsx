@@ -3,9 +3,12 @@ import useLocalStorageState from "use-local-storage-state";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
+import scrollbarStyles from "@styles/scrollbar";
+
 import useTheme from "@utils/hooks/useTheme";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
+import BoxesList from "@components/Boxes/List";
 import Layout from "@components/Layout";
 import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
@@ -14,12 +17,24 @@ import MessageOverview from "@components/Message/Overview";
 const Index = () => {
 	const theme = useTheme();
 
-	const [messageListWidth, setMesageListWidth] = useLocalStorageState<number>(
+	const [messageListWidth, setMessageListWidth] = useLocalStorageState<number>(
 		"messageListWidth",
 		{
 			defaultValue: 400
 		}
 	);
+
+	const [boxesListWidth, setBoxesListWidth] = useLocalStorageState<number>(
+		"boxesListWidth",
+		{
+			defaultValue: 300
+		}
+	);
+
+	const widthSetters = {
+		boxes: setBoxesListWidth,
+		messages: setMessageListWidth
+	};
 
 	const appBarHeight = theme.spacing(8);
 
@@ -29,7 +44,11 @@ const Index = () => {
 
 	const grabberWidth = 2;
 
-	const handleDragStart = (originalWidth: number, dragEvent: MouseEvent) => {
+	const handleDragStart = (
+		originalWidth: number,
+		dragEvent: MouseEvent,
+		component: keyof typeof widthSetters
+	) => {
 		const pageX = dragEvent.pageX;
 
 		const run = (moveEvent: MouseEvent) => {
@@ -39,7 +58,7 @@ const Index = () => {
 
 			const newWidth = originalWidth - difference;
 
-			if (newWidth >= 200 && newWidth <= 600) setMesageListWidth(newWidth);
+			if (newWidth >= 200 && newWidth <= 600) widthSetters[component](newWidth);
 		};
 
 		const unsub = () => {
@@ -51,21 +70,39 @@ const Index = () => {
 		document.addEventListener("mouseup", unsub);
 	};
 
+	const isMobile = theme.breakpoints.values.md >= windowWidth;
+
 	return (
 		<Layout withNavbar>
 			<Stack direction="row" sx={{ height: fullpageHeight }}>
+				{!isMobile && (
+					<>
+						<Box
+							sx={{
+								...scrollbarStyles(theme),
+								width: boxesListWidth,
+								overflowY: "scroll"
+							}}
+						>
+							<BoxesList />
+						</Box>
+
+						<Box
+							onMouseDown={(e: MouseEvent) =>
+								handleDragStart(boxesListWidth, e, "boxes")
+							}
+							sx={{
+								width: grabberWidth,
+								bgcolor: theme.palette.divider,
+								cursor: "col-resize"
+							}}
+						/>
+					</>
+				)}
+
 				<Box
 					sx={{
-						"&::-webkit-scrollbar": {
-							width: theme.spacing(1)
-						},
-						"&::-webkit-scrollbar-track": {
-							bgcolor: "transparent"
-						},
-						"&::-webkit-scrollbar-thumb": {
-							backgroundImage:
-								"linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
-						},
+						...scrollbarStyles(theme),
 						width: messageListWidth,
 						overflowY: "scroll"
 					}}
@@ -74,7 +111,9 @@ const Index = () => {
 				</Box>
 
 				<Box
-					onMouseDown={(e: MouseEvent) => handleDragStart(messageListWidth, e)}
+					onMouseDown={(e: MouseEvent) =>
+						handleDragStart(messageListWidth, e, "messages")
+					}
 					sx={{
 						width: grabberWidth,
 						bgcolor: theme.palette.divider,
@@ -86,7 +125,11 @@ const Index = () => {
 					direction="column"
 					spacing={1}
 					sx={{
-						width: windowWidth - messageListWidth - grabberWidth,
+						width:
+							windowWidth -
+							messageListWidth -
+							(isMobile ? 0 : boxesListWidth) -
+							grabberWidth * 2,
 						transition: theme.transitions.create(["width", "transform"], {
 							duration: theme.transitions.duration.standard
 						}),

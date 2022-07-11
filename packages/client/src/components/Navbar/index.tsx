@@ -1,10 +1,11 @@
 import { FunctionalComponent } from "preact";
 
-import { useState } from "preact/hooks";
+import { useMemo, useState } from "preact/hooks";
 
 import AppBar from "@mui/material/AppBar";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
@@ -39,59 +40,80 @@ const Navbar: FunctionalComponent = () => {
 			setDrawerState(open);
 		};
 
-	const boxNameSplit = selectedBox?.name.split(".");
+	const breadcrumbs = useMemo(() => {
+		const boxNameSplit = selectedBox?.name.split(".");
 
-	const breadcrumbs = boxNameSplit?.map((crumb, i) => {
-		const boxName = boxNameSplit.slice(0, i + 1).join(".");
+		return boxNameSplit?.map((crumb, i) => {
+			const boxName = boxNameSplit.slice(0, i + 1).join(".");
 
-		return (
-			<Typography
-				sx={{ cursor: boxName == selectedBox?.name ? "inherit" : "pointer" }}
-				key={boxName}
-				onClick={() => {
-					if (boxName == selectedBox?.name) return;
+			return (
+				<Typography
+					sx={{ cursor: boxName == selectedBox?.name ? "inherit" : "pointer" }}
+					key={boxName}
+					onClick={() => {
+						if (boxName == selectedBox?.name) return;
 
-					const box = findBoxInPrimaryBoxesList(boxName);
+						const box = findBoxInPrimaryBoxesList(boxName);
 
-					if (box) setSelectedBox({ ...box, id: box.name });
-					else setSelectedBox({ id: boxName, name: boxName });
-				}}
-				color={
-					i + 1 == boxNameSplit.length
-						? theme.palette.text.primary
-						: theme.palette.text.secondary
-				}
-			>
-				{crumb}
-			</Typography>
-		);
-	});
+						if (box) setSelectedBox({ ...box, id: box.name });
+						else setSelectedBox({ id: boxName, name: boxName });
+					}}
+					color={
+						i + 1 == boxNameSplit.length
+							? theme.palette.text.primary
+							: theme.palette.text.secondary
+					}
+				>
+					{crumb}
+				</Typography>
+			);
+		});
+	}, [selectedBox?.name]);
 
 	return (
 		<>
 			<AppBar position="static">
 				<Toolbar>
-					<IconButton
-						size="large"
-						edge="start"
-						color="inherit"
-						aria-label="menu"
-						sx={{ mr: 2 }}
-						onClick={toggleDrawer(true)}
+					<Stack
+						direction="row"
+						sx={{ flexGrow: 1, alignItems: "center" }}
+						spacing={2}
 					>
-						<MenuIcon />
-					</IconButton>
-					<Typography variant="h6" sx={{ flexGrow: 1 }}>
-						{import.meta.env.VITE_APP_NAME}
-						{breadcrumbs && (
-							<Breadcrumbs
-								separator={<NavigateNext fontSize="small" />}
-								aria-label="breadcrumb"
-							>
-								{breadcrumbs}
-							</Breadcrumbs>
-						)}
-					</Typography>
+						<IconButton
+							size="large"
+							edge="start"
+							color="inherit"
+							aria-label="menu"
+							sx={{
+								display: { md: "none", sm: "inline-flex" }
+							}}
+							onClick={toggleDrawer(true)}
+						>
+							<MenuIcon />
+						</IconButton>
+
+						<img
+							src="/android-chrome-192x192.png"
+							style={{ width: theme.spacing(5) }}
+							alt="Logo"
+						/>
+
+						<Typography variant="h6">
+							{import.meta.env.VITE_APP_NAME}
+						</Typography>
+
+						<Typography>
+							{breadcrumbs && (
+								<Breadcrumbs
+									separator={<NavigateNext fontSize="small" />}
+									aria-label="breadcrumb"
+								>
+									{breadcrumbs}
+								</Breadcrumbs>
+							)}
+						</Typography>
+					</Stack>
+
 					<Avatar />
 				</Toolbar>
 			</AppBar>
