@@ -9,6 +9,8 @@ import SmtpClient from "@utils/smtp";
 
 import { Payload } from "./interfaces/payload.interface";
 import Server from "./interfaces/server.interface";
+import { jwtConstants } from "./constants";
+import { createIdentifier } from "@src/utils/createIdentifier";
 
 @Injectable()
 export class AuthService {
@@ -21,14 +23,6 @@ export class AuthService {
 		incoming: Server;
 		outgoing: Server;
 	}): Promise<string> {
-		await this.createIncomingClient(config.incoming).then((client) =>
-			this.incomingClients.set(config.incoming.username, client)
-		);
-
-		await this.createOutgoingClient(config.outgoing).then((client) =>
-			this.outgoingClients.set(config.outgoing.username, client)
-		);
-
 		const payload: Payload = {
 			username: config.incoming.username,
 			sub: config
@@ -36,10 +30,23 @@ export class AuthService {
 
 		const access_token = this.jwtService.sign(payload);
 
+		await this.createIncomingClient(
+			createIdentifier(config.incoming),
+			config.incoming
+		);
+
+		await this.createOutgoingClient(
+			createIdentifier(config.outgoing),
+			config.outgoing
+		);
+
 		return access_token;
 	}
 
-	private async createIncomingClient(config: Server): Promise<IncomingClient> {
+	private async createIncomingClient(
+		identifier: string,
+		config: Server
+	): Promise<IncomingClient> {
 		const client = new ImapClient({
 			user: {
 				name: config.username,
@@ -50,10 +57,22 @@ export class AuthService {
 
 		await client.connect();
 
+		this.incomingClients.set(identifier, client);
+
+		client.on("end", () => this.incomingClients.delete(identifier));
+
+		setTimeout(
+			() => this.incomingClients.delete(identifier),
+			jwtConstants.expires * 1000
+		);
+
 		return client;
 	}
 
-	private async createOutgoingClient(config: Server): Promise<OutgoingClient> {
+	private async createOutgoingClient(
+		identifier: string,
+		config: Server
+	): Promise<OutgoingClient> {
 		const client = new SmtpClient({
 			user: {
 				name: config.username,
@@ -64,6 +83,15 @@ export class AuthService {
 
 		await client.connect();
 
+		this.outgoingClients.set(identifier, client);
+
+		client.on("end", () => this.outgoingClients.delete(identifier));
+
+		setTimeout(
+			() => this.outgoingClients.delete(identifier),
+			jwtConstants.expires * 1000
+		);
+
 		return client;
 	}
 
@@ -71,28 +99,23 @@ export class AuthService {
 		incoming: Server;
 		outgoing: Server;
 	}): Promise<[IncomingClient, OutgoingClient]> {
-		let incomingClient = this.incomingClients.get(config.incoming.username);
-		let outgoingClient = this.outgoingClients.get(config.outgoing.username);
+		const incomingIdentifier = createIdentifier(config.incoming);
+		const outgoingIdentifier = createIdentifier(config.outgoing);
 
-		if (!incomingClient) {
-			incomingClient = await this.createIncomingClient(config.incoming).then(
-				(client) => {
-					this.incomingClients.set(config.incoming.username, client);
+		let incomingClient = this.incomingClients.get(incomingIdentifier);
+		let outgoingClient = this.outgoingClients.get(outgoingIdentifier);
 
-					return client;
-				}
+		if (!incomingClient)
+			incomingClient = await this.createIncomingClient(
+				incomingIdentifier,
+				config.incoming
 			);
-		}
 
-		if (!outgoingClient) {
-			outgoingClient = await this.createOutgoingClient(config.outgoing).then(
-				(client) => {
-					this.outgoingClients.set(config.outgoing.username, client);
-
-					return client;
-				}
+		if (!outgoingClient)
+			outgoingClient = await this.createOutgoingClient(
+				outgoingIdentifier,
+				config.outgoing
 			);
-		}
 
 		return [incomingClient, outgoingClient];
 	}

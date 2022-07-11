@@ -12,7 +12,7 @@ import { allowedDomains } from "./constants";
 
 import { MailValidationPipe } from "./pipes/mail.pipe";
 
-import { ThrottlerBehindProxyGuard } from "./throttler-proxy.guard";
+import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
 import handleError from "@utils/handleError";
 

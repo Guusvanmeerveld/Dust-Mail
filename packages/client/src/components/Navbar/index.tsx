@@ -68,7 +68,7 @@ const Navbar: FunctionalComponent = () => {
 				</Typography>
 			);
 		});
-	}, [selectedBox?.name]);
+	}, [selectedBox?.name, theme.palette.text]);
 
 	return (
 		<>
