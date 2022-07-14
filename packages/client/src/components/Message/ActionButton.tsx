@@ -5,12 +5,12 @@ import SpeedDialAction from "@mui/material/SpeedDialAction";
 import SpeedDialIcon from "@mui/material/SpeedDialIcon";
 
 import useMessageActions from "@utils/hooks/useMessageActions";
-import useStore from "@utils/hooks/useStore";
+import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 
 const MessageActionButton: FunctionalComponent = () => {
-	const selectedMessage = useStore((state) => state.selectedMessage);
+	const [selectedMessage] = useSelectedMessage();
 
-	const actions = useMessageActions(selectedMessage?.id!);
+	const actions = useMessageActions(selectedMessage!);
 
 	if (selectedMessage)
 		return (
