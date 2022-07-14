@@ -1,9 +1,9 @@
-import Server from "./server.interface";
+import Config, { PayloadType } from "./config.interface";
 
 export interface Payload {
-	username: string;
+	username: PayloadType;
 	sub: {
-		incoming: Server;
-		outgoing: Server;
+		incoming: Config;
+		outgoing: Config;
 	};
 }

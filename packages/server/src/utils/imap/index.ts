@@ -2,6 +2,8 @@ import Imap from "imap";
 
 import { EventEmitter } from "events";
 
+import Config from "@auth/interfaces/config.interface";
+
 import {
 	IncomingMessage,
 	ContentType,
@@ -10,9 +12,7 @@ import {
 import parseMessage, { createAddress } from "@utils/imap/utils/parseMessage";
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 
-import IncomingClient, {
-	Config
-} from "@utils/interfaces/client/incoming.interface";
+import IncomingClient from "@utils/interfaces/client/incoming.interface";
 import { State } from "@utils/interfaces/state.interface";
 
 import { getBox, closeBox, getBoxes } from "./box";
@@ -24,12 +24,12 @@ export default class Client extends EventEmitter implements IncomingClient {
 
 	public state = State.NOT_READY;
 
-	constructor(config: Config) {
+	constructor({ mail: config }: Config) {
 		super();
 
 		this._client = new Imap({
-			user: config.user.name,
-			password: config.user.password,
+			user: config.username,
+			password: config.password,
 			host: config.server,
 			port: config.port,
 			tls: config.security != "NONE"

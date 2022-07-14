@@ -23,11 +23,16 @@ export const closeBox = async (_client: Imap): Promise<void> => {
 	});
 };
 
-export const getBoxes = async (_client: Imap): Promise<string[]> => {
+export const getBoxes = async (
+	_client: Imap
+): Promise<{ name: string; id: string }[]> => {
 	return new Promise((resolve, reject) => {
 		_client.getBoxes((err, boxes) => {
 			if (err) reject(err);
-			else resolve(getRecursiveBoxNames(boxes));
+			else
+				resolve(
+					getRecursiveBoxNames(boxes).map((box) => ({ name: box, id: box }))
+				);
 		});
 	});
 };

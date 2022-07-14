@@ -1,8 +1,13 @@
-import Server from "@auth/interfaces/server.interface";
+import Config from "@auth/interfaces/config.interface";
 
 import { createHash } from "@utils/createHash";
 
-export const createIdentifier = (config: Server): string =>
-	createHash(
-		`${config.username}:${config.password}@${config.server}:${config.port}`
-	);
+export function createIdentifier(config: Config): string {
+	if (config.mail)
+		return createHash(
+			`${config.mail.username}:${config.mail.password}@${config.mail.server}:${config.mail.port}`,
+			"sha256"
+		);
+
+	if (config.google) return createHash(config.google.accessToken, "sha256");
+}

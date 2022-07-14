@@ -32,6 +32,7 @@
 		"js-md5": "^0.7.3",
 		"preact": "^10.5.15",
 		"react-query": "^3.39.1",
+		"react-router-dom": "6",
 		"use-local-storage-state": "^17.0.1",
 		"zustand": "^4.0.0-rc.1"
 	},

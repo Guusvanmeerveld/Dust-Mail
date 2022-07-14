@@ -1,5 +1,6 @@
 import { FunctionalComponent } from "preact";
 
+import { memo } from "preact/compat";
 import { useMemo, useState } from "preact/hooks";
 
 import AppBar from "@mui/material/AppBar";
@@ -12,20 +13,18 @@ import Typography from "@mui/material/Typography";
 import MenuIcon from "@mui/icons-material/Menu";
 import NavigateNext from "@mui/icons-material/NavigateNext";
 
-import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
-import useStore from "@utils/hooks/useStore";
+import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useTheme from "@utils/hooks/useTheme";
 
 import Avatar from "@components/Navbar/Avatar";
 import Drawer from "@components/Navbar/Drawer";
 
-const Navbar: FunctionalComponent = () => {
+const UnMemoizedNavbar: FunctionalComponent = () => {
 	const theme = useTheme();
 
 	const [drawerState, setDrawerState] = useState(false);
 
-	const selectedBox = useStore((state) => state.selectedBox);
-	const setSelectedBox = useStore((state) => state.setSelectedBox);
+	const [selectedBox, setSelectedBox] = useSelectedBox();
 
 	const toggleDrawer =
 		(open: boolean) => (event: KeyboardEvent | MouseEvent) => {
@@ -53,10 +52,7 @@ const Navbar: FunctionalComponent = () => {
 					onClick={() => {
 						if (boxName == selectedBox?.name) return;
 
-						const box = findBoxInPrimaryBoxesList(boxName);
-
-						if (box) setSelectedBox({ ...box, id: box.name });
-						else setSelectedBox({ id: boxName, name: boxName });
+						setSelectedBox({ id: boxName, name: boxName });
 					}}
 					color={
 						i + 1 == boxNameSplit.length
@@ -122,5 +118,7 @@ const Navbar: FunctionalComponent = () => {
 		</>
 	);
 };
+
+const Navbar = memo(UnMemoizedNavbar);
 
 export default Navbar;

@@ -16,6 +16,8 @@ import Error from "@interfaces/error";
 import Message from "@interfaces/message";
 
 import useFetch from "@utils/hooks/useFetch";
+import useSelectedBox from "@utils/hooks/useSelectedBox";
+import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 
 import Loading from "@components/Loading";
@@ -29,40 +31,45 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 	// The amount of messages to load per request
 	const messageCountForPage = import.meta.env.VITE_MESSAGE_COUNT_PAGE ?? 20;
 
-	const selectedBox = useStore((state) => state.selectedBox);
-
-	const selectedMessage = useStore((state) => state.selectedMessage);
+	const [selectedBox] = useSelectedBox();
+	const [selectedMessage] = useSelectedMessage();
 
 	// Request the messages using react-query
-	const { data, error, fetchNextPage, isFetching, isFetchingNextPage } =
-		useInfiniteQuery<Message[], AxiosError<{ code: Error; message: string }>>(
-			["box", selectedBox?.id],
-			({ pageParam = 0 }) => {
-				if (pageParam === false) {
-					return [];
-				}
-
-				return fetcher
-					.get("/mail/box", {
-						params: {
-							cursor: pageParam,
-							limit: messageCountForPage,
-							box: selectedBox?.id
-						}
-					})
-					.then((res) => res.data);
-			},
-			{
-				getNextPageParam: (lastPage, pages) => {
-					const morePagesExist = lastPage?.length === messageCountForPage;
-
-					if (!morePagesExist) return false;
-
-					return pages.length;
-				},
-				enabled: selectedBox != undefined
+	const {
+		data,
+		error,
+		fetchNextPage,
+		isFetching,
+		isFetchingNextPage,
+		refetch
+	} = useInfiniteQuery<Message[], AxiosError<{ code: Error; message: string }>>(
+		["box", selectedBox?.id],
+		({ pageParam = 0 }) => {
+			if (pageParam === false) {
+				return [];
 			}
-		);
+
+			return fetcher
+				.get("/mail/box", {
+					params: {
+						cursor: pageParam,
+						limit: messageCountForPage,
+						box: selectedBox?.id
+					}
+				})
+				.then((res) => res.data);
+		},
+		{
+			getNextPageParam: (lastPage, pages) => {
+				const morePagesExist = lastPage?.length === messageCountForPage;
+
+				if (!morePagesExist) return false;
+
+				return pages.length;
+			},
+			enabled: selectedBox?.id != undefined
+		}
+	);
 
 	useEffect(
 		() => setFetching(isFetching || isFetchingNextPage),
@@ -81,10 +88,6 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 		<>
 			{(isFetching || isFetchingNextPage) && <Loading />}
 
-			{error && error.response?.data && (
-				<div>{error.response.data.message}</div>
-			)}
-
 			<Box
 				sx={{
 					position: "absolute",
@@ -98,18 +101,13 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 				data.pages &&
 				data.pages.map((messages) =>
 					messages.map((message) => {
-						const selected = selectedMessage?.id == message.id;
+						const selected = selectedMessage == message.id;
 
 						return (
 							<MessageListItem
 								key={message.id}
 								selectedMessage={selected}
 								message={message}
-								unSeen={
-									selected
-										? !selectedMessage?.flags.find((flag) => flag.match(/Seen/))
-										: undefined
-								}
 								rightClickMenuBox={rightClickMenuBox}
 								rightClickMenuOpen={
 									rightClickMenuAnchor.id == message.id &&
@@ -134,10 +132,18 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 				</Box>
 			)}
 
-			{!selectedBox && (
+			{!selectedBox?.id && (
 				<Typography variant="h6" sx={{ textAlign: "center", mt: 1 }}>
 					No mail box selected.
 				</Typography>
+			)}
+
+			{error && error.response?.data && (
+				<Box sx={{ textAlign: "center", mt: 1, mx: 1 }}>
+					<Typography variant="h6">{error.response.data.message}</Typography>
+
+					<Button onClick={() => refetch()}>Retry</Button>
+				</Box>
 			)}
 
 			{data && data.pages && data.pages[0].length == 0 && (

@@ -6,11 +6,14 @@ import OutgoingClient from "@utils/interfaces/client/outgoing.interface";
 
 import ImapClient from "@utils/imap";
 import SmtpClient from "@utils/smtp";
+import IncomingGoogleClient from "@utils/google/incoming";
+
+import { createIdentifier } from "@utils/createIdentifier";
 
 import { Payload } from "./interfaces/payload.interface";
-import Server from "./interfaces/server.interface";
+import Config from "./interfaces/config.interface";
+
 import { jwtConstants } from "./constants";
-import { createIdentifier } from "@src/utils/createIdentifier";
 
 @Injectable()
 export class AuthService {
@@ -20,15 +23,13 @@ export class AuthService {
 	private readonly outgoingClients: Map<string, OutgoingClient> = new Map();
 
 	public async login(config: {
-		incoming: Server;
-		outgoing: Server;
+		incoming: Config;
+		outgoing: Config;
 	}): Promise<string> {
 		const payload: Payload = {
-			username: config.incoming.username,
+			username: "mail",
 			sub: config
 		};
-
-		const access_token = this.jwtService.sign(payload);
 
 		await this.createIncomingClient(
 			createIdentifier(config.incoming),
@@ -40,20 +41,34 @@ export class AuthService {
 			config.outgoing
 		);
 
+		const access_token = this.jwtService.sign(payload);
+
+		return access_token;
+	}
+
+	public async googleLogin(config: Config): Promise<string> {
+		const payload: Payload = {
+			username: "google",
+			sub: { incoming: config, outgoing: config }
+		};
+
+		await this.createIncomingClient(createIdentifier(config), config);
+
+		// await this.createOutgoingClient(createIdentifier(config), config);
+
+		const access_token = this.jwtService.sign(payload);
+
 		return access_token;
 	}
 
 	private async createIncomingClient(
 		identifier: string,
-		config: Server
+		config: Config
 	): Promise<IncomingClient> {
-		const client = new ImapClient({
-			user: {
-				name: config.username,
-				password: config.password
-			},
-			...config
-		});
+		let client: IncomingClient;
+
+		if (config.mail) client = new ImapClient(config);
+		else if (config.google) client = new IncomingGoogleClient(config);
 
 		await client.connect();
 
@@ -71,15 +86,11 @@ export class AuthService {
 
 	private async createOutgoingClient(
 		identifier: string,
-		config: Server
+		config: Config
 	): Promise<OutgoingClient> {
-		const client = new SmtpClient({
-			user: {
-				name: config.username,
-				password: config.password
-			},
-			...config
-		});
+		let client: OutgoingClient;
+
+		if (config.mail) client = new SmtpClient(config);
 
 		await client.connect();
 
@@ -96,8 +107,8 @@ export class AuthService {
 	}
 
 	public async findConnection(config: {
-		incoming: Server;
-		outgoing: Server;
+		incoming: Config;
+		outgoing: Config;
 	}): Promise<[IncomingClient, OutgoingClient]> {
 		const incomingIdentifier = createIdentifier(config.incoming);
 		const outgoingIdentifier = createIdentifier(config.outgoing);
@@ -111,11 +122,11 @@ export class AuthService {
 				config.incoming
 			);
 
-		if (!outgoingClient)
-			outgoingClient = await this.createOutgoingClient(
-				outgoingIdentifier,
-				config.outgoing
-			);
+		// if (!outgoingClient)
+		// 	outgoingClient = await this.createOutgoingClient(
+		// 		outgoingIdentifier,
+		// 		config.outgoing
+		// 	);
 
 		return [incomingClient, outgoingClient];
 	}

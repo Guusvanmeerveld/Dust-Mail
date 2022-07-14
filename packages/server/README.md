@@ -8,3 +8,5 @@ ENV's:
 - ALLOWED_DOMAINS: The domains for the imap servers that the server can fetch, seperated by comma's.
 - PROXY: A boolean value to signify if the server is behind a proxy. Default: false
 - PORT: The port the application should run on. Default: 3000
+- GOOGLE_CLIENT_ID: The client id for the oauth2 consent screen. Only required for Google login support
+- GOOGLE_CLIENT_SECRET: The client secret for the oauth2 consent screen. Only required for Google login support

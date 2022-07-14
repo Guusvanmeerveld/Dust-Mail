@@ -1,11 +1,10 @@
 import { FunctionalComponent } from "preact";
 
 import { memo } from "preact/compat";
-import { MutableRef } from "preact/hooks";
+import { MutableRef, useEffect } from "preact/hooks";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -19,7 +18,7 @@ import Message from "@interfaces/message";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useMessageActions from "@utils/hooks/useMessageActions";
-import useStore from "@utils/hooks/useStore";
+import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 
 const UnMemoizedMessageListItem: FunctionalComponent<{
@@ -45,11 +44,11 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 
 	const messageActions = useMessageActions(message.id);
 
+	const [, setSelectedMessage] = useSelectedMessage();
+
 	let from = message.from
 		.map((from) => from.displayName || from.email)
 		.join(", ");
-
-	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
 
 	const avatar = useAvatar(from.length != 0 ? message.from[0].email : null);
 
@@ -59,7 +58,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 	const handleClick = () => {
 		if (!message.id) return;
 		if (selectedMessage) setSelectedMessage();
-		else setSelectedMessage({ id: message.id, flags: message.flags });
+		else setSelectedMessage(message.id);
 	};
 
 	const handleContextMenu = (e: MouseEvent) => {
@@ -126,7 +125,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 					{unSeen && (
 						<Box
 							sx={{
-								width: theme.spacing(1),
+								width: theme.spacing(0.5),
 								height: theme.spacing(9),
 								bgcolor: theme.palette.secondary.light
 							}}

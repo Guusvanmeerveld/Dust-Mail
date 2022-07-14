@@ -2,7 +2,7 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { FunctionalComponent } from "preact";
 
-import { ChangeEvent } from "preact/compat";
+import { memo } from "preact/compat";
 import { useState } from "preact/hooks";
 
 import MUIAvatar from "@mui/material/Avatar";
@@ -12,7 +12,6 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Switch from "@mui/material/Switch";
 
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
@@ -39,7 +38,7 @@ const DarkModeListItem = () => {
 	);
 };
 
-const Avatar: FunctionalComponent = () => {
+const UnMemoizedAvatar: FunctionalComponent = () => {
 	const theme = useTheme();
 
 	const [username] = useLocalStorageState<string>("username");
@@ -101,5 +100,7 @@ const Avatar: FunctionalComponent = () => {
 		</>
 	);
 };
+
+const Avatar = memo(UnMemoizedAvatar);
 
 export default Avatar;

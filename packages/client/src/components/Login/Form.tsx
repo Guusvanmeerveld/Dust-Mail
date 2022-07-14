@@ -38,6 +38,8 @@ import useLogin from "@utils/hooks/useLogin";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
+import OtherLogins from "@components/Login/OtherLogins";
+
 type Store = Record<ServerType, AdvancedLogin & { error?: APIError }> & {
 	setProperty: (
 		type: ServerType
@@ -204,8 +206,6 @@ const ServerPropertiesColumn = memo(UnMemoizedServerPropertiesColumn);
 const AdvancedLoginMenu: FunctionalComponent = () => {
 	const theme = useTheme();
 
-	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
-
 	const [isOpen, setOpen] = useState(false);
 
 	const login = useLogin();
@@ -229,11 +229,9 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 			return;
 		}
 
-		const token = await login({ incoming, outgoing }).catch((e) => {
+		await login({ incoming, outgoing }).catch((e) => {
 			setProperty("incoming")("error")(e);
 		});
-
-		setJwtToken(token);
 	};
 
 	return (
@@ -288,8 +286,6 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 const LoginForm: FunctionalComponent = () => {
 	const theme = useTheme();
 
-	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
-
 	const fetching = useStore((state) => state.fetching);
 
 	const [username, setUsername] = useState("");
@@ -320,11 +316,7 @@ const LoginForm: FunctionalComponent = () => {
 		// Remove any old errors
 		setError(undefined);
 
-		const token = await login({ incoming: { username, password } }).catch((e) =>
-			setError(e)
-		);
-
-		setJwtToken(token);
+		await login({ incoming: { username, password } }).catch((e) => setError(e));
 	};
 
 	const handleKeyDown = async (e: KeyboardEvent) => {
@@ -371,6 +363,8 @@ const LoginForm: FunctionalComponent = () => {
 							{error.message}
 						</Alert>
 					)}
+
+				<OtherLogins />
 
 				<AdvancedLoginMenu />
 			</Stack>

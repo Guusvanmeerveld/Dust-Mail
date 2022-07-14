@@ -1,4 +1,4 @@
-import { SecurityType } from "@auth/interfaces/server.interface";
+import EventEmitter from "events";
 
 import {
 	IncomingMessage,
@@ -7,24 +7,14 @@ import {
 
 import { State } from "@utils/interfaces/state.interface";
 
-export interface Config {
-	user: {
-		name: string;
-		password: string;
-	};
-	server: string;
-	port: number;
-	security: SecurityType;
-}
-
 export interface Box {
 	totalMessages: number;
 	name: string;
 }
 
-export default interface IncomingClient {
+export default interface IncomingClient extends EventEmitter {
 	state: State;
-	getBoxes: () => Promise<string[]>;
+	getBoxes: () => Promise<{ name: string; id: string }[]>;
 	getBox: (boxName: string, readOnly?: boolean) => Promise<Box>;
 	getBoxMessages: (
 		boxName: string,

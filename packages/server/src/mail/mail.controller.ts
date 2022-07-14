@@ -27,7 +27,7 @@ import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 @Controller("mail")
 export class MailController {
 	@Get("boxes")
-	@UseGuards(ThrottlerBehindProxyGuard)
+	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(JwtAuthGuard)
 	async fetchBoxes(@Req() req: Request) {
 		const client = req.user.incomingClient;
@@ -36,7 +36,7 @@ export class MailController {
 	}
 
 	@Get("box")
-	@UseGuards(ThrottlerBehindProxyGuard)
+	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(JwtAuthGuard)
 	async fetchBox(
 		@Req() req: Request,
@@ -76,7 +76,7 @@ export class MailController {
 	}
 
 	@Get("message")
-	@UseGuards(ThrottlerBehindProxyGuard)
+	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(JwtAuthGuard)
 	async fetchMessage(
 		@Req() req: Request,
@@ -98,7 +98,7 @@ export class MailController {
 	}
 
 	@Post("send")
-	@UseGuards(ThrottlerBehindProxyGuard)
+	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(JwtAuthGuard)
 	async sendMessage(
 		@Req() req: Request,

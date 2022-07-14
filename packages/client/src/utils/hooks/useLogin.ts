@@ -1,5 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import { useNavigate } from "react-router-dom";
+
 import Error from "@interfaces/error";
 import AdvancedLogin from "@interfaces/login";
 
@@ -13,7 +15,9 @@ import useStore from "@utils/hooks/useStore";
 const useFetchBoxes = () => {
 	const fetcher = useFetch();
 
-	const [, setBoxes] = useLocalStorageState<string>("boxes");
+	const [, setBoxes] = useLocalStorageState<{ name: string; id: string }>(
+		"boxes"
+	);
 
 	return async (token: string): Promise<void> => {
 		console.log("Fetching inboxes...");
@@ -31,9 +35,16 @@ const useFetchBoxes = () => {
 const useLogin = () => {
 	const [, setUsername] = useLocalStorageState<string>("username");
 	const [, setAvatar] = useLocalStorageState<string>("avatar");
+	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
+
+	const [defaultBox] = useLocalStorageState("defaultBox", {
+		defaultValue: { id: "INBOX", name: "Inbox" }
+	});
 
 	const appVersion = useStore((state) => state.appVersion);
 	const setFetching = useStore((state) => state.setFetching);
+
+	const navigate = useNavigate();
 
 	const fetcher = useFetch();
 
@@ -163,7 +174,9 @@ const useLogin = () => {
 
 			setAvatar(createGravatarUrl(config.incoming.username));
 
-			return data;
+			setJwtToken(data);
+
+			navigate(`/dashboard/${defaultBox.id}`);
 		}
 
 		setFetching(false);

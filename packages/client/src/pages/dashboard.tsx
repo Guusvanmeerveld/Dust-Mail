@@ -1,5 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import { Navigate } from "react-router-dom";
+
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
@@ -14,8 +16,10 @@ import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
 
-const Index = () => {
+const Dashboard = () => {
 	const theme = useTheme();
+
+	const [session] = useLocalStorageState("jwtToken");
 
 	const [messageListWidth, setMessageListWidth] = useLocalStorageState<number>(
 		"messageListWidth",
@@ -73,77 +77,80 @@ const Index = () => {
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
 	return (
-		<Layout withNavbar>
-			<Stack direction="row" sx={{ height: fullpageHeight }}>
-				{!isMobile && (
-					<>
-						<Box
-							sx={{
-								...scrollbarStyles(theme),
-								width: boxesListWidth,
-								overflowY: "scroll"
-							}}
-						>
-							<BoxesList />
-						</Box>
+		<>
+			{!session && <Navigate to="/" replace={true} />}
+			<Layout withNavbar>
+				<Stack direction="row" sx={{ height: fullpageHeight }}>
+					{!isMobile && (
+						<>
+							<Box
+								sx={{
+									...scrollbarStyles(theme),
+									width: boxesListWidth,
+									overflowY: "scroll"
+								}}
+							>
+								<BoxesList />
+							</Box>
 
-						<Box
-							onMouseDown={(e: MouseEvent) =>
-								handleDragStart(boxesListWidth, e, "boxes")
-							}
-							sx={{
-								width: grabberWidth,
-								bgcolor: theme.palette.divider,
-								cursor: "col-resize"
-							}}
-						/>
-					</>
-				)}
+							<Box
+								onMouseDown={(e: MouseEvent) =>
+									handleDragStart(boxesListWidth, e, "boxes")
+								}
+								sx={{
+									width: grabberWidth,
+									bgcolor: theme.palette.divider,
+									cursor: "col-resize"
+								}}
+							/>
+						</>
+					)}
 
-				<Box
-					sx={{
-						...scrollbarStyles(theme),
-						width: messageListWidth,
-						overflowY: "scroll"
-					}}
-				>
-					<MessageList />
-				</Box>
+					<Box
+						sx={{
+							...scrollbarStyles(theme),
+							width: messageListWidth,
+							overflowY: "scroll"
+						}}
+					>
+						<MessageList />
+					</Box>
 
-				<Box
-					onMouseDown={(e: MouseEvent) =>
-						handleDragStart(messageListWidth, e, "messages")
-					}
-					sx={{
-						width: grabberWidth,
-						bgcolor: theme.palette.divider,
-						cursor: "col-resize"
-					}}
-				/>
+					<Box
+						onMouseDown={(e: MouseEvent) =>
+							handleDragStart(messageListWidth, e, "messages")
+						}
+						sx={{
+							width: grabberWidth,
+							bgcolor: theme.palette.divider,
+							cursor: "col-resize"
+						}}
+					/>
 
-				<Stack
-					direction="column"
-					spacing={1}
-					sx={{
-						width:
-							windowWidth -
-							messageListWidth -
-							(isMobile ? 0 : boxesListWidth) -
-							grabberWidth * 2,
-						transition: theme.transitions.create(["width", "transform"], {
-							duration: theme.transitions.duration.standard
-						}),
-						px: 3,
-						py: 1
-					}}
-				>
-					<MessageOverview />
+					<Stack
+						direction="column"
+						spacing={1}
+						sx={{
+							width:
+								windowWidth -
+								messageListWidth -
+								(isMobile ? 0 : boxesListWidth) -
+								grabberWidth * 2,
+							transition: theme.transitions.create(["width", "transform"], {
+								duration: theme.transitions.duration.standard
+							}),
+							px: 3,
+							py: 1
+						}}
+					>
+						<MessageOverview />
+					</Stack>
 				</Stack>
-			</Stack>
 
-			<MessageActionButton />
-		</Layout>
+				<MessageActionButton />
+			</Layout>
+		</>
 	);
 };
 
-export default Index;
+export default Dashboard;

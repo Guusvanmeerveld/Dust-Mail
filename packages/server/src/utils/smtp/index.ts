@@ -2,9 +2,9 @@ import { EventEmitter } from "events";
 
 import nodemailer, { Transporter } from "nodemailer";
 
-import OutgoingClient, {
-	Config
-} from "@utils/interfaces/client/outgoing.interface";
+import Config from "@auth/interfaces/config.interface";
+
+import OutgoingClient from "@utils/interfaces/client/outgoing.interface";
 
 import { State } from "@utils/interfaces/state.interface";
 import { OutgoingMessage } from "@utils/interfaces/message";
@@ -17,7 +17,7 @@ export default class Client extends EventEmitter implements OutgoingClient {
 
 	public state = State.NOT_READY;
 
-	constructor(config: Config) {
+	constructor({ mail: config }: Config) {
 		super();
 
 		this._client = nodemailer.createTransport({
@@ -25,8 +25,8 @@ export default class Client extends EventEmitter implements OutgoingClient {
 			port: config.port,
 			secure: config.security == "TLS",
 			auth: {
-				user: config.user.name,
-				pass: config.user.password
+				user: config.username,
+				pass: config.password
 			}
 		});
 

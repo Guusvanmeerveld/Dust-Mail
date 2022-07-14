@@ -1,8 +1,13 @@
+import mailDiscover from "mail-discover";
+
 import {
 	BadRequestException,
 	Body,
 	Controller,
+	Get,
 	Post,
+	Query,
+	Req,
 	UseGuards
 } from "@nestjs/common";
 
@@ -10,15 +15,18 @@ import { AuthService } from "./auth.service";
 
 import { allowedDomains } from "./constants";
 
-import { MailValidationPipe } from "./pipes/mail.pipe";
-
 import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
 import handleError from "@utils/handleError";
 
-import mailDiscover from "mail-discover";
+import exchangeGoogleToken from "@utils/google/exchangeToken";
+import { clientInfo as googleClientInfo } from "@utils/google/constants";
+
 import UserError from "@utils/interfaces/error.interface";
-import { SecurityType } from "./interfaces/server.interface";
+import { Request } from "./interfaces/request.interface";
+import { SecurityType } from "./interfaces/config.interface";
+
+import { StringValidationPipe } from "./pipes/string.pipe";
 
 @Controller("auth")
 export class AuthController {
@@ -31,25 +39,25 @@ export class AuthController {
 	@Post("login")
 	@UseGuards(ThrottlerBehindProxyGuard)
 	async login(
-		@Body("incoming_username", MailValidationPipe)
+		@Body("incoming_username", StringValidationPipe)
 		incomingUsername?: string,
-		@Body("incoming_password")
+		@Body("incoming_password", StringValidationPipe)
 		incomingPassword?: string,
-		@Body("incoming_server")
+		@Body("incoming_server", StringValidationPipe)
 		incomingServer?: string,
 		@Body("incoming_port")
 		incomingPort?: number,
-		@Body("incoming_security")
+		@Body("incoming_security", StringValidationPipe)
 		incomingSecurity?: SecurityType,
-		@Body("outgoing_username", MailValidationPipe)
+		@Body("outgoing_username", StringValidationPipe)
 		outgoingUsername?: string,
-		@Body("outgoing_password")
+		@Body("outgoing_password", StringValidationPipe)
 		outgoingPassword?: string,
-		@Body("outgoing_server")
+		@Body("outgoing_server", StringValidationPipe)
 		outgoingServer?: string,
 		@Body("outgoing_port")
 		outgoingPort?: number,
-		@Body("outgoing_security")
+		@Body("outgoing_security", StringValidationPipe)
 		outgoingSecurity?: SecurityType
 	) {
 		if (incomingUsername && incomingPassword) {
@@ -113,26 +121,56 @@ export class AuthController {
 			const token = await this.authService
 				.login({
 					incoming: {
-						username: incomingUsername,
-						password: incomingPassword,
-						server: incomingServer,
-						port: incomingPort,
-						security: incomingSecurity
+						mail: {
+							username: incomingUsername,
+							password: incomingPassword,
+							server: incomingServer,
+							port: incomingPort,
+							security: incomingSecurity
+						}
 					},
 					outgoing: {
-						username: outgoingUsername,
-						password: outgoingPassword,
-						server: outgoingServer,
-						port: outgoingPort,
-						security: outgoingSecurity
+						mail: {
+							username: outgoingUsername,
+							password: outgoingPassword,
+							server: outgoingServer,
+							port: outgoingPort,
+							security: outgoingSecurity
+						}
 					}
 				})
-				.then((token) => token)
 				.catch(handleError);
 
 			return token;
 		}
 
 		throw new BadRequestException("Missing fields");
+	}
+
+	@Get("gmail")
+	@UseGuards(ThrottlerBehindProxyGuard)
+	async googleLogin(
+		@Req() req: Request,
+		@Query("code", StringValidationPipe) code: string
+	) {
+		if (!code) throw new BadRequestException("`code` param required");
+
+		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
+
+		const tokens = await exchangeGoogleToken(code, redirect_uri);
+
+		return await this.authService
+			.googleLogin({ google: tokens })
+			.catch(handleError);
+	}
+
+	@Get("gmail/token")
+	async getGooglePublicToken() {
+		if (!googleClientInfo.id)
+			throw new BadRequestException(
+				"Google authentication is not supported on this server"
+			);
+
+		return googleClientInfo.id;
 	}
 }

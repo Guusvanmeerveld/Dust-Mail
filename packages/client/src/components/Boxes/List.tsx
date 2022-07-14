@@ -17,46 +17,36 @@ import FolderIcon from "@mui/icons-material/Folder";
 import MailBox from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
+import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
 
 const UnMemoizedBoxesList: FunctionalComponent<{
 	switchBox?: (e: MouseEvent) => void;
 }> = ({ switchBox: switchBoxCb }) => {
-	const [boxes] = useLocalStorageState<string[]>("boxes");
+	const [boxes] = useLocalStorageState<{ name: string; id: string }[]>("boxes");
 
-	const [defaultBox] = useLocalStorageState("defaultBox", {
-		defaultValue: "INBOX"
-	});
-
-	const selectedBox = useStore((state) => state.selectedBox);
-	const setSelectedBox = useStore((state) => state.setSelectedBox);
-
-	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
-
-	useEffect(() => {
-		const box = findBoxInPrimaryBoxesList(defaultBox);
-
-		if (box) setSelectedBox({ ...box, id: box.name });
-		else setSelectedBox({ id: defaultBox, name: defaultBox });
-	}, []);
+	const [selectedBox, setSelectedBox] = useSelectedBox();
 
 	useEffect(() => {
 		if (selectedBox) {
-			document.title = `${import.meta.env.VITE_APP_NAME} - ${selectedBox.name}`;
-			setSelectedMessage();
+			const name = selectedBox.name ?? selectedBox.id;
+
+			document.title = `${import.meta.env.VITE_APP_NAME}${
+				name ? ` - ${name}` : ""
+			}`;
 		}
-	}, [selectedBox?.name]);
+	}, [selectedBox]);
 
 	// Find all of the primary boxes and sort them alphabetically
 	const primaryBoxes: MailBox[] | undefined = useMemo(
 		() =>
 			boxes
-				?.filter(findBoxInPrimaryBoxesList)
-				.sort((a, b) => a.localeCompare(b))
-				.map((i) => {
-					const found = findBoxInPrimaryBoxesList(i);
+				?.filter((box) => findBoxInPrimaryBoxesList(box.name))
+				.sort((a, b) => a.name.localeCompare(b.name))
+				.map((box) => {
+					const found = findBoxInPrimaryBoxesList(box.name);
 
-					return { ...found!, id: i };
+					return { ...found!, id: box.id };
 				}),
 		[boxes]
 	);
@@ -65,9 +55,8 @@ const UnMemoizedBoxesList: FunctionalComponent<{
 	const otherBoxes: MailBox[] | undefined = useMemo(
 		() =>
 			boxes
-				?.filter((i) => !findBoxInPrimaryBoxesList(i))
-				.sort((a, b) => a.localeCompare(b))
-				.map((i) => ({ name: i, id: i })),
+				?.filter((box) => !findBoxInPrimaryBoxesList(box.name))
+				.sort((a, b) => a.name.localeCompare(b.name)),
 		[boxes]
 	);
 

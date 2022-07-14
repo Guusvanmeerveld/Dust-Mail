@@ -11,7 +11,6 @@ import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
@@ -26,8 +25,12 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 
 import { Address, FullMessage } from "@interfaces/message";
 
+import scrollbarStyles from "@styles/scrollbar";
+
 import useAvatar from "@utils/hooks/useAvatar";
 import useFetch from "@utils/hooks/useFetch";
+import useSelectedBox from "@utils/hooks/useSelectedBox";
+import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
@@ -103,10 +106,8 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 
 	const fetcher = useFetch();
 
-	const selectedMessage = useStore((state) => state.selectedMessage);
-	const selectedBox = useStore((state) => state.selectedBox);
-
-	const setSelectedMessage = useStore((state) => state.setSelectedMessage);
+	const [selectedMessage, setSelectedMessage] = useSelectedMessage();
+	const [selectedBox] = useSelectedBox();
 
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -118,12 +119,12 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 	const [showImages, setShowImages] = useState(false);
 
 	const { data, error, isFetching } = useQuery<FullMessage>(
-		["message", selectedMessage?.id],
+		["message", selectedMessage, selectedBox?.id],
 		() =>
 			fetcher
 				.get("/mail/message", {
 					params: {
-						id: selectedMessage?.id,
+						id: selectedMessage,
 						box: selectedBox?.id,
 						markRead: true
 					}
@@ -142,7 +143,12 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 		<>
 			{selectedMessage && (
 				<>
-					<Card sx={{ p: 2 }}>
+					<Card
+						sx={{
+							p: 2,
+							flexShrink: 0
+						}}
+					>
 						<Stack direction="row">
 							<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
 								<Box>
@@ -192,7 +198,14 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 							</Stack>
 						</Stack>
 					</Card>
-					<Card sx={{ p: data?.content?.type == "text" ? 2 : 0, flexGrow: 2 }}>
+					<Card
+						sx={{
+							...scrollbarStyles(theme),
+							overflowY: "scroll",
+							p: data?.content?.type == "text" ? 2 : 0,
+							flexGrow: 1
+						}}
+					>
 						{(isFetching || !data) && (
 							<Skeleton
 								animation="wave"
@@ -204,6 +217,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 							<>
 								{data.content.type == "text" && (
 									<Box
+										sx={{}}
 										dangerouslySetInnerHTML={{
 											__html: data.content.html
 										}}

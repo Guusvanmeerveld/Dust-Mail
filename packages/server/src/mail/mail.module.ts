@@ -9,7 +9,7 @@ import { ThrottlerModule } from "@nestjs/throttler";
 	imports: [
 		ThrottlerModule.forRoot({
 			ttl: 60,
-			limit: 30
+			limit: 60
 		}),
 		AuthModule
 	],

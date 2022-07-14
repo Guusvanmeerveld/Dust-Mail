@@ -1,3 +1,5 @@
+import { useEffect, useMemo } from "preact/hooks";
+
 import DeleteIcon from "@mui/icons-material/Delete";
 import FolderMoveIcon from "@mui/icons-material/DriveFileMove";
 import ForwardIcon from "@mui/icons-material/Forward";
@@ -6,12 +8,12 @@ import ReplyIcon from "@mui/icons-material/Reply";
 
 import MessageAction from "@interfaces/messageAction";
 
-const useMessageActions = (messageId: string): MessageAction[] => {
+const useMessageActions = (messageID: string): MessageAction[] => {
 	const actions: MessageAction[] = [
 		{
 			name: "Move message",
 			icon: <FolderMoveIcon />,
-			handler: () => console.log(messageId)
+			handler: () => console.log(messageID)
 		},
 		{
 			name: "Forward message",

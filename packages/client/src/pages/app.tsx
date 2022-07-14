@@ -1,10 +1,12 @@
-import useLocalStorageState from "use-local-storage-state";
-
-import Index from "./Index";
-import Login from "./Login";
+import NotFound from "./404";
+import Dashboard from "./dashboard";
+import Login from "./login";
 
 import { QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import { FunctionalComponent } from "preact";
 
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,18 +14,25 @@ import { ThemeProvider } from "@mui/material/styles";
 import queryClient from "@utils/createClient";
 import useTheme from "@utils/hooks/useTheme";
 
-const App = () => {
+const App: FunctionalComponent = () => {
 	const theme = useTheme();
-
-	const [isLoggedIn] = useLocalStorageState<string | undefined>("jwtToken");
 
 	return (
 		<ThemeProvider theme={theme}>
+			<CssBaseline />
 			<QueryClientProvider client={queryClient}>
 				<ReactQueryDevtools initialIsOpen={false} />
-				<CssBaseline />
-				{!!isLoggedIn && <Index />}
-				{!isLoggedIn && <Login />}
+				<BrowserRouter>
+					<Routes>
+						<Route path="/" element={<Login />} />
+						<Route path="dashboard" element={<Dashboard />}>
+							<Route path=":boxID" element={<Dashboard />}>
+								<Route path=":messageID" element={<Dashboard />} />
+							</Route>
+						</Route>
+						<Route path="*" element={<NotFound />} />
+					</Routes>
+				</BrowserRouter>
 			</QueryClientProvider>
 		</ThemeProvider>
 	);
