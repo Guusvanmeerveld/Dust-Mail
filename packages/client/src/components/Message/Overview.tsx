@@ -12,6 +12,11 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
@@ -22,6 +27,7 @@ import DarkModeIcon from "@mui/icons-material/DarkMode";
 import HideImageIcon from "@mui/icons-material/HideImage";
 import ImageIcon from "@mui/icons-material/Image";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import MoreIcon from "@mui/icons-material/MoreHoriz";
 
 import { Address, FullMessage } from "@interfaces/message";
 
@@ -29,6 +35,7 @@ import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useFetch from "@utils/hooks/useFetch";
+import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
@@ -109,7 +116,13 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 	const [selectedMessage, setSelectedMessage] = useSelectedMessage();
 	const [selectedBox] = useSelectedBox();
 
+	const messageActions = useMessageActions(selectedMessage!);
+
 	const setFetching = useStore((state) => state.setFetching);
+
+	const setShowMessageComposer = useStore(
+		(state) => state.setShowMessageComposer
+	);
 
 	const [darkMode, setDarkMode] = useLocalStorageState<boolean>(
 		"messageDarkMode",
@@ -117,6 +130,10 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 	);
 
 	const [showImages, setShowImages] = useState(false);
+
+	const [messageActionsAnchor, setMessageActionsAnchor] =
+		useState<null | Element>(null);
+	const messageActionsAnchorOpen = Boolean(messageActionsAnchor);
 
 	const { data, error, isFetching } = useQuery<FullMessage>(
 		["message", selectedMessage, selectedBox?.id],
@@ -134,10 +151,6 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 	);
 
 	useEffect(() => setFetching(isFetching), [isFetching]);
-
-	// useEffect(() => {
-	// 	if (data) setSelectedMessage({ id: data.id, flags: data.flags });
-	// }, [data?.id]);
 
 	return (
 		<>
@@ -179,6 +192,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 								{data?.cc && <AddressList data={data.cc} prefixText="CC:" />}
 								{data?.bcc && <AddressList data={data.bcc} prefixText="BCC:" />}
 							</Stack>
+
 							<Stack direction="column" spacing={0.5}>
 								<Tooltip title="Close current message">
 									<IconButton onClick={() => setSelectedMessage()}>
@@ -195,6 +209,36 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 										{showImages ? <ImageIcon /> : <HideImageIcon />}
 									</IconButton>
 								</Tooltip>
+								<Tooltip title="Message actions">
+									<IconButton
+										onClick={(e: MouseEvent) =>
+											setMessageActionsAnchor(e.currentTarget as Element)
+										}
+									>
+										<MoreIcon />
+									</IconButton>
+								</Tooltip>
+								<Menu
+									id="message-actions-menu"
+									anchorEl={messageActionsAnchor}
+									open={messageActionsAnchorOpen}
+									onClose={() => setMessageActionsAnchor(null)}
+									MenuListProps={{
+										"aria-labelledby": "basic-button"
+									}}
+								>
+									{messageActions.map((action) => (
+										<MenuItem
+											onClick={() => {
+												setMessageActionsAnchor(null);
+												action.handler();
+											}}
+										>
+											<ListItemIcon>{action.icon}</ListItemIcon>
+											<ListItemText>{action.name}</ListItemText>
+										</MenuItem>
+									))}
+								</Menu>
 							</Stack>
 						</Stack>
 					</Card>
@@ -237,6 +281,16 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 					<Typography>
 						Get started by selecting a message on the left.
 					</Typography>
+					{/* <Typography>
+						Or start by{" "}
+						<Link
+							sx={{ cursor: "pointer" }}
+							onClick={() => setShowMessageComposer(true)}
+						>
+							composing a new message
+						</Link>
+						.
+					</Typography> */}
 				</Box>
 			)}
 		</>

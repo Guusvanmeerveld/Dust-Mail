@@ -19,7 +19,7 @@ const useSelectedMessage = (): [
 
 		const setSelectedMessage = (messageID?: string) =>
 			navigate(
-				`/dashboard/${selectedBox?.id}${messageID ? `/${messageID}` : null}`
+				`/dashboard/${selectedBox?.id}${messageID ? `/${messageID}` : ""}`
 			);
 
 		if (messageID) {

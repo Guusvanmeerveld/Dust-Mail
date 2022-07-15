@@ -7,16 +7,16 @@ import { useState } from "preact/hooks";
 
 import MUIAvatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
-import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 
 import DarkModeIcon from "@mui/icons-material/DarkMode";
+import ComposeIcon from "@mui/icons-material/Edit";
 import LightModeIcon from "@mui/icons-material/LightMode";
-import Logout from "@mui/icons-material/Logout";
-import Settings from "@mui/icons-material/Settings";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -52,20 +52,29 @@ const UnMemoizedAvatar: FunctionalComponent = () => {
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
 
+	const setShowMessageComposer = useStore(
+		(state) => state.setShowMessageComposer
+	);
+
 	const logout = () => {
 		setLoggedIn();
 	};
 
 	const menuItems: { title: string; icon: JSX.Element; onClick: () => void }[] =
 		[
+			// {
+			// 	title: "New message",
+			// 	icon: <ComposeIcon fontSize="small" />,
+			// 	onClick: () => setShowMessageComposer(true)
+			// },
 			{
 				title: "Settings",
-				icon: <Settings fontSize="small" />,
+				icon: <SettingsIcon fontSize="small" />,
 				onClick: () => setShowSettings(true)
 			},
 			{
 				title: "Logout",
-				icon: <Logout fontSize="small" />,
+				icon: <LogoutIcon fontSize="small" />,
 				onClick: () => logout()
 			}
 		];
@@ -91,7 +100,12 @@ const UnMemoizedAvatar: FunctionalComponent = () => {
 			>
 				<DarkModeListItem />
 				{menuItems.map((item) => (
-					<MenuItem onClick={item.onClick}>
+					<MenuItem
+						onClick={() => {
+							setMenuAnchor(null);
+							item.onClick();
+						}}
+					>
 						<ListItemIcon>{item.icon}</ListItemIcon>
 						<ListItemText>{item.title}</ListItemText>
 					</MenuItem>

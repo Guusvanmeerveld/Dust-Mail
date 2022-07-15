@@ -33,6 +33,8 @@
 		"preact": "^10.5.15",
 		"react-query": "^3.39.1",
 		"react-router-dom": "6",
+		"slate": "^0.81.1",
+		"slate-react": "^0.81.0",
 		"use-local-storage-state": "^17.0.1",
 		"zustand": "^4.0.0-rc.1"
 	},

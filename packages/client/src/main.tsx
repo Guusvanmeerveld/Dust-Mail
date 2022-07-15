@@ -8,6 +8,6 @@ import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
 if ("navigator" in window && "registerProtocolHandler" in navigator)
-	navigator.registerProtocolHandler("mailto", "/dashboard/composer?to=%s");
+	navigator.registerProtocolHandler("mailto", "/dashboard/compose?uri=%s");
 
 render(<App />, document.getElementById("app")!);

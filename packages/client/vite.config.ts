@@ -41,7 +41,7 @@ export default defineConfig({
 				protocol_handlers: [
 					{
 						protocol: "mailto",
-						url: "/dashboard/composer?to=%s"
+						url: "/dashboard/compose?uri=%s"
 					}
 				]
 			}

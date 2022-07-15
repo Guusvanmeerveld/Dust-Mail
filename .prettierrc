@@ -9,6 +9,7 @@
 		"@rollup/.*",
 		"rollup-.*",
 		"^..?/.*",
+		"^slate.*",
 		"^react.*",
 		"^preact$",
 		"^preact.*",

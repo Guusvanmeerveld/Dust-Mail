@@ -26,6 +26,7 @@ const App: FunctionalComponent = () => {
 					<Routes>
 						<Route path="/" element={<Login />} />
 						<Route path="dashboard" element={<Dashboard />}>
+							<Route path="compose" element={<Dashboard />} />
 							<Route path=":boxID" element={<Dashboard />}>
 								<Route path=":messageID" element={<Dashboard />} />
 							</Route>

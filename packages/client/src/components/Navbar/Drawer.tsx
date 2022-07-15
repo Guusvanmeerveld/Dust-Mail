@@ -9,6 +9,8 @@ import IconButton from "@mui/material/IconButton";
 
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 
+import scrollbarStyles from "@styles/scrollbar";
+
 import useTheme from "@utils/hooks/useTheme";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
@@ -29,7 +31,7 @@ const UnMemoizedDrawer: FunctionalComponent<{
 	return (
 		<MUIDrawer
 			anchor="left"
-			sx={{ p: 2 }}
+			sx={{ ...scrollbarStyles(theme), p: 2 }}
 			open={drawerState}
 			onClose={toggleDrawer(false)}
 		>
