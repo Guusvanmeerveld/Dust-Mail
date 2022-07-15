@@ -52,8 +52,36 @@ jobs:
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:${{ steps.vars.outputs.tag }}-${{ matrix.type }}
+          tags: |
+            guusvanmeerveld/dust-mail:${{ steps.vars.outputs.tag }}-${{ matrix.type }}
+            guusvanmeerveld/dust-mail:${{ matrix.type }}
           context: packages/${{ matrix.type }}
+          platforms: linux/amd64,linux/arm64
+
+  docker-standalone:
+    name: Build Docker image for standalone
+    runs-on: ubuntu-latest
+
+    needs: create_release
+
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Get latest tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF:10}
+
+      - name: Build and push to Docker hub
+        uses: guusvanmeerveld/actions/docker@main
+        with:
+          username: guusvanmeerveld
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          tags: |
+            guusvanmeerveld/dust-mail:${{ steps.vars.outputs.tag }}-standalone
+            guusvanmeerveld/dust-mail:standalone
+            guusvanmeerveld/dust-mail:latest
+          context: .
           platforms: linux/amd64,linux/arm64
 
   deploy_to_heroku:
