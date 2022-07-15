@@ -48,7 +48,7 @@
 			}
 		},
 		"security": {
-			"csp": "default-src *"
+			"csp": "default-src *;"
 		},
 		"updater": {
 			"active": false,
