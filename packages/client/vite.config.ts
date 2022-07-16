@@ -61,6 +61,7 @@ export default defineConfig({
 		logOverride: { "this-is-undefined-in-esm": "silent" }
 	},
 	build: {
+		chunkSizeWarningLimit: 1000,
 		sourcemap: false,
 		outDir: "dist",
 		rollupOptions: {
