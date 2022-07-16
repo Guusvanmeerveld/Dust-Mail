@@ -7,7 +7,7 @@
 		"distDir": "../dist"
 	},
 	"package": {
-		"productName": "dust-mail-client",
+		"productName": "Dust-Mail",
 		"version": "0.1.4"
 	},
 	"tauri": {
@@ -47,9 +47,7 @@
 				"timestampUrl": ""
 			}
 		},
-		"security": {
-			"csp": "default-src *;"
-		},
+		"security": {},
 		"updater": {
 			"active": false,
 			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM3OTY1OTUxNjk3ODMxRApSV1FkZzVjV2xXVjVETmsyblI4b1p0eDVrRHRPUlkvb3d1VjZKMnFYME1nUXdyNVpiNlNwR09KVQo="
