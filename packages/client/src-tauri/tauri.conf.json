@@ -4,7 +4,8 @@
 		"beforeBuildCommand": "yarn build",
 		"beforeDevCommand": "yarn dev",
 		"devPath": "http://localhost:3000/",
-		"distDir": "../dist"
+		"distDir": "../dist",
+		"withGlobalTauri": true
 	},
 	"package": {
 		"productName": "Dust-Mail",
@@ -12,7 +13,15 @@
 	},
 	"tauri": {
 		"allowlist": {
-			"all": true
+			"all": false,
+			"window": {
+				"close": true,
+				"create": true
+			}
+		},
+		"systemTray": {
+			"iconPath": "icons/icon.png",
+			"iconAsTemplate": true
 		},
 		"bundle": {
 			"active": true,
@@ -55,6 +64,8 @@
 		"windows": [
 			{
 				"maximized": true,
+				"minHeight": 300,
+				"minWidth": 300,
 				"focus": false,
 				"resizable": true,
 				"title": "Dust-Mail"

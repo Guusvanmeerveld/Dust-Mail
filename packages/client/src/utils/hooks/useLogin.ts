@@ -32,23 +32,13 @@ const useFetchBoxes = () => {
 	};
 };
 
-const useLogin = () => {
-	const [, setUsername] = useLocalStorageState<string>("username");
-	const [, setAvatar] = useLocalStorageState<string>("avatar");
-	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
-
-	const [defaultBox] = useLocalStorageState("defaultBox", {
-		defaultValue: { id: "INBOX", name: "Inbox" }
-	});
-
+export const useMailLogin = () => {
 	const appVersion = useStore((state) => state.appVersion);
 	const setFetching = useStore((state) => state.setFetching);
 
-	const navigate = useNavigate();
+	const login = useLogin();
 
 	const fetcher = useFetch();
-
-	const fetchBoxes = useFetchBoxes();
 
 	return async (config: {
 		incoming: AdvancedLogin;
@@ -164,19 +154,7 @@ const useLogin = () => {
 
 		// Check if the request was successfull
 		if (status == 201) {
-			console.log("Successfully logged in, redirecting soon");
-
-			await fetchBoxes(data);
-
-			setUsername(config.incoming.username);
-
-			console.log("Creating avatar...");
-
-			setAvatar(createGravatarUrl(config.incoming.username));
-
-			setJwtToken(data);
-
-			navigate(`/dashboard/${defaultBox.id}`);
+			login(data, config.incoming.username);
 		}
 
 		setFetching(false);
@@ -185,6 +163,38 @@ const useLogin = () => {
 			message: `Unknown error with status code ${status} occured`,
 			type: Error.Misc
 		};
+	};
+};
+
+const useLogin = () => {
+	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
+
+	const [, setUsername] = useLocalStorageState<string>("username");
+	const [, setAvatar] = useLocalStorageState<string>("avatar");
+
+	const [defaultBox] = useLocalStorageState("defaultBox", {
+		defaultValue: { id: "INBOX", name: "Inbox" }
+	});
+	const navigate = useNavigate();
+
+	const fetchBoxes = useFetchBoxes();
+
+	return async (token: string, username?: string): Promise<void> => {
+		console.log("Successfully logged in, redirecting soon");
+
+		await fetchBoxes(token);
+
+		if (username) {
+			setUsername(username);
+
+			console.log("Creating avatar...");
+
+			setAvatar(createGravatarUrl(username));
+		}
+
+		setJwtToken(token);
+
+		navigate(`/dashboard/${defaultBox.id}`);
 	};
 };
 

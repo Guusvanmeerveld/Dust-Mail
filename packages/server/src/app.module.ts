@@ -6,10 +6,16 @@ import { LoggerMiddleware } from "./logger.middleware";
 import { MailModule } from "./mail/mail.module";
 import { AvatarModule } from "./avatar/avatar.module";
 import { SystemModule } from "./system/system.module";
+import { join } from "path";
+import { ServeStaticModule } from "@nestjs/serve-static";
 
 @Module({
 	imports: [
 		ConfigModule.forRoot({ cache: true, isGlobal: true }),
+		ServeStaticModule.forRoot({
+			rootPath: join(process.cwd(), "public", "scripts"),
+			serveRoot: "/scripts"
+		}),
 		AuthModule,
 		MailModule,
 		AvatarModule,

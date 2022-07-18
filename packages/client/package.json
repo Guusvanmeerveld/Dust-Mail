@@ -6,6 +6,13 @@
 	"repository": {
 		"url": "https://github.com/Guusvanmeerveld/Dust-Mail"
 	},
+	"homepage": "https://github.com/Guusvanmeerveld/Dust-Mail",
+	"author": {
+		"name": "Guus van Meerveld",
+		"url": "https://guusvanmeerveld.dev",
+		"email": "contact@guusvanmeerveld.dev"
+	},
+	"contributors": [],
 	"size-limit": [
 		{
 			"path": "dist/assets/*.js",
@@ -50,6 +57,7 @@
 		"size-limit": "^7.0.8",
 		"typescript": "^4.5.4",
 		"vite": "^2.9.9",
+		"vite-plugin-imagemin": "^0.6.1",
 		"vite-plugin-pwa": "^0.12.2",
 		"vite-tsconfig-paths": "^3.4.1",
 		"workbox-window": "^6.5.3"

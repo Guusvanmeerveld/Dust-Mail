@@ -40,48 +40,53 @@ export const getBox = async (
 export const getBoxMessages = async (
 	authorization: string,
 	boxID: string,
-	options: { start: number; end: number }
-): Promise<IncomingMessage[]> => {
-	const { data } = await axios.get<{ messages: { id: string }[] }>(
-		`https://gmail.googleapis.com/gmail/v1/users/me/messages`,
-		{
-			params: {
-				maxResults: options.end - options.start,
-				labelIds: boxID
-			},
-			headers: {
-				Authorization: authorization
-			}
+	options: { start: number; end: number; nextPageToken?: string }
+): Promise<[messages: IncomingMessage[], nextPageToken?: string]> => {
+	const { data } = await axios.get<{
+		messages: { id: string }[];
+		nextPageToken?: string;
+	}>(`https://gmail.googleapis.com/gmail/v1/users/me/messages`, {
+		params: {
+			maxResults: options.end + 1 - options.start,
+			labelIds: boxID,
+			pageToken: options.nextPageToken
+		},
+		headers: {
+			Authorization: authorization
 		}
-	);
+	});
 
-	return await Promise.all(
-		data.messages.map(async (message) => {
-			const { data } = await axios.get<{
-				internalDate: string;
-				id: string;
-				payload: { headers: [{ name: string; value: string }] };
-			}>(
-				`https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
-				{
-					headers: {
-						Authorization: authorization
+	return [
+		await Promise.all(
+			data.messages.map(async (message) => {
+				const { data } = await axios.get<{
+					internalDate: string;
+					id: string;
+					payload: { headers: [{ name: string; value: string }] };
+				}>(
+					`https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
+					{
+						headers: {
+							Authorization: authorization
+						}
 					}
-				}
-			);
+				);
 
-			const from = data.payload.headers
-				.filter((header) => header.name === "From")
-				.map((from) => ({ email: from.value, displayName: "" }));
+				const from = data.payload.headers
+					.filter((header) => header.name === "From")
+					.map((from) => ({ email: from?.value, displayName: "" }));
 
-			return {
-				date: new Date(parseInt(data.internalDate)),
-				subject: data.payload.headers.find((header) => header.name == "Subject")
-					.value,
-				from,
-				id: data.id,
-				flags: ["\\Seen"]
-			};
-		})
-	);
+				return {
+					date: new Date(parseInt(data.internalDate)),
+					subject: data.payload.headers.find(
+						(header) => header.name == "Subject"
+					)?.value,
+					from,
+					id: data.id,
+					flags: ["\\Seen"]
+				};
+			})
+		),
+		data.nextPageToken
+	];
 };

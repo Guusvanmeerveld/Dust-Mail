@@ -1,14 +1,16 @@
+import { WebviewWindow } from "@tauri-apps/api/window";
 import useLocalStorageState from "use-local-storage-state";
 
 import { useQuery } from "react-query";
 
 import { FunctionalComponent } from "preact";
 
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import Container from "@mui/material/Container";
 import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -16,36 +18,104 @@ import Typography from "@mui/material/Typography";
 import modalStyles from "@styles/modal";
 
 import useFetch from "@utils/hooks/useFetch";
+import useLogin from "@utils/hooks/useLogin";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
+
+const oauthWindowLabel = "oauth2-login";
+
+const useWebOAuth = () => {
+	const [webWindow, setWebWindow] = useState<Window>();
+
+	const [backendServer] = useLocalStorageState("customServerUrl");
+
+	const login = useLogin();
+
+	const onWebWindowMessage = async (e: MessageEvent<string>) => {
+		if (e.origin != backendServer) return;
+
+		webWindow?.close();
+
+		setWebWindow(undefined);
+
+		await login(e.data);
+	};
+
+	useEffect(() => {
+		window.addEventListener("message", onWebWindowMessage);
+
+		return () => window.removeEventListener("message", onWebWindowMessage);
+	}, [webWindow]);
+
+	return (oauthLink: string) => {
+		let webview = window.open(
+			oauthLink,
+			oauthWindowLabel,
+			"height=200,width=150"
+		);
+
+		if (webview === null) return;
+
+		setWebWindow(webview);
+	};
+};
+
+const useTauriOAuth = () => {
+	const [token, setToken] = useState<string>();
+
+	const login = useLogin();
+
+	return async (url: string) => {
+		const webview = new WebviewWindow(oauthWindowLabel, {
+			url,
+			focus: true,
+			minWidth: 200,
+			minHeight: 300
+		});
+
+		const unlisten = await webview.listen<string>("oauth_login_token", (e) => {
+			setToken(e.payload);
+		});
+
+		unlisten();
+
+		// await webview.close();
+
+		if (token) login(token);
+	};
+};
 
 const OtherLogins: FunctionalComponent = () => {
 	const theme = useTheme();
 
+	const [isOpen, setOpen] = useState(false);
+
 	const [backendServer] = useLocalStorageState("customServerUrl");
 
-	const [isOpen, setOpen] = useState(false);
+	const handleWebOAuth = useWebOAuth();
+	const handleTauriOAuth = useTauriOAuth();
 
 	const fetcher = useFetch();
 
 	const {
-		data: googleClientID,
-		isFetching: fetchingGoogleClientID,
-		error: googleClientIDError
-	} = useQuery(
-		["googleClientID", backendServer],
-		() => fetcher.get("/auth/gmail/token").then((res) => res.data),
+		data: oauthTokens,
+		isFetching,
+		error
+	} = useQuery<{ google?: string }>(
+		["oauthTokens", backendServer],
+		() => fetcher.get("/auth/oauth/tokens").then((res) => res.data),
 		{ enabled: isOpen, retry: 1 }
 	);
 
 	const googleOAuthLink = useMemo(() => {
-		if (!googleClientID) return;
+		if (!oauthTokens?.google) return;
 
 		const params: Record<string, string> = {
 			response_type: "code",
 			access_type: "offline",
 			approval_prompt: "force",
 			scope: ["https://mail.google.com/"].join(" "),
-			client_id: googleClientID,
+			client_id: oauthTokens.google,
 			redirect_uri: `${backendServer}/auth/gmail`
 		};
 
@@ -54,11 +124,7 @@ const OtherLogins: FunctionalComponent = () => {
 		)
 			.map(([key, value]) => `${key}=${value}`)
 			.join("&")}`;
-	}, [googleClientID, backendServer]);
-
-	const error = !!googleClientIDError;
-
-	const isFetching = !!fetchingGoogleClientID;
+	}, [oauthTokens?.google, backendServer]);
 
 	return (
 		<>
@@ -83,11 +149,25 @@ const OtherLogins: FunctionalComponent = () => {
 									{import.meta.env.VITE_APP_NAME} server.
 								</Typography>
 							)}
-							{googleOAuthLink && (
-								<Button href={googleOAuthLink} fullWidth variant="contained">
-									Login with Google
-								</Button>
-							)}
+							<Container>
+								<Stack direction="column" spacing={2}>
+									{googleOAuthLink && (
+										<Button
+											onClick={() => {
+												if ("__TAURI_METADATA__" in window)
+													handleTauriOAuth(googleOAuthLink);
+												else if ("open" in window)
+													handleWebOAuth(googleOAuthLink);
+											}}
+											fullWidth
+											variant="outlined"
+											startIcon={<img height={30} src="/logo/google.png" />}
+										>
+											Login with Google
+										</Button>
+									)}
+								</Stack>
+							</Container>
 						</Stack>
 					</Box>
 				</Modal>

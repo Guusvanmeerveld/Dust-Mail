@@ -17,7 +17,15 @@ tauri-build = { version = "1.0.3", features = [] }
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.0.3", features = ["api-all"] }
+tauri = { version = "1.0.3", features = ["system-tray", "window-close", "window-create"] }
+open = "3.0.2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+strip = true 
+opt-level = "s"
 
 [features]
 # by default Tauri runs in production mode

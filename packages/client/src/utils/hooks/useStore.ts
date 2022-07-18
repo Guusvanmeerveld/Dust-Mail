@@ -5,6 +5,8 @@ import { version as appVersion } from "../../../package.json";
 interface Store {
 	fetching: boolean;
 	setFetching: (fetching: boolean) => void;
+	showAbout: boolean;
+	setShowAbout: (show: boolean) => void;
 	showSettings: boolean;
 	setShowSettings: (show: boolean) => void;
 	toggleShowSettings: () => void;
@@ -16,6 +18,8 @@ interface Store {
 const createStore = create<Store>((set) => ({
 	fetching: false,
 	setFetching: (fetching: boolean) => set({ fetching }),
+	showAbout: false,
+	setShowAbout: (show) => set({ showAbout: show }),
 	showSettings: false,
 	setShowSettings: (show) => set({ showSettings: show }),
 	toggleShowSettings: () =>

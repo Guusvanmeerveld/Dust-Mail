@@ -3,6 +3,7 @@ import { port } from "./constants";
 import { AppLogger } from "./utils/logger";
 import { NestFactory } from "@nestjs/core";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 async function bootstrap() {
 	// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -13,7 +14,9 @@ async function bootstrap() {
 
 	app.enableCors();
 
-	app.use(helmet());
+	app.use(helmet({ crossOriginOpenerPolicy: { policy: "unsafe-none" } }));
+
+	app.use(cookieParser());
 
 	await app.listen(port);
 }

@@ -1,4 +1,4 @@
-export default interface Tokens {
+export default interface Config {
 	accessToken: string;
 	refreshToken: string;
 	expires: Date;

@@ -4,8 +4,9 @@ import Config from "@auth/interfaces/config.interface";
 
 import { State } from "@utils/interfaces/state.interface";
 import IncomingClient from "@utils/interfaces/client/incoming.interface";
+import { IncomingMessage } from "@utils/interfaces/message";
 
-import Tokens from "../interfaces/tokens";
+import GoogleConfig from "../interfaces/config";
 
 import connect from "./connect";
 import { getBox, getBoxes, getBoxMessages } from "./box";
@@ -17,7 +18,11 @@ export default class IncomingGoogleClient
 {
 	public state = State.NOT_READY;
 
-	private config: Tokens;
+	private config: GoogleConfig;
+
+	private messages: Map<string, IncomingMessage[]> = new Map();
+
+	private boxMessagesNextPageToken: Map<string, string | undefined> = new Map();
 
 	constructor({ google }: Config) {
 		super();
@@ -42,13 +47,32 @@ export default class IncomingGoogleClient
 	public getBox = (boxName: string) =>
 		this.refreshToken().then((authorization) => getBox(authorization, boxName));
 
-	public getBoxMessages = (
+	public getBoxMessages = async (
 		boxName: string,
 		options: { start: number; end: number }
-	) =>
-		this.refreshToken().then((authorization) =>
-			getBoxMessages(authorization, boxName, options)
+	) => {
+		const current = this.messages.get(boxName);
+		console.log(current);
+
+		if (current && current[options.start]) {
+			return current.slice(options.start, options.end + 1);
+		}
+
+		const [messages, nextPageToken] = await this.refreshToken().then(
+			(authorization) =>
+				getBoxMessages(authorization, boxName, {
+					...options,
+					nextPageToken: this.boxMessagesNextPageToken.get(boxName)
+				})
 		);
+
+		this.boxMessagesNextPageToken.set(boxName, nextPageToken);
+
+		if (current) this.messages.set(boxName, current.concat(messages));
+		else this.messages.set(boxName, messages);
+
+		return messages;
+	};
 
 	public getMessage = (id: string, boxName: string, markAsRead: boolean) =>
 		this.refreshToken().then((authorization) =>

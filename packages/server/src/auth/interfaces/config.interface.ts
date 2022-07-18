@@ -1,4 +1,4 @@
-import Tokens from "@utils/google/interfaces/tokens";
+import GoogleConfig from "@src/utils/google/interfaces/config";
 
 export default interface Config {
 	mail?: {
@@ -8,7 +8,7 @@ export default interface Config {
 		port: number;
 		security: SecurityType;
 	};
-	google?: Tokens;
+	google?: GoogleConfig;
 }
 
 export type PayloadType = "mail" | "google";

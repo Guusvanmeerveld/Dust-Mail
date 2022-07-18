@@ -1,4 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
 import create from "zustand";
 
 import { description } from "../../../package.json";
@@ -34,7 +33,7 @@ import AdvancedLogin, { SecurityType, ServerType } from "@interfaces/login";
 
 import modalStyles from "@styles/modal";
 
-import useLogin from "@utils/hooks/useLogin";
+import { useMailLogin } from "@utils/hooks/useLogin";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
@@ -208,7 +207,7 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 
 	const [isOpen, setOpen] = useState(false);
 
-	const login = useLogin();
+	const login = useMailLogin();
 
 	const setProperty = createLoginSettingsStore((state) => state.setProperty);
 
@@ -293,7 +292,7 @@ const LoginForm: FunctionalComponent = () => {
 
 	const [error, setError] = useState<APIError>();
 
-	const login = useLogin();
+	const login = useMailLogin();
 
 	useEffect(() => {
 		document.title = `${import.meta.env.VITE_APP_NAME} - Login`;

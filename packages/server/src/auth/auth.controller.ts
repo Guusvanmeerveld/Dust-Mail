@@ -1,4 +1,8 @@
+import { join } from "path";
+
 import mailDiscover from "mail-discover";
+
+import { Response } from "express";
 
 import {
 	BadRequestException,
@@ -8,6 +12,7 @@ import {
 	Post,
 	Query,
 	Req,
+	Res,
 	UseGuards
 } from "@nestjs/common";
 
@@ -151,26 +156,31 @@ export class AuthController {
 	@UseGuards(ThrottlerBehindProxyGuard)
 	async googleLogin(
 		@Req() req: Request,
-		@Query("code", StringValidationPipe) code: string
+		@Res() res: Response,
+		@Query("code", StringValidationPipe) code: string,
+		@Query("error", StringValidationPipe) error: string
 	) {
+		if (error) {
+			throw new BadRequestException(`OAuth login failed: ${error}`);
+		}
+
 		if (!code) throw new BadRequestException("`code` param required");
 
 		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
 
 		const tokens = await exchangeGoogleToken(code, redirect_uri);
 
-		return await this.authService
+		const token = await this.authService
 			.googleLogin({ google: tokens })
 			.catch(handleError);
+
+		res.cookie("jwtToken", token);
+
+		res.sendFile(join(process.cwd(), "public", "oauth.html"));
 	}
 
-	@Get("gmail/token")
-	async getGooglePublicToken() {
-		if (!googleClientInfo.id)
-			throw new BadRequestException(
-				"Google authentication is not supported on this server"
-			);
-
-		return googleClientInfo.id;
+	@Get("oauth/tokens")
+	async getOAuthTokens() {
+		return { google: googleClientInfo.id };
 	}
 }
