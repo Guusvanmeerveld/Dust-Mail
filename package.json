@@ -7,7 +7,7 @@
 	},
 	"scripts": {
 		"prettify": "prettier packages/client/src packages/autodiscover/src --write",
-		"commit": "cz",
+		"cm": "cz",
 		"postinstall": "husky install",
 		"version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
 		"postversion": "git push origin"
@@ -21,6 +21,11 @@
 		"prettier": "^2.6.2"
 	},
 	"dependencies": {},
+	"husky": {
+		"hooks": {
+			"prepare-commit-msg": "exec < /dev/tty && npx cz --hook || true"
+		}
+	},
 	"config": {
 		"commitizen": {
 			"path": "./node_modules/cz-conventional-changelog"
