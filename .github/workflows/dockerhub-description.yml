@@ -18,7 +18,7 @@ jobs:
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v2
         with:
-          username: Guusvanmeerveld
+          username: guusvanmeerveld
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: Guusvanmeerveld/Dust-Mail
+          repository: guusvanmeerveld/dust-mail
           short-description: ${{ github.event.repository.description }}
