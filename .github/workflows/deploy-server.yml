@@ -26,6 +26,10 @@ jobs:
         working-directory: ./packages/server
         run: yarn install
 
+      - name: Lint source
+        working-directory: ./packages/server
+        run: yarn run lint
+
       - name: Build server
         working-directory: ./packages/server
         run: yarn run build
