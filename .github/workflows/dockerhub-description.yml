@@ -1,0 +1,22 @@
+name: Update Docker Hub Description
+
+on:
+  push:
+    branches:
+      - disabled
+    paths:
+      - README.md
+      - .github/workflows/dockerhub-description.yml
+jobs:
+  dockerHubDescription:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v2
+        with:
+          username: Guusvanmeerveld
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: Guusvanmeerveld/Dust-Mail
+          short-description: ${{ github.event.repository.description }}
