@@ -11,7 +11,7 @@ WORKDIR /app
 
 COPY ./packages/client/package.json ./packages/client/yarn.lock ./packages/client/.yarnrc ./
 
-RUN apk add autoconf
+RUN apk add autoconf automake
 
 RUN yarn install --frozen-lockfile
 
