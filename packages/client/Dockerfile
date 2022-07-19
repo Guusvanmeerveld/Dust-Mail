@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc ./
 
-RUN apk add automake
+RUN apk add autoconf
 
 RUN yarn install --frozen-lockfile
 
