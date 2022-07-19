@@ -9,6 +9,8 @@ on:
       - .github/workflows/dockerhub-description.yml
 jobs:
   dockerHubDescription:
+    name: Update Docker Hub Description
+
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -17,6 +19,6 @@ jobs:
         uses: peter-evans/dockerhub-description@v2
         with:
           username: Guusvanmeerveld
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: Guusvanmeerveld/Dust-Mail
           short-description: ${{ github.event.repository.description }}
