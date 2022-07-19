@@ -11,7 +11,7 @@ import Layout from "@components/Layout";
 const NotFound: FunctionalComponent = () => {
 	const navigate = useNavigate();
 
-	const goBack = () => {
+	const goBack = (): void => {
 		navigate(-1);
 	};
 

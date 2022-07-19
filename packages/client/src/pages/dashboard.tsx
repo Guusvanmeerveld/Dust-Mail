@@ -2,6 +2,8 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { Navigate } from "react-router-dom";
 
+import { FunctionalComponent } from "preact";
+
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
@@ -16,7 +18,7 @@ import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
 
-const Dashboard = () => {
+const Dashboard: FunctionalComponent = () => {
 	const theme = useTheme();
 
 	const [session] = useLocalStorageState("jwtToken");
@@ -52,10 +54,10 @@ const Dashboard = () => {
 		originalWidth: number,
 		dragEvent: MouseEvent,
 		component: keyof typeof widthSetters
-	) => {
+	): void => {
 		const pageX = dragEvent.pageX;
 
-		const run = (moveEvent: MouseEvent) => {
+		const run = (moveEvent: MouseEvent): void => {
 			moveEvent.preventDefault();
 
 			const difference = pageX - moveEvent.pageX;
@@ -65,7 +67,7 @@ const Dashboard = () => {
 			if (newWidth >= 200 && newWidth <= 600) widthSetters[component](newWidth);
 		};
 
-		const unsub = () => {
+		const unsub = (): void => {
 			document.removeEventListener("mousemove", run);
 			document.removeEventListener("mouseup", unsub);
 		};

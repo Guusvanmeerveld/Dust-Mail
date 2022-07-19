@@ -1,12 +1,11 @@
-import useLocalStorageState from "use-local-storage-state";
-
+// import useLocalStorageState from "use-local-storage-state";
 import { FunctionalComponent } from "preact";
 
-import Autocomplete from "@mui/material/Autocomplete";
+// import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
+// import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import modalStyles from "@styles/modal";
@@ -39,12 +38,12 @@ const Settings: FunctionalComponent = () => {
 	const setShowSettings = useStore((state) => state.setShowSettings);
 	const showSettings = useStore((state) => state.showSettings);
 
-	const [boxes] = useLocalStorageState<string[]>("boxes");
+	// const [boxes] = useLocalStorageState<string[]>("boxes");
 
-	const [defaultBox, setDefaultBox] =
-		useLocalStorageState<string>("defaultBox");
+	// const [defaultBox, setDefaultBox] =
+	// 	useLocalStorageState<string>("defaultBox");
 
-	const handleClose = () => setShowSettings(false);
+	const handleClose = (): void => setShowSettings(false);
 
 	if (showSettings)
 		return (

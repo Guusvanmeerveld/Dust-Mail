@@ -26,6 +26,10 @@ jobs:
         working-directory: ./packages/client
         run: yarn install
 
+      - name: Lint source
+        working-directory: ./packages/client
+        run: yarn lint
+
       - name: Build client
         working-directory: ./packages/client
         run: yarn run build

@@ -1,10 +1,10 @@
 import useLocalStorageState from "use-local-storage-state";
 
 import { blue, orange } from "@mui/material/colors";
-import createTheme from "@mui/material/styles/createTheme";
+import createTheme, { Theme } from "@mui/material/styles/createTheme";
 import useMediaQuery from "@mui/material/useMediaQuery";
 
-const useTheme = () => {
+const useTheme = (): Theme => {
 	let darkMode = true;
 
 	darkMode = useMediaQuery("(prefers-color-scheme: dark)");

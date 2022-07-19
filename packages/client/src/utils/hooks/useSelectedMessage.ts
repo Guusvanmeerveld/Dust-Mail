@@ -17,7 +17,7 @@ const useSelectedMessage = (): [
 	return useMemo(() => {
 		const messageID = params.messageID;
 
-		const setSelectedMessage = (messageID?: string) =>
+		const setSelectedMessage = (messageID?: string): void =>
 			navigate(
 				`/dashboard/${selectedBox?.id}${messageID ? `/${messageID}` : ""}`
 			);
@@ -27,7 +27,7 @@ const useSelectedMessage = (): [
 		}
 
 		return [, setSelectedMessage];
-	}, [params.messageID]);
+	}, [params.messageID, selectedBox?.id]);
 };
 
 export default useSelectedMessage;

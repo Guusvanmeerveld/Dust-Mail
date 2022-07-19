@@ -12,14 +12,14 @@ import useStore from "@utils/hooks/useStore";
 /**
  * Request the users inboxes and puts them in local storage
  */
-const useFetchBoxes = () => {
+const useFetchBoxes = (): ((token: string) => Promise<void>) => {
 	const fetcher = useFetch();
 
 	const [, setBoxes] = useLocalStorageState<{ name: string; id: string }>(
 		"boxes"
 	);
 
-	return async (token: string): Promise<void> => {
+	return async (token): Promise<void> => {
 		console.log("Fetching inboxes...");
 
 		const boxes = await fetcher
@@ -32,7 +32,10 @@ const useFetchBoxes = () => {
 	};
 };
 
-export const useMailLogin = () => {
+export const useMailLogin = (): ((config: {
+	incoming: AdvancedLogin;
+	outgoing?: AdvancedLogin;
+}) => Promise<void>) => {
 	const appVersion = useStore((state) => state.appVersion);
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -40,10 +43,7 @@ export const useMailLogin = () => {
 
 	const fetcher = useFetch();
 
-	return async (config: {
-		incoming: AdvancedLogin;
-		outgoing?: AdvancedLogin;
-	}): Promise<string | void> => {
+	return async (config) => {
 		if (!config.incoming.username || !config.incoming.password) return;
 
 		// Show the fetching animation
@@ -166,7 +166,7 @@ export const useMailLogin = () => {
 	};
 };
 
-const useLogin = () => {
+const useLogin = (): ((token: string, username?: string) => Promise<void>) => {
 	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
 
 	const [, setUsername] = useLocalStorageState<string>("username");
@@ -179,7 +179,7 @@ const useLogin = () => {
 
 	const fetchBoxes = useFetchBoxes();
 
-	return async (token: string, username?: string): Promise<void> => {
+	return async (token, username) => {
 		console.log("Successfully logged in, redirecting soon");
 
 		await fetchBoxes(token);

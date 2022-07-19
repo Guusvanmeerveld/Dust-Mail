@@ -3,7 +3,7 @@ import { useEffect, useState } from "preact/hooks";
 const useWindowWidth = (): number => {
 	const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-	const setter = () => {
+	const setter = (): void => {
 		setWindowWidth(window.innerWidth);
 	};
 

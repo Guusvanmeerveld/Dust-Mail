@@ -1,7 +1,7 @@
 import { FunctionalComponent } from "preact";
 
 import { memo } from "preact/compat";
-import { MutableRef, useEffect } from "preact/hooks";
+import { MutableRef } from "preact/hooks";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -46,7 +46,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 
 	const [, setSelectedMessage] = useSelectedMessage();
 
-	let from = message.from
+	const from = message.from
 		.map((from) => from.displayName || from.email)
 		.join(", ");
 
@@ -55,19 +55,19 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 	if (unSeen === undefined)
 		unSeen = !message.flags.find((flag) => flag.match(/Seen/));
 
-	const handleClick = () => {
+	const handleClick = (): void => {
 		if (!message.id) return;
 		if (selectedMessage) setSelectedMessage();
 		else setSelectedMessage(message.id);
 	};
 
-	const handleContextMenu = (e: MouseEvent) => {
+	const handleContextMenu = (e: MouseEvent): void => {
 		e.preventDefault();
 
 		setRightClickMenuAnchor({ x: e.x, y: e.y, id: message.id });
 	};
 
-	const handleMenuClose = () => setRightClickMenuAnchor({ x: 0, y: 0 });
+	const handleMenuClose = (): void => setRightClickMenuAnchor({ x: 0, y: 0 });
 
 	return (
 		<>
@@ -83,6 +83,7 @@ const UnMemoizedMessageListItem: FunctionalComponent<{
 				>
 					{messageActions.map((action) => (
 						<MenuItem
+							key={action.name}
 							onClick={() => {
 								handleMenuClose();
 								action.handler();

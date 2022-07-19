@@ -1,8 +1,8 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 
-const useFetch = () => {
+const useFetch = (): AxiosInstance => {
 	const [customServerUrl] = useLocalStorageState<string>("customServerUrl", {
 		defaultValue: import.meta.env.VITE_DEFAULT_SERVER
 	});

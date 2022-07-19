@@ -158,6 +158,7 @@ const UnMemoizedServerPropertiesColumn: FunctionalComponent<{
 						id={`${type}-server-security`}
 						label="Security"
 						value={security ?? "NONE"}
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						onChange={(e: any) => setSetting(type)("security")(e.target?.value)}
 					>
 						<MenuItem value="NONE">None (Not secure)</MenuItem>
@@ -218,7 +219,7 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 
 	const missingFields = !incoming.username || !incoming.password;
 
-	const submit = async () => {
+	const submit = async (): Promise<void> => {
 		if (missingFields) {
 			setProperty("incoming")("error")({
 				message: "Missing required fields",
@@ -249,7 +250,7 @@ const AdvancedLoginMenu: FunctionalComponent = () => {
 					<br />
 					<Grid container spacing={2}>
 						{(["incoming", "outgoing"] as ServerType[]).map((type) => (
-							<ServerPropertiesColumn type={type} />
+							<ServerPropertiesColumn key={type} type={type} />
 						))}
 					</Grid>
 
@@ -303,7 +304,7 @@ const LoginForm: FunctionalComponent = () => {
 	/**
 	 * Runs when the form should be submitted to the server
 	 */
-	const onSubmit = async (e?: TargetedEvent) => {
+	const onSubmit = async (e?: TargetedEvent): Promise<void> => {
 		if (e) e.preventDefault();
 
 		// Reject the form if there any fields empty
@@ -318,7 +319,7 @@ const LoginForm: FunctionalComponent = () => {
 		await login({ incoming: { username, password } }).catch((e) => setError(e));
 	};
 
-	const handleKeyDown = async (e: KeyboardEvent) => {
+	const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
 		if (e.key == "Enter") {
 			await onSubmit();
 		}

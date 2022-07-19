@@ -19,19 +19,18 @@ import modalStyles from "@styles/modal";
 
 import useFetch from "@utils/hooks/useFetch";
 import useLogin from "@utils/hooks/useLogin";
-import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 const oauthWindowLabel = "oauth2-login";
 
-const useWebOAuth = () => {
+const useWebOAuth = (): ((oauthLink: string) => void) => {
 	const [webWindow, setWebWindow] = useState<Window>();
 
 	const [backendServer] = useLocalStorageState("customServerUrl");
 
 	const login = useLogin();
 
-	const onWebWindowMessage = async (e: MessageEvent<string>) => {
+	const onWebWindowMessage = async (e: MessageEvent<string>): Promise<void> => {
 		if (e.origin != backendServer) return;
 
 		webWindow?.close();
@@ -47,8 +46,8 @@ const useWebOAuth = () => {
 		return () => window.removeEventListener("message", onWebWindowMessage);
 	}, [webWindow]);
 
-	return (oauthLink: string) => {
-		let webview = window.open(
+	return (oauthLink) => {
+		const webview = window.open(
 			oauthLink,
 			oauthWindowLabel,
 			"height=200,width=150"
@@ -60,7 +59,7 @@ const useWebOAuth = () => {
 	};
 };
 
-const useTauriOAuth = () => {
+const useTauriOAuth = (): ((oauthLink: string) => void) => {
 	const [token, setToken] = useState<string>();
 
 	const login = useLogin();
@@ -161,7 +160,13 @@ const OtherLogins: FunctionalComponent = () => {
 											}}
 											fullWidth
 											variant="outlined"
-											startIcon={<img height={30} src="/logo/google.png" />}
+											startIcon={
+												<img
+													height={30}
+													src="/logo/google.png"
+													alt="google-logo"
+												/>
+											}
 										>
 											Login with Google
 										</Button>

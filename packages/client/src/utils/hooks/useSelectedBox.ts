@@ -18,7 +18,7 @@ const useSelectedBox = (): [Box | void, (boxID?: Box) => void] => {
 	return useMemo(() => {
 		const boxID = params.boxID;
 
-		const setSelectedBox = (box?: Box) =>
+		const setSelectedBox = (box?: Box): void =>
 			navigate(`/dashboard/${box?.id ?? ""}`);
 
 		if (boxID) {

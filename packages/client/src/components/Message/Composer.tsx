@@ -1,3 +1,4 @@
+/* eslint-disable */
 import useLocalStorageState from "use-local-storage-state";
 
 import { Descendant, createEditor, Transforms, Text, Editor } from "slate";
@@ -15,7 +16,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
-import { CustomElement, CustomText, CustomTextType } from "@interfaces/slate";
+import { CustomElement, CustomText } from "@interfaces/slate";
 
 import modalStyles from "@styles/modal";
 

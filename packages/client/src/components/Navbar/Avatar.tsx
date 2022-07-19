@@ -13,7 +13,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 
 import DarkModeIcon from "@mui/icons-material/DarkMode";
-import ComposeIcon from "@mui/icons-material/Edit";
+// import ComposeIcon from "@mui/icons-material/Edit";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -21,10 +21,10 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
-const DarkModeListItem = () => {
+const DarkModeListItem: FunctionalComponent = () => {
 	const [darkMode, setDarkMode] = useLocalStorageState<boolean>("darkMode");
 
-	const handleClick = () => {
+	const handleClick = (): void => {
 		setDarkMode(!darkMode);
 	};
 
@@ -52,11 +52,11 @@ const UnMemoizedAvatar: FunctionalComponent = () => {
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
 
-	const setShowMessageComposer = useStore(
-		(state) => state.setShowMessageComposer
-	);
+	// const setShowMessageComposer = useStore(
+	// 	(state) => state.setShowMessageComposer
+	// );
 
-	const logout = () => {
+	const logout = (): void => {
 		setLoggedIn();
 	};
 
@@ -101,6 +101,7 @@ const UnMemoizedAvatar: FunctionalComponent = () => {
 				<DarkModeListItem />
 				{menuItems.map((item) => (
 					<MenuItem
+						key={item.title}
 						onClick={() => {
 							setMenuAnchor(null);
 							item.onClick();

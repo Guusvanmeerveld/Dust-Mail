@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc ./
 
+RUN apk add automake
+
 RUN yarn install --frozen-lockfile
 
 ENV NODE_ENV "production"
@@ -13,7 +15,6 @@ ENV VITE_APP_NAME "Dust-Mail"
 COPY . .
 
 RUN yarn build
-
 
 FROM nginx:alpine AS runner
 

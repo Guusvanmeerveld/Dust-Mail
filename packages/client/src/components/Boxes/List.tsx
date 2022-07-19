@@ -18,7 +18,6 @@ import MailBox from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
-import useStore from "@utils/hooks/useStore";
 
 const UnMemoizedBoxesList: FunctionalComponent<{
 	switchBox?: (e: MouseEvent) => void;
@@ -46,6 +45,7 @@ const UnMemoizedBoxesList: FunctionalComponent<{
 				.map((box) => {
 					const found = findBoxInPrimaryBoxesList(box.name);
 
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					return { ...found!, id: box.id };
 				}),
 		[boxes]
@@ -60,15 +60,19 @@ const UnMemoizedBoxesList: FunctionalComponent<{
 		[boxes]
 	);
 
-	const switchBox = (e: MouseEvent, box: MailBox) => {
+	const switchBox = (e: MouseEvent, box: MailBox): void => {
 		setSelectedBox(box);
 
 		if (switchBoxCb) switchBoxCb(e);
 	};
 
-	const createFolderTree = (boxes: MailBox[]) =>
+	const createFolderTree = (boxes: MailBox[]): JSX.Element[] =>
 		boxes.map((box) => (
-			<ListItem selected={box.id == selectedBox?.id} disablePadding>
+			<ListItem
+				key={box.id}
+				selected={box.id == selectedBox?.id}
+				disablePadding
+			>
 				<ListItemButton onClick={(e: MouseEvent) => switchBox(e, box)}>
 					<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
 					<ListItemText>

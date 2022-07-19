@@ -107,7 +107,7 @@ const About: FunctionalComponent = () => {
 
 				<List subheader={<ListSubheader>List of contributors</ListSubheader>}>
 					{[author, ...contributors].map((contributor) => (
-						<Contributor {...contributor} />
+						<Contributor key={contributor.name} {...contributor} />
 					))}
 				</List>
 			</Box>

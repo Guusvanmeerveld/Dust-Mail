@@ -12,7 +12,6 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -52,12 +51,14 @@ const AddressList: FunctionalComponent<{
 			<Typography>{prefixText}</Typography>
 			{data &&
 				data.map((address) => {
+					// eslint-disable-next-line react-hooks/rules-of-hooks
 					const { data: avatar } = useAvatar(address.email);
 
 					const name = address.displayName || address.email;
 
 					return (
 						<Chip
+							key={address.email}
 							avatar={
 								<Avatar
 									sx={{
@@ -97,6 +98,7 @@ const MessageDisplay: FunctionalComponent<{ content: string }> = ({
 
 	return (
 		<iframe
+			title="message-iframe"
 			style={{
 				width: "100%",
 				height: "100%",
@@ -116,13 +118,14 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 	const [selectedMessage, setSelectedMessage] = useSelectedMessage();
 	const [selectedBox] = useSelectedBox();
 
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 	const messageActions = useMessageActions(selectedMessage!);
 
 	const setFetching = useStore((state) => state.setFetching);
 
-	const setShowMessageComposer = useStore(
-		(state) => state.setShowMessageComposer
-	);
+	// const setShowMessageComposer = useStore(
+	// 	(state) => state.setShowMessageComposer
+	// );
 
 	const [darkMode, setDarkMode] = useLocalStorageState<boolean>(
 		"messageDarkMode",
@@ -135,7 +138,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 		useState<null | Element>(null);
 	const messageActionsAnchorOpen = Boolean(messageActionsAnchor);
 
-	const { data, error, isFetching } = useQuery<FullMessage>(
+	const { data, isFetching } = useQuery<FullMessage>(
 		["message", selectedMessage, selectedBox?.id],
 		() =>
 			fetcher
@@ -229,6 +232,7 @@ const UnMemoizedMessageOverview: FunctionalComponent = () => {
 								>
 									{messageActions.map((action) => (
 										<MenuItem
+											key={action.name}
 											onClick={() => {
 												setMessageActionsAnchor(null);
 												action.handler();

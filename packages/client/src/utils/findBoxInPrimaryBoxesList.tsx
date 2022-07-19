@@ -16,7 +16,15 @@ const DEFAULT_PRIMARY_BOXES: { name: string; icon: JSX.Element }[] = [
 	{ name: "Junk", icon: <ChangeCircle /> }
 ];
 
-const findBoxInPrimaryBoxesList = (name: string) =>
+const findBoxInPrimaryBoxesList = (
+	name: string
+):
+	| {
+			name: string;
+			icon: JSX.Element;
+			// eslint-disable-next-line no-mixed-spaces-and-tabs
+	  }
+	| undefined =>
 	DEFAULT_PRIMARY_BOXES.find(
 		(box) => box.name.toLowerCase() == name.toLowerCase()
 	);

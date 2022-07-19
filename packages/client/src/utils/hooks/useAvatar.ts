@@ -1,7 +1,6 @@
 import { useQuery } from "react-query";
 
-import { AxiosError } from "axios";
-
+// import { AxiosError } from "axios";
 import useFetch from "@utils/hooks/useFetch";
 
 function useAvatar(email: null): void;
@@ -22,12 +21,11 @@ function useAvatar(
 		() =>
 			fetcher("/avatar", {
 				params: { address: email }
-			})
-				.then((res) => res.data)
-				.catch((error: AxiosError) => {
-					if (error.response?.status == 404) {
-					}
-				}),
+			}).then((res) => res.data),
+		// .catch((error: AxiosError) => {
+		// 	if (error.response?.status == 404) {
+		// 	}
+		// }),
 		{ retry: false, enabled: email !== null }
 	);
 

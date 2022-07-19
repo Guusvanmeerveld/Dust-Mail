@@ -10,6 +10,7 @@ import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 const MessageActionButton: FunctionalComponent = () => {
 	const [selectedMessage] = useSelectedMessage();
 
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 	const actions = useMessageActions(selectedMessage!);
 
 	if (selectedMessage)

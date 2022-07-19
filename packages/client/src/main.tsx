@@ -10,4 +10,4 @@ import "@fontsource/roboto/700.css";
 if ("navigator" in window && "registerProtocolHandler" in navigator)
 	navigator.registerProtocolHandler("mailto", "/dashboard/compose?uri=%s");
 
-render(<App />, document.getElementById("app")!);
+render(<App />, document.getElementById("app") as HTMLElement);
