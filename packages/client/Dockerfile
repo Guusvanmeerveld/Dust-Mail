@@ -4,8 +4,6 @@ WORKDIR /app
 
 COPY package.json yarn.lock .yarnrc ./
 
-RUN apk add autoconf automake zlib gcc
-
 RUN yarn install --frozen-lockfile
 
 ENV NODE_ENV "production"

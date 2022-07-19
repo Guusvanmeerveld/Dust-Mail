@@ -1,7 +1,6 @@
 import preact from "@preact/preset-vite";
 import { resolve } from "path";
 import { defineConfig } from "vite";
-import viteImagemin from "vite-plugin-imagemin";
 import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -10,29 +9,6 @@ import alias from "@rollup/plugin-alias";
 // https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [
-		viteImagemin({
-			optipng: {
-				optimizationLevel: 7
-			},
-			mozjpeg: {
-				quality: 20
-			},
-			pngquant: {
-				quality: [0.8, 0.9],
-				speed: 4
-			},
-			svgo: {
-				plugins: [
-					{
-						name: "removeViewBox"
-					},
-					{
-						name: "removeEmptyAttrs",
-						active: false
-					}
-				]
-			}
-		}),
 		VitePWA({
 			includeAssets: ["favicon.ico", "robots.txt", "apple-touch-icon.png"],
 			registerType: "autoUpdate",

@@ -1,15 +1,29 @@
 {
 	"private": true,
 	"license": "MIT",
+	"version": "0.1.4",
 	"author": {
 		"name": "Guus van Meerveld"
 	},
 	"scripts": {
-		"prettify": "prettier packages/client/src packages/autodiscover/src --write"
+		"prettify": "prettier packages/client/src packages/autodiscover/src --write",
+		"commit": "cz",
+		"postinstall": "husky install",
+		"version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+		"postversion": "git push origin"
 	},
 	"devDependencies": {
 		"@trivago/prettier-plugin-sort-imports": "^3.2.0",
+		"commitizen": "^4.2.5",
+		"conventional-changelog-cli": "^2.2.2",
+		"cz-conventional-changelog": "3.3.0",
+		"husky": "^8.0.1",
 		"prettier": "^2.6.2"
 	},
-	"dependencies": {}
+	"dependencies": {},
+	"config": {
+		"commitizen": {
+			"path": "./node_modules/cz-conventional-changelog"
+		}
+	}
 }

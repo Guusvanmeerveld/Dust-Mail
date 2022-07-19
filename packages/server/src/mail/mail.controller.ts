@@ -22,7 +22,7 @@ import { Address } from "@utils/interfaces/message";
 
 import { AddressValidationPipe } from "./pipes/address.pipe";
 
-import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
+// import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
 @Controller("mail")
 export class MailController {

@@ -114,7 +114,7 @@ export class AuthService {
 		const outgoingIdentifier = createIdentifier(config.outgoing);
 
 		let incomingClient = this.incomingClients.get(incomingIdentifier);
-		let outgoingClient = this.outgoingClients.get(outgoingIdentifier);
+		const outgoingClient = this.outgoingClients.get(outgoingIdentifier);
 
 		if (!incomingClient)
 			incomingClient = await this.createIncomingClient(

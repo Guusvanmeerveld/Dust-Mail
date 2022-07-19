@@ -7,7 +7,7 @@ on:
     paths:
       - .github/workflows/build-release.yml
     tags:
-      - "[0-9]+.*"
+      - "v[0-9]+.*"
 
 jobs:
   create_release:
