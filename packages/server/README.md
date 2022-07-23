@@ -1,12 +1,15 @@
-# Mail-Server
+<div align="center">
+    <img height="128" src="https://raw.githubusercontent.com/Guusvanmeerveld/Dust-Mail/main/icons/logo-192x192.png" />
+</div>
 
-ENV's:
+<h1 align="center">@dust-mail/server</h1>
 
-- MAIL_FETCH_LIMIT: Max amount of emails the client is able to fetch at once. Default: 25
-- JWT_SECRET: The JSON webtoken secret
-- JWT_EXPIRES: The expiry time in seconds for the JSON webtoken. Default: 600
-- ALLOWED_DOMAINS: The domains for the imap servers that the server can fetch, seperated by comma's.
-- PROXY: A boolean value to signify if the server is behind a proxy. Default: false
-- PORT: The port the application should run on. Default: 3000
-- GOOGLE_CLIENT_ID: The client id for the oauth2 consent screen. Only required for Google login support
-- GOOGLE_CLIENT_SECRET: The client secret for the oauth2 consent screen. Only required for Google login support
+<div align="center">
+    <img src="https://github.com/Guusvanmeerveld/Dust-Mail/actions/workflows/deploy-server.yml/badge.svg" alt="Deploy Client" />
+    <img alt="Docker Image Size (tag)" src="https://img.shields.io/docker/image-size/guusvanmeerveld/dust-mail/git-server?label=Server%20image%20size" />
+    
+</div>
+
+<p align="center">This the Dust mail backend server, built using NestJS.</p>
+
+<p align="center">For more information about setting up a server, contributing or implementing the server api, please check the <a href="https://github.com/Guusvanmeerveld/Dust-Mail/wiki/Server">wiki</a>.</p>
