@@ -1,12 +1,15 @@
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { PassportStrategy } from "@nestjs/passport";
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 
 import { jwtConstants } from "./constants";
 
 import { AuthService } from "./auth.service";
 
-import { Payload } from "./interfaces/payload.interface";
+import {
+	AccessTokenPayload,
+	RefreshTokenPayload
+} from "./interfaces/payload.interface";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,9 +21,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		});
 	}
 
-	async validate(payload: Payload) {
+	async validate(payload: AccessTokenPayload | RefreshTokenPayload) {
+		if (payload.accessToken)
+			throw new UnauthorizedException(
+				"Can't use refresh token as access token"
+			);
+
 		const [incomingClient, outgoingClient] =
-			await this.authService.findConnection(payload.sub);
+			await this.authService.findConnection(payload.body);
 
 		return {
 			incomingClient,

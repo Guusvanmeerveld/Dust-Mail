@@ -9,11 +9,11 @@ import {
 	ContentType,
 	FullIncomingMessage
 } from "@utils/interfaces/message";
-import parseMessage, { createAddress } from "@utils/imap/utils/parseMessage";
+import parseMessage, { createAddress } from "@mail/imap/utils/parseMessage";
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 
-import IncomingClient from "@utils/interfaces/client/incoming.interface";
-import { State } from "@utils/interfaces/state.interface";
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import { State } from "@mail/interfaces/state.interface";
 
 import { getBox, closeBox, getBoxes } from "./box";
 import connect from "./connect";

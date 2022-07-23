@@ -1,19 +1,22 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import IncomingClient from "@utils/interfaces/client/incoming.interface";
-import OutgoingClient from "@utils/interfaces/client/outgoing.interface";
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
-import ImapClient from "@utils/imap";
-import SmtpClient from "@utils/smtp";
-import IncomingGoogleClient from "@utils/google/incoming";
+import ImapClient from "@mail/imap";
+import SmtpClient from "@mail/smtp";
+
+import IncomingGoogleClient from "@mail/google/incoming";
 
 import { createIdentifier } from "@utils/createIdentifier";
 
-import { Payload } from "./interfaces/payload.interface";
 import Config from "./interfaces/config.interface";
 
 import { jwtConstants } from "./constants";
+
+type TokenType = "access_token" | "refresh_token";
+type TokenResponse = { type: TokenType; body: string; expires: Date };
 
 @Injectable()
 export class AuthService {
@@ -22,15 +25,45 @@ export class AuthService {
 	private readonly incomingClients: Map<string, IncomingClient> = new Map();
 	private readonly outgoingClients: Map<string, OutgoingClient> = new Map();
 
+	public createTokenResponse(type: TokenType, token: string): TokenResponse {
+		let expiry: number;
+
+		if (type == "access_token") expiry = jwtConstants.accessTokenExpires;
+		else if (type == "refresh_token") expiry = jwtConstants.refreshTokenExpires;
+
+		return {
+			type,
+			body: token,
+			expires: new Date(Date.now() + expiry * 1000)
+		};
+	}
+
+	public refreshTokens(config: {
+		incoming: Config;
+		outgoing: Config;
+	}): TokenResponse[] {
+		const accessToken = this.jwtService.sign(
+			{ accessToken: false, body: config },
+			{
+				expiresIn: jwtConstants.accessTokenExpires
+			}
+		);
+
+		const refreshToken = this.jwtService.sign({
+			accessToken,
+			body: config
+		});
+
+		return [
+			this.createTokenResponse("access_token", accessToken),
+			this.createTokenResponse("refresh_token", refreshToken)
+		];
+	}
+
 	public async login(config: {
 		incoming: Config;
 		outgoing: Config;
-	}): Promise<string> {
-		const payload: Payload = {
-			username: "mail",
-			sub: config
-		};
-
+	}): Promise<TokenResponse[]> {
 		await this.createIncomingClient(
 			createIdentifier(config.incoming),
 			config.incoming
@@ -41,24 +74,49 @@ export class AuthService {
 			config.outgoing
 		);
 
-		const access_token = this.jwtService.sign(payload);
+		const accessToken = this.jwtService.sign(
+			{ accessToken: false, body: config },
+			{
+				expiresIn: jwtConstants.accessTokenExpires
+			}
+		);
 
-		return access_token;
+		const refreshToken = this.jwtService.sign({
+			accessToken,
+			body: config
+		});
+
+		return [
+			this.createTokenResponse("access_token", accessToken),
+			this.createTokenResponse("refresh_token", refreshToken)
+		];
 	}
 
-	public async googleLogin(config: Config): Promise<string> {
-		const payload: Payload = {
-			username: "google",
-			sub: { incoming: config, outgoing: config }
-		};
+	public async googleLogin(config: Config): Promise<TokenResponse[]> {
+		const identifier = createIdentifier(config);
 
-		await this.createIncomingClient(createIdentifier(config), config);
+		await this.createIncomingClient(identifier, config);
 
-		// await this.createOutgoingClient(createIdentifier(config), config);
+		// await this.createOutgoingClient(identifier, config);
 
-		const access_token = this.jwtService.sign(payload);
+		const payloadBody = { incoming: config, outgoing: config };
 
-		return access_token;
+		const accessToken = this.jwtService.sign(
+			{ accessToken: false, body: payloadBody },
+			{
+				expiresIn: jwtConstants.accessTokenExpires
+			}
+		);
+
+		const refreshToken = this.jwtService.sign({
+			accessToken,
+			body: payloadBody
+		});
+
+		return [
+			this.createTokenResponse("access_token", accessToken),
+			this.createTokenResponse("refresh_token", refreshToken)
+		];
 	}
 
 	private async createIncomingClient(
@@ -78,7 +136,7 @@ export class AuthService {
 
 		setTimeout(
 			() => this.incomingClients.delete(identifier),
-			jwtConstants.expires * 1000
+			jwtConstants.accessTokenExpires * 1000
 		);
 
 		return client;
@@ -100,7 +158,7 @@ export class AuthService {
 
 		setTimeout(
 			() => this.outgoingClients.delete(identifier),
-			jwtConstants.expires * 1000
+			jwtConstants.accessTokenExpires * 1000
 		);
 
 		return client;

@@ -2,8 +2,8 @@ import EventEmitter from "events";
 
 import Config from "@auth/interfaces/config.interface";
 
-import { State } from "@utils/interfaces/state.interface";
-import IncomingClient from "@utils/interfaces/client/incoming.interface";
+import { State } from "@mail/interfaces/state.interface";
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import { IncomingMessage } from "@utils/interfaces/message";
 
 import GoogleConfig from "../interfaces/config";
@@ -52,7 +52,7 @@ export default class IncomingGoogleClient
 		options: { start: number; end: number }
 	) => {
 		const current = this.messages.get(boxName);
-		console.log(current);
+		// console.log(current);
 
 		if (current && current[options.start]) {
 			return current.slice(options.start, options.end + 1);

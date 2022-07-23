@@ -3,7 +3,9 @@ export const jwtConstants = {
 	/**
 	 * Expiry time in seconds
 	 */
-	expires: parseInt(process.env.JWT_EXPIRES) || 3600
+	refreshTokenExpires:
+		parseInt(process.env.SESSION_EXPIRES) || 60 * 60 * 24 * 7,
+	accessTokenExpires: 60 * 15
 };
 
 export const allowedDomains = process.env.ALLOWED_DOMAINS;

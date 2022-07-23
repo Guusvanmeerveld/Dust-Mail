@@ -1,4 +1,4 @@
-import GoogleConfig from "@src/utils/google/interfaces/config";
+import GoogleConfig from "@mail/google/interfaces/config";
 
 export default interface Config {
 	mail?: {
@@ -10,7 +10,5 @@ export default interface Config {
 	};
 	google?: GoogleConfig;
 }
-
-export type PayloadType = "mail" | "google";
 
 export type SecurityType = "NONE" | "STARTTLS" | "TLS";

@@ -32,7 +32,9 @@
 			"type": "node-terminal",
 			"request": "launch",
 			"env": {
-				"PORT": "4000"
+				"PORT": "4000",
+				"GOOGLE_CLIENT_ID": "1005771905136-j5775tafg4buo3a2sjca1rqpc2mo7c2j.apps.googleusercontent.com",
+				"GOOGLE_CLIENT_SECRET": "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"
 			},
 			"command": "yarn run start:debug",
 			"cwd": "${workspaceFolder}/packages/server"

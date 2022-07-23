@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import Error from "@interfaces/error";
 import AdvancedLogin from "@interfaces/login";
+import { LocalToken, LoginResponse } from "@interfaces/responses";
 
 import createGravatarUrl from "@utils/createGravatarUrl";
 import useFetch from "@utils/hooks/useFetch";
@@ -154,7 +155,10 @@ export const useMailLogin = (): ((config: {
 
 		// Check if the request was successfull
 		if (status == 201) {
-			login(data, config.incoming.username);
+			login(data, {
+				username: config.incoming.username,
+				redirectToDashboard: true
+			});
 		}
 
 		setFetching(false);
@@ -166,8 +170,15 @@ export const useMailLogin = (): ((config: {
 	};
 };
 
-const useLogin = (): ((token: string, username?: string) => Promise<void>) => {
-	const [, setJwtToken] = useLocalStorageState<string>("jwtToken");
+const useLogin = (): ((
+	tokens: LoginResponse,
+	options?: {
+		username?: string;
+		redirectToDashboard?: boolean;
+	}
+) => Promise<void>) => {
+	const [, setAccessToken] = useLocalStorageState<LocalToken>("accessToken");
+	const [, setRefreshToken] = useLocalStorageState<LocalToken>("refreshToken");
 
 	const [, setUsername] = useLocalStorageState<string>("username");
 	const [, setAvatar] = useLocalStorageState<string>("avatar");
@@ -175,26 +186,36 @@ const useLogin = (): ((token: string, username?: string) => Promise<void>) => {
 	const [defaultBox] = useLocalStorageState("defaultBox", {
 		defaultValue: { id: "INBOX", name: "Inbox" }
 	});
+
 	const navigate = useNavigate();
 
 	const fetchBoxes = useFetchBoxes();
 
-	return async (token, username) => {
-		console.log("Successfully logged in, redirecting soon");
+	return async (tokens, options) => {
+		const accessToken = tokens.find(({ type }) => type == "access_token");
 
-		await fetchBoxes(token);
+		if (!accessToken) return;
 
-		if (username) {
-			setUsername(username);
+		const refreshToken = tokens.find(({ type }) => type == "refresh_token");
+
+		if (!refreshToken) return;
+
+		console.log("Successfully authorized with backend server");
+
+		await fetchBoxes(accessToken.body);
+
+		if (options?.username) {
+			setUsername(options.username);
 
 			console.log("Creating avatar...");
 
-			setAvatar(createGravatarUrl(username));
+			setAvatar(createGravatarUrl(options.username));
 		}
 
-		setJwtToken(token);
+		setAccessToken(accessToken);
+		setRefreshToken(refreshToken);
 
-		navigate(`/dashboard/${defaultBox.id}`);
+		if (options?.redirectToDashboard) navigate(`/dashboard/${defaultBox.id}`);
 	};
 };
 

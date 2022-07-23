@@ -2,7 +2,7 @@ import EventEmitter from "events";
 
 import { OutgoingMessage } from "@utils/interfaces/message";
 
-import { State } from "../state.interface";
+import { State } from "@mail/interfaces/state.interface";
 
 export default interface OutgoingClient extends EventEmitter {
 	state: State;

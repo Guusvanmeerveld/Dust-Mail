@@ -9,7 +9,7 @@ import { clientInfo } from "./constants";
 const exchangeToken = async (
 	code: string,
 	redirect_uri: string
-): Promise<Config> => {
+): Promise<Omit<Config, "userID">> => {
 	if (!clientInfo.id || !clientInfo.secret)
 		throw new BadRequestException(
 			"Google authentication is not supported on this server"

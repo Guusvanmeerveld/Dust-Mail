@@ -33,6 +33,7 @@
 		"fs-extra": "^10.1.0",
 		"helmet": "^5.1.0",
 		"imap": "^0.8.19",
+		"ioredis": "^5.2.1",
 		"kleur": "^4.1.4",
 		"mail-discover": "^0.1.2",
 		"mailparser": "^3.5.0",

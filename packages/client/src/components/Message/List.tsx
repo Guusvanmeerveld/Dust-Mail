@@ -22,9 +22,13 @@ import useStore from "@utils/hooks/useStore";
 
 import Loading from "@components/Loading";
 import MessageListItem from "@components/Message/ListItem";
+import useLocalStorageState from "use-local-storage-state";
+import { LocalToken } from "@interfaces/responses";
 
 const UnMemoizedMessageList: FunctionalComponent = () => {
 	const fetcher = useFetch();
+
+	const [accessToken] = useLocalStorageState<LocalToken>("accessToken");
 
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -43,7 +47,7 @@ const UnMemoizedMessageList: FunctionalComponent = () => {
 		isFetchingNextPage,
 		refetch
 	} = useInfiniteQuery<Message[], AxiosError<{ code: Error; message: string }>>(
-		["box", selectedBox?.id],
+		["box", selectedBox?.id, accessToken?.body],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];

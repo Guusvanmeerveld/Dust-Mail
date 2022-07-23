@@ -5,7 +5,7 @@ import {
 	FullIncomingMessage
 } from "@utils/interfaces/message";
 
-import { State } from "@utils/interfaces/state.interface";
+import { State } from "@mail/interfaces/state.interface";
 
 export interface Box {
 	totalMessages: number;

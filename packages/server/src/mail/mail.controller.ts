@@ -11,7 +11,7 @@ import {
 	UseGuards
 } from "@nestjs/common";
 
-import { JwtAuthGuard } from "@auth/jwt-auth.guard";
+import { AccessTokenAuthGuard } from "@src/auth/jwt-auth.guard";
 
 import { mailDefaultLimit, mailFetchLimit } from "./constants";
 
@@ -28,7 +28,7 @@ import { AddressValidationPipe } from "./pipes/address.pipe";
 export class MailController {
 	@Get("boxes")
 	// @UseGuards(ThrottlerBehindProxyGuard)
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(AccessTokenAuthGuard)
 	async fetchBoxes(@Req() req: Request) {
 		const client = req.user.incomingClient;
 
@@ -37,7 +37,7 @@ export class MailController {
 
 	@Get("box")
 	// @UseGuards(ThrottlerBehindProxyGuard)
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(AccessTokenAuthGuard)
 	async fetchBox(
 		@Req() req: Request,
 		@Query("limit", ParseIntPipe) limit: number,
@@ -77,7 +77,7 @@ export class MailController {
 
 	@Get("message")
 	// @UseGuards(ThrottlerBehindProxyGuard)
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(AccessTokenAuthGuard)
 	async fetchMessage(
 		@Req() req: Request,
 		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
@@ -99,7 +99,7 @@ export class MailController {
 
 	@Post("send")
 	// @UseGuards(ThrottlerBehindProxyGuard)
-	@UseGuards(JwtAuthGuard)
+	@UseGuards(AccessTokenAuthGuard)
 	async sendMessage(
 		@Req() req: Request,
 		@Body("from", AddressValidationPipe) from: Address,

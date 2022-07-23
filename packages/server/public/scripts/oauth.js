@@ -19,13 +19,13 @@ const getCookie = (cname) => {
 
 	return "";
 };
-
-const token = getCookie("jwtToken");
+const accessToken = JSON.parse(getCookie("accessToken").replace("j:", ""));
+const refreshToken = JSON.parse(getCookie("refreshToken").replace("j:", ""));
 
 if ("__TAURI__" in window) {
 	window.__TAURI__.tauri.invoke("oauth_login_token", token);
 } else if ("opener" in window && "postMessage" in window.opener) {
-	window.opener.postMessage(token, "*");
+	window.opener.postMessage(JSON.stringify([accessToken, refreshToken]), "*");
 
 	document.getElementById("text").innerHTML =
 		"Login complete, you can now close this window.";

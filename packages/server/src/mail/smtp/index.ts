@@ -4,9 +4,9 @@ import nodemailer, { Transporter } from "nodemailer";
 
 import Config from "@auth/interfaces/config.interface";
 
-import OutgoingClient from "@utils/interfaces/client/outgoing.interface";
+import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
-import { State } from "@utils/interfaces/state.interface";
+import { State } from "@mail/interfaces/state.interface";
 import { OutgoingMessage } from "@utils/interfaces/message";
 
 import connect from "./connect";

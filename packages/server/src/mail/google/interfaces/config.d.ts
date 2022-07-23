@@ -3,4 +3,5 @@ export default interface Config {
 	refreshToken: string;
 	expires: Date;
 	tokenType: string;
+	userID: string;
 }

@@ -1,6 +1,6 @@
 import { IncomingMessage } from "@utils/interfaces/message";
 
-import { Box } from "@utils/interfaces/client/incoming.interface";
+import { Box } from "@mail/interfaces/client/incoming.interface";
 
 import GoogleBox from "../interfaces/box";
 

@@ -9,5 +9,6 @@ export function createIdentifier(config: Config): string {
 			"sha256"
 		);
 
-	if (config.google) return createHash(config.google.accessToken, "sha256");
+	if (config.google)
+		return createHash(`google-oauth-${config.google.userID}`, "sha256");
 }

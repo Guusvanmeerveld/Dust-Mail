@@ -2,7 +2,10 @@ import { join } from "path";
 
 import mailDiscover from "mail-discover";
 
-import { Response } from "express";
+import { Request as ExpressRequest, Response } from "express";
+import axios from "axios";
+
+import { JwtService } from "@nestjs/jwt";
 
 import {
 	BadRequestException,
@@ -13,10 +16,9 @@ import {
 	Query,
 	Req,
 	Res,
+	UnauthorizedException,
 	UseGuards
 } from "@nestjs/common";
-
-import { AuthService } from "./auth.service";
 
 import { allowedDomains } from "./constants";
 
@@ -24,26 +26,33 @@ import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
 import handleError from "@utils/handleError";
 
-import exchangeGoogleToken from "@utils/google/exchangeToken";
-import { clientInfo as googleClientInfo } from "@utils/google/constants";
+import exchangeGoogleToken from "@mail/google/exchangeToken";
+import { clientInfo as googleClientInfo } from "@mail/google/constants";
 
 import UserError from "@utils/interfaces/error.interface";
+
 import { Request } from "./interfaces/request.interface";
+import { RefreshTokenPayload } from "./interfaces/payload.interface";
 import { SecurityType } from "./interfaces/config.interface";
 
 import { StringValidationPipe } from "./pipes/string.pipe";
+
+import { AuthService } from "./auth.service";
 
 @Controller("auth")
 export class AuthController {
 	private allowedDomains?: string[];
 
-	constructor(private authService: AuthService) {
+	constructor(
+		private authService: AuthService,
+		private jwtService: JwtService
+	) {
 		if (allowedDomains) this.allowedDomains = allowedDomains.split(",");
 	}
 
 	@Post("login")
 	@UseGuards(ThrottlerBehindProxyGuard)
-	async login(
+	public async login(
 		@Body("incoming_username", StringValidationPipe)
 		incomingUsername?: string,
 		@Body("incoming_password", StringValidationPipe)
@@ -123,7 +132,7 @@ export class AuthController {
 			if (!outgoingUsername) outgoingUsername = incomingUsername;
 			if (!outgoingPassword) outgoingPassword = outgoingPassword;
 
-			const token = await this.authService
+			return await this.authService
 				.login({
 					incoming: {
 						mail: {
@@ -145,16 +154,52 @@ export class AuthController {
 					}
 				})
 				.catch(handleError);
-
-			return token;
 		}
 
 		throw new BadRequestException("Missing fields");
 	}
 
+	private bearerPrefix = "Bearer ";
+
+	@Get("refresh")
+	public async refreshTokens(
+		@Req()
+		req: ExpressRequest
+	) {
+		const authHeader = req.headers.authorization;
+
+		if (!authHeader.startsWith(this.bearerPrefix))
+			throw new BadRequestException("Auth token should be of type bearer");
+
+		const userRefreshToken = authHeader?.slice(
+			this.bearerPrefix.length,
+			authHeader?.length
+		);
+
+		const refreshTokenPayload: RefreshTokenPayload = await this.jwtService
+			.verifyAsync(userRefreshToken)
+			.catch(() => {
+				throw new UnauthorizedException("Refresh token is invalid");
+			});
+
+		if (!refreshTokenPayload.accessToken)
+			throw new UnauthorizedException(
+				"Can't use access token as refresh token"
+			);
+
+		return await this.jwtService
+			.verifyAsync(refreshTokenPayload.accessToken, { ignoreExpiration: false })
+			.then((e) => {
+				console.log(e);
+
+				throw new UnauthorizedException("Access token is still valid");
+			})
+			.catch(() => this.authService.refreshTokens(refreshTokenPayload.body));
+	}
+
 	@Get("gmail")
 	@UseGuards(ThrottlerBehindProxyGuard)
-	async googleLogin(
+	public async googleLogin(
 		@Req() req: Request,
 		@Res() res: Response,
 		@Query("code", StringValidationPipe) code: string,
@@ -168,19 +213,33 @@ export class AuthController {
 
 		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
 
-		const tokens = await exchangeGoogleToken(code, redirect_uri);
+		const config = await exchangeGoogleToken(code, redirect_uri);
 
-		const token = await this.authService
-			.googleLogin({ google: tokens })
+		const { data: user } = await axios
+			.get<{ id: string }>(
+				`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${config.accessToken}`,
+				{
+					headers: {
+						Authorization: `${config.tokenType} ${config.accessToken}`
+					}
+				}
+			)
+			.catch(() => {
+				throw new UnauthorizedException("Invalid access token");
+			});
+
+		const [accessToken, refreshToken] = await this.authService
+			.googleLogin({ google: { ...config, userID: user.id } })
 			.catch(handleError);
 
-		res.cookie("jwtToken", token);
+		res.cookie("accessToken", accessToken);
+		res.cookie("refreshToken", refreshToken);
 
 		res.sendFile(join(process.cwd(), "public", "oauth.html"));
 	}
 
 	@Get("oauth/tokens")
-	async getOAuthTokens() {
+	public async getOAuthTokens() {
 		return { google: googleClientInfo.id };
 	}
 }

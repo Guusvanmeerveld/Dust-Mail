@@ -20,6 +20,7 @@ import modalStyles from "@styles/modal";
 import useFetch from "@utils/hooks/useFetch";
 import useLogin from "@utils/hooks/useLogin";
 import useTheme from "@utils/hooks/useTheme";
+import { LoginResponse } from "@interfaces/responses";
 
 const oauthWindowLabel = "oauth2-login";
 
@@ -37,7 +38,7 @@ const useWebOAuth = (): ((oauthLink: string) => void) => {
 
 		setWebWindow(undefined);
 
-		await login(e.data);
+		await login(JSON.parse(e.data), { redirectToDashboard: true });
 	};
 
 	useEffect(() => {
@@ -60,7 +61,7 @@ const useWebOAuth = (): ((oauthLink: string) => void) => {
 };
 
 const useTauriOAuth = (): ((oauthLink: string) => void) => {
-	const [token, setToken] = useState<string>();
+	const [token, setToken] = useState<LoginResponse>();
 
 	const login = useLogin();
 
@@ -72,9 +73,12 @@ const useTauriOAuth = (): ((oauthLink: string) => void) => {
 			minHeight: 300
 		});
 
-		const unlisten = await webview.listen<string>("oauth_login_token", (e) => {
-			setToken(e.payload);
-		});
+		const unlisten = await webview.listen<LoginResponse>(
+			"oauth_login_token",
+			(e) => {
+				setToken(e.payload);
+			}
+		);
 
 		unlisten();
 
@@ -113,7 +117,10 @@ const OtherLogins: FunctionalComponent = () => {
 			response_type: "code",
 			access_type: "offline",
 			approval_prompt: "force",
-			scope: ["https://mail.google.com/"].join(" "),
+			scope: [
+				"https://mail.google.com/",
+				"https://www.googleapis.com/auth/userinfo.profile"
+			].join(" "),
 			client_id: oauthTokens.google,
 			redirect_uri: `${backendServer}/auth/gmail`
 		};

@@ -18,8 +18,10 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 
+import useLogout from "@utils/hooks/useLogout";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
+import useUser from "@utils/hooks/useUser";
 
 const DarkModeListItem: FunctionalComponent = () => {
 	const [darkMode, setDarkMode] = useLocalStorageState<boolean>("darkMode");
@@ -41,11 +43,9 @@ const DarkModeListItem: FunctionalComponent = () => {
 const UnMemoizedAvatar: FunctionalComponent = () => {
 	const theme = useTheme();
 
-	const [username] = useLocalStorageState<string>("username");
+	const user = useUser();
 
-	const [avatar] = useLocalStorageState<string>("avatar");
-
-	const [, setLoggedIn] = useLocalStorageState<undefined | string>("jwtToken");
+	const logout = useLogout();
 
 	const [menuAnchor, setMenuAnchor] = useState<Element | null>();
 	const open = Boolean(menuAnchor);
@@ -55,10 +55,6 @@ const UnMemoizedAvatar: FunctionalComponent = () => {
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
 	// );
-
-	const logout = (): void => {
-		setLoggedIn();
-	};
 
 	const menuItems: { title: string; icon: JSX.Element; onClick: () => void }[] =
 		[
@@ -87,8 +83,8 @@ const UnMemoizedAvatar: FunctionalComponent = () => {
 			>
 				<MUIAvatar
 					sx={{ bgcolor: theme.palette.secondary.main }}
-					src={avatar}
-					alt={username?.toUpperCase()}
+					src={user.avatar}
+					alt={user.username?.toUpperCase()}
 				/>
 			</IconButton>
 

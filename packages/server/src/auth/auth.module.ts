@@ -12,7 +12,7 @@ import { jwtConstants } from "./constants";
 	imports: [
 		JwtModule.register({
 			secret: jwtConstants.secret,
-			signOptions: { expiresIn: `${jwtConstants.expires}s` }
+			signOptions: { expiresIn: jwtConstants.refreshTokenExpires }
 		}),
 		ThrottlerModule.forRoot({
 			ttl: 60,

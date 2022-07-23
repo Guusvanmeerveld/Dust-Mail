@@ -10,6 +10,7 @@ import Stack from "@mui/material/Stack";
 import scrollbarStyles from "@styles/scrollbar";
 
 import useTheme from "@utils/hooks/useTheme";
+import useUser from "@utils/hooks/useUser";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
 import BoxesList from "@components/Boxes/List";
@@ -17,11 +18,60 @@ import Layout from "@components/Layout";
 import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
+import { LocalToken, LoginResponse } from "@interfaces/responses";
+import useLogin from "@utils/hooks/useLogin";
+import { useEffect } from "preact/hooks";
+import { useQuery } from "react-query";
+import useFetch from "@utils/hooks/useFetch";
+import useLogout from "@utils/hooks/useLogout";
+import useStore from "@utils/hooks/useStore";
 
 const Dashboard: FunctionalComponent = () => {
 	const theme = useTheme();
 
-	const [session] = useLocalStorageState("jwtToken");
+	const [accessToken] = useLocalStorageState<LocalToken>("accessToken");
+	const [refreshToken] = useLocalStorageState<LocalToken>("refreshToken");
+
+	const setFetching = useStore((state) => state.setFetching);
+
+	const fetcher = useFetch();
+
+	const logout = useLogout();
+	const login = useLogin();
+
+	const accessTokenExpired =
+		accessToken && new Date(accessToken?.expires).getTime() < Date.now();
+
+	if (
+		accessTokenExpired &&
+		refreshToken &&
+		new Date(refreshToken?.expires).getTime() < Date.now()
+	) {
+		logout();
+	}
+
+	const { data: tokens, isFetching: isFetchingTokens } = useQuery(
+		"refreshTokens",
+		() =>
+			fetcher
+				.get<LoginResponse>("/auth/refresh", {
+					headers: { Authorization: `Bearer ${refreshToken?.body}` }
+				})
+				.then((res) => res.data),
+		{
+			enabled: accessTokenExpired
+		}
+	);
+
+	useEffect(() => {
+		setFetching(isFetchingTokens);
+	}, [isFetchingTokens]);
+
+	useEffect(() => {
+		if (tokens) login(tokens);
+	}, [tokens]);
+
+	const user = useUser();
 
 	const [messageListWidth, setMessageListWidth] = useLocalStorageState<number>(
 		"messageListWidth",
@@ -80,7 +130,7 @@ const Dashboard: FunctionalComponent = () => {
 
 	return (
 		<>
-			{!session && <Navigate to="/" replace={true} />}
+			{!user.isLoggedIn && <Navigate to="/" replace={true} />}
 			<Layout withNavbar>
 				<Stack direction="row" sx={{ height: fullpageHeight }}>
 					{!isMobile && (
