@@ -33,7 +33,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install NPM dependencies
-        run: pnpm install
+        run: pnpm install --prefer-offline
 
       - name: Run full suite
         run: pnpm run deploy

@@ -2,7 +2,7 @@
 # This Dockerfile combines both the client and the server into a single container
 # 
 
-FROM base as deployer
+FROM dust-mail/base as deployer
 
 WORKDIR /repo
 
