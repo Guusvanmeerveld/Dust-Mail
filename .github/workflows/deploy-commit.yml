@@ -38,10 +38,11 @@ jobs:
       - name: Run full suite
         run: pnpm run deploy
 
-  docker:
-    name: Build Docker image
+  build-base:
+    name: Build Docker base image
     runs-on: ubuntu-latest
     needs: test
+
     steps:
       - name: Setup
         uses: actions/checkout@v2
@@ -53,29 +54,72 @@ jobs:
           token: ${{ secrets.DOCKERHUB_TOKEN }}
           tags: dust-mail/base
           push: false
+          outputs: type=docker,dest=/tmp/base.tar
           context: .
           file: Dockerfile.base
           platforms: linux/amd64,linux/arm64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: base
+          path: /tmp/base.tar
+
+  build-apps:
+    name: Build Docker apps images
+    needs: build-base
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        type: [server, client]
+
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Download base image
+        uses: actions/download-artifact@v3
+        with:
+          name: base
+          path: /tmp/base.tar
+
+      - name: Load image
+        run: docker load --input /tmp/base.tar
 
       - name: Build server image
         uses: guusvanmeerveld/actions/docker@main
         with:
           username: guusvanmeerveld
           token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:git-server
+          tags: guusvanmeerveld/dust-mail:git-${{ matrix.type }}
           context: .
-          file: apps/server/Dockerfile
+          file: apps/${{ matrix.type }}/Dockerfile
           platforms: linux/amd64,linux/arm64
 
-      - name: Build client image
-        uses: guusvanmeerveld/actions/docker@main
+  build-standalone:
+    name: Build Docker standalone image
+    needs: build-base
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Download base image
+        uses: actions/download-artifact@v3
         with:
-          username: guusvanmeerveld
-          token: ${{ secrets.DOCKERHUB_TOKEN }}
-          tags: guusvanmeerveld/dust-mail:git-client
-          context: .
-          file: apps/client/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          name: base
+          path: /tmp/base.tar
+
+      - name: Load image
+        run: docker load --input /tmp/base.tar
 
       - name: Build standalone image
         uses: guusvanmeerveld/actions/docker@main

@@ -1,4 +1,4 @@
-FROM dust-mail/base as deployer
+FROM base as deployer
 
 WORKDIR /repo
 
