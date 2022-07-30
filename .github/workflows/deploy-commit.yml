@@ -18,6 +18,11 @@ jobs:
   test:
     name: Test apps
     runs-on: ubuntu-latest
+
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
     steps:
       - name: Setup
         uses: actions/checkout@v2
@@ -54,7 +59,7 @@ jobs:
           token: ${{ secrets.DOCKERHUB_TOKEN }}
           tags: dust-mail/base
           push: false
-          outputs: type=docker,dest=/tmp/base.tar
+          outputs: type=docker,dest=- . > /tmp/base.tar
           context: .
           file: Dockerfile.base
           platforms: linux/amd64,linux/arm64
