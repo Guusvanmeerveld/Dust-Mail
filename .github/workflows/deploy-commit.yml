@@ -1,4 +1,4 @@
-name: Test and deploy Server
+name: Test and deploy all apps
 
 on:
   push:
@@ -16,11 +16,15 @@ on:
 
 jobs:
   test:
-    name: Test server
+    name: Test apps
     runs-on: ubuntu-latest
     steps:
       - name: Setup
         uses: actions/checkout@v2
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7.5.2
 
       - name: Setup Node.js
         uses: actions/setup-node@v2
