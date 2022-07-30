@@ -1,0 +1,11 @@
+{
+	"name": "@dust-mail/tsconfig",
+	"version": "0.0.0",
+	"private": true,
+	"main": "index.js",
+	"files": [
+		"base.json",
+		"nestjs.json",
+		"vite-react.json"
+	]
+}

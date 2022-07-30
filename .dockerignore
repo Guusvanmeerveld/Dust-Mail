@@ -2,22 +2,32 @@
 
 !/nginx
 
+!/package.json
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/turbo.json
+!/.npmrc
+
 !/entrypoint.sh
 
-!/packages/server/src
-!/packages/server/public
-!/packages/server/package.json
-!/packages/server/yarn.lock
-!/packages/server/.yarnrc
-!/packages/server/tsconfig.build.json
-!/packages/server/tsconfig.json
+!/packages/tsconfig/*
 
-!/packages/client/src
-!/packages/client/index.html
-!/packages/client/splashscreen.html
-!/packages/client/tsconfig.json
-!/packages/client/tsconfig.node.json
-!/packages/client/vite.config.ts
-!/packages/client/package.json
-!/packages/client/.yarnrc
-!/packages/client/yarn.lock
+!/packages/autodiscover/src
+!/packages/autodiscover/package.json
+!/packages/autodiscover/rollup.config.ts
+!/packages/autodiscover/tsconfig.json
+
+!/apps/server/src
+!/apps/server/public
+!/apps/server/package.json
+!/apps/server/tsconfig.build.json
+!/apps/server/tsconfig.json
+
+!/apps/client/src
+!/apps/client/.env
+!/apps/client/index.html
+!/apps/client/splashscreen.html
+!/apps/client/tsconfig.json
+!/apps/client/tsconfig.node.json
+!/apps/client/vite.config.ts
+!/apps/client/package.json

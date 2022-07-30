@@ -2,9 +2,7 @@ version: '3.3'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: dust-mail
     container_name: dust-mail
     ports:
       - 3000:80

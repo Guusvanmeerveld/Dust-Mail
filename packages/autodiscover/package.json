@@ -1,0 +1,49 @@
+{
+	"name": "@dust-mail/autodiscover",
+	"displayName": "Dust Mail Discover",
+	"description": "A simple package to find any imap, pop3 and smtp servers related to an email address",
+	"author": {
+		"name": "Guus van Meerveld"
+	},
+	"repository": {
+		"url": "https://github.com/Guusvanmeerveld/Dust-Mail"
+	},
+	"license": "MIT",
+	"version": "0.1.2",
+	"main": "lib/index.cjs.js",
+	"module": "lib/index.es.js",
+	"types": "lib/index.d.ts",
+	"jest": {
+		"preset": "ts-jest",
+		"testEnvironment": "node"
+	},
+	"scripts": {
+		"build": "rollup -c",
+		"test": "jest",
+		"lint": "eslint src"
+	},
+	"devDependencies": {
+		"@rollup/plugin-json": "^4.1.0",
+		"@types/jest": "^28.1.3",
+		"@types/node": "^15.0.2",
+		"@typescript-eslint/eslint-plugin": "^4.22.1",
+		"@typescript-eslint/parser": "^4.22.0",
+		"eslint": "^7.25.0",
+		"eslint-plugin-prettier": "^3.4.0",
+		"jest": "^28.1.1",
+		"prettier": "2.2.1",
+		"rollup": "^2.56.3",
+		"rollup-plugin-typescript2": "^0.31.1",
+		"ts-jest": "^28.0.4",
+		"ts-node-dev": "^1.1.8",
+		"tsconfig-paths": "^3.12.0",
+		"tsconfig-paths-jest": "^0.0.1",
+		"typescript": "^4.2.4",
+		"tslib": "^2.4.0",
+		"@dust-mail/tsconfig": "workspace:*"
+	},
+	"dependencies": {
+		"axios": "^0.27.2",
+		"fast-xml-parser": "^4.0.8"
+	}
+}

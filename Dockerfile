@@ -2,48 +2,19 @@
 # This Dockerfile combines both the client and the server into a single container
 # 
 
-ARG BASE_IMAGE=node:16-alpine
+FROM dust-mail/base as deployer
 
-# Build client
-FROM $BASE_IMAGE AS client-builder
+WORKDIR /repo
 
-WORKDIR /app
-
-COPY ./packages/client/package.json ./packages/client/yarn.lock ./packages/client/.yarnrc ./
-
-RUN yarn install --frozen-lockfile
-
-COPY ./packages/client .
-
-ENV NODE_ENV "production"
-
-ENV VITE_DEFAULT_SERVER "/api"
-
-ENV VITE_APP_NAME "Dust-Mail"
-
-RUN yarn build
-
-# Build server
-FROM $BASE_IMAGE AS server-builder
-
-WORKDIR /app
-
-COPY ./packages/server/package.json ./packages/server/yarn.lock ./packages/server/.yarnrc ./
-
-RUN yarn install --frozen-lockfile
-
-COPY ./packages/server .
-
-RUN yarn build
-
-RUN yarn install --production --ignore-scripts --prefer-offline
+RUN pnpm --filter @dust-mail/client --prod deploy /app/client
+RUN pnpm --filter @dust-mail/server --prod deploy /app/server
 
 # Run nginx + api
 FROM nginx:stable-alpine as runner
 
 RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.11/main/ nodejs=12.22.6-r0
 
-COPY --from=client-builder /app/dist /client
+COPY --from=deployer /app/client/dist /client
 
 COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 
@@ -55,12 +26,11 @@ ENV NODE_ENV "production"
 
 ENV BASE_PATH "api"
 
-COPY --from=server-builder /app/dist ./dist
-COPY --from=server-builder /app/node_modules ./node_modules
-COPY --from=server-builder /app/package.json ./package.json
+COPY --from=deployer /app/server/dist ./dist
+COPY --from=deployer /app/server/node_modules ./node_modules
 
 COPY entrypoint.sh .
 
-COPY packages/server/public public
+COPY apps/server/public public
 
 CMD [ "./entrypoint.sh" ]

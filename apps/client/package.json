@@ -1,0 +1,77 @@
+{
+	"name": "@dust-mail/client",
+	"displayName": "Dust Mail Client",
+	"description": "A simple and fast mail client",
+	"version": "0.1.4",
+	"repository": {
+		"url": "https://github.com/Guusvanmeerveld/Dust-Mail"
+	},
+	"homepage": "https://github.com/Guusvanmeerveld/Dust-Mail",
+	"author": {
+		"name": "Guus van Meerveld",
+		"url": "https://guusvanmeerveld.dev",
+		"email": "contact@guusvanmeerveld.dev"
+	},
+	"contributors": [],
+	"size-limit": [
+		{
+			"path": "dist/assets/*.js",
+			"limit": "500 kB"
+		}
+	],
+	"license": "MIT",
+	"scripts": {
+		"dev": "vite",
+		"size": "size-limit",
+		"lint": "eslint src",
+		"build": "tsc && vite build",
+		"preview": "vite preview",
+		"tauri": "tauri"
+	},
+	"dependencies": {
+		"@emotion/react": "^11.9.3",
+		"@emotion/styled": "^11.9.3",
+		"@fontsource/roboto": "^4.5.7",
+		"@mui/icons-material": "^5.8.0",
+		"@mui/material": "^5.8.0",
+		"@mui/styled-engine": "^5.8.0",
+		"@tauri-apps/api": "^1.0.2",
+		"axios": "^0.27.2",
+		"js-md5": "^0.7.3",
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0",
+		"react-query": "^3.39.1",
+		"react-router-dom": "6",
+		"slate": "^0.81.1",
+		"slate-react": "^0.81.0",
+		"use-local-storage-state": "^17.0.1",
+		"zustand": "^4.0.0-rc.1"
+	},
+	"devDependencies": {
+		"@babel/plugin-transform-react-jsx-source": "^7.18.6",
+		"@rollup/plugin-alias": "^3.1.9",
+		"@size-limit/preset-app": "^7.0.8",
+		"@tauri-apps/cli": "^1.0.4",
+		"@types/jest": "^28.1.4",
+		"@types/js-md5": "^0.4.3",
+		"@types/node": "^17.0.35",
+		"@types/react": "^18.0.15",
+		"@types/react-dom": "^18.0.6",
+		"@typescript-eslint/eslint-plugin": "^5.30.7",
+		"@typescript-eslint/parser": "^5.30.7",
+		"@vitejs/plugin-react": "^2.0.0",
+		"eslint": "^8.20.0",
+		"eslint-plugin-jsx-a11y": "^6.6.0",
+		"eslint-plugin-prettier": "^4.2.1",
+		"eslint-plugin-react": "^7.30.1",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"@dust-mail/tsconfig": "workspace:*",
+		"prettier": "^2.7.1",
+		"size-limit": "^7.0.8",
+		"typescript": "^4.5.4",
+		"vite": "^3.0.3",
+		"vite-plugin-pwa": "^0.12.2",
+		"vite-tsconfig-paths": "^3.4.1",
+		"workbox-window": "^6.5.3"
+	}
+}

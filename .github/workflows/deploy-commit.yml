@@ -1,0 +1,84 @@
+name: Test and deploy Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps/server/**
+      - .github/workflows/deploy-commit.yml
+      - Dockerfile
+      - entrypoint.sh
+      - nginx/**
+      - .dockerignore
+      - apps/**
+      - packages/**
+
+jobs:
+  test:
+    name: Test server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "12.x"
+          cache: "pnpm"
+
+      - name: Install NPM dependencies
+        run: pnpm install
+
+      - name: Run full suite
+        run: pnpm run deploy
+
+  docker:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Build base image
+        uses: guusvanmeerveld/actions/docker@main
+        with:
+          username: guusvanmeerveld
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          tags: dust-mail/base
+          push: false
+          context: .
+          file: Dockerfile.base
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build server image
+        uses: guusvanmeerveld/actions/docker@main
+        with:
+          username: guusvanmeerveld
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          tags: guusvanmeerveld/dust-mail:git-server
+          context: .
+          file: apps/server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build client image
+        uses: guusvanmeerveld/actions/docker@main
+        with:
+          username: guusvanmeerveld
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          tags: guusvanmeerveld/dust-mail:git-client
+          context: .
+          file: apps/client/Dockerfile
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build standalone image
+        uses: guusvanmeerveld/actions/docker@main
+        with:
+          username: guusvanmeerveld
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+          tags: guusvanmeerveld/dust-mail:git-standalone
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64

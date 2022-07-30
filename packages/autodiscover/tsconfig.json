@@ -1,0 +1,11 @@
+{
+	"extends": "@dust-mail/tsconfig/base.json",
+	"compilerOptions": {
+		"target": "es5",
+		"module": "ES2015",
+		"resolveJsonModule": true,
+		"outDir": "dist",
+		"rootDir": "src"
+	},
+	"include": ["src", "src/tests"]
+}
