@@ -1,4 +1,4 @@
-FROM dust-mail/base as deployer
+FROM ghcr.io/guusvanmeerveld/dust-mail:base as deployer
 
 WORKDIR /repo
 
