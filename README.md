@@ -5,9 +5,7 @@
 <h1 align="center">Dust Mail</h1>
 
 <div align="center">
-    <img src="https://github.com/Guusvanmeerveld/Dust-Mail/actions/workflows/deploy-client.yml/badge.svg" alt="Deploy Client" />
-    <img src="https://github.com/Guusvanmeerveld/Dust-Mail/actions/workflows/deploy-server.yml/badge.svg" alt="Deploy Server" />
-    <img src="https://github.com/Guusvanmeerveld/Dust-Mail/actions/workflows/deploy-standalone.yml/badge.svg" alt="Deploy Standalone" />
+    <img src="https://github.com/Guusvanmeerveld/Dust-Mail/actions/workflows/deploy-commit.yml/badge.svg" alt="Deploy Recent commit" />
     <img alt="Mail Discover Downloads" src="https://img.shields.io/npm/dw/mail-discover?label=mail-discover" />
     <img alt="Docker Image Size (tag)" src="https://img.shields.io/docker/image-size/guusvanmeerveld/dust-mail/latest?label=Standalone%20image%20size" />
     <a href="https://discord.gg/ybBaCaxfdt"><img alt="Discord" src="https://img.shields.io/discord/1000421125844639797"></a>
