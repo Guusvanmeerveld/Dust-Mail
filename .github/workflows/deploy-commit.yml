@@ -71,9 +71,16 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           tags: ghcr.io/guusvanmeerveld/dust-mail:base
+
+          push: true
+
           context: .
           file: Dockerfile.base
+
           platforms: linux/amd64,linux/arm64
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   build-apps:
     name: Build Docker apps images
@@ -103,13 +110,20 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build server image
+      - name: Build app image
         uses: docker/build-push-action@v3
         with:
           tags: ghcr.io/guusvanmeerveld/dust-mail:git-${{ matrix.type }}
+
+          push: true
+
           context: .
           file: apps/${{ matrix.type }}/Dockerfile
+
           platforms: linux/amd64,linux/arm64
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   build-standalone:
     name: Build Docker standalone image
@@ -139,6 +153,13 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           tags: ghcr.io/guusvanmeerveld/dust-mail:git-standalone
+
+          push: true
+
           context: .
-          file: /Dockerfile
+          file: Dockerfile
+
           platforms: linux/amd64,linux/arm64
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
