@@ -110,10 +110,18 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build app image
         uses: docker/build-push-action@v3
         with:
-          tags: ghcr.io/guusvanmeerveld/dust-mail:git-${{ matrix.type }}
+          tags: |
+            guusvanmeerveld/dust-mail:git-${{ matrix.type }}
+            ghcr.io/guusvanmeerveld/dust-mail:git-${{ matrix.type }}
 
           push: true
 
@@ -149,10 +157,18 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build server image
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build standalone image
         uses: docker/build-push-action@v3
         with:
-          tags: ghcr.io/guusvanmeerveld/dust-mail:git-standalone
+          tags: |
+            guusvanmeerveld/dust-mail:git-standalone
+            ghcr.io/guusvanmeerveld/dust-mail:git-standalone
 
           push: true
 
