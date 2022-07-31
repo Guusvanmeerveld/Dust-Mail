@@ -1,0 +1,45 @@
+name: Auto merge Dependabot
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    name: Test apps
+    runs-on: ubuntu-latest
+
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7.5.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+          cache: "pnpm"
+
+      - name: Install NPM dependencies
+        run: pnpm install --prefer-offline --ignore-scripts
+
+      - name: Run full suite
+        run: pnpm run deploy
+
+  auto-merge:
+    name: Auto Merge
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    steps:
+      - name: Merge
+        uses: ahmadnassri/action-dependabot-auto-merge@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
