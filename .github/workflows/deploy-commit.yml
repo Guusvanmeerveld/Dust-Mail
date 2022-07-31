@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - apps/server/**
       - .github/workflows/deploy-commit.yml
       - Dockerfile
       - entrypoint.sh
+      - pnpm-lock.yaml
       - nginx/**
       - .dockerignore
       - apps/**
@@ -43,48 +43,9 @@ jobs:
       - name: Run full suite
         run: pnpm run deploy
 
-  build-base:
-    name: Build Docker base image
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Setup
-        uses: actions/checkout@v2
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1.2.0
-        with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1.6.0
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build base image
-        uses: docker/build-push-action@v3
-        with:
-          tags: ghcr.io/guusvanmeerveld/dust-mail:base
-
-          push: true
-
-          context: .
-          file: Dockerfile.base
-
-          platforms: linux/amd64,linux/arm64
-
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   build-apps:
     name: Build Docker apps images
-    needs: build-base
+    needs: test
     runs-on: ubuntu-latest
 
     strategy:
@@ -135,7 +96,7 @@ jobs:
 
   build-standalone:
     name: Build Docker standalone image
-    needs: build-base
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
