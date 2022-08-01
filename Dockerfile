@@ -48,6 +48,7 @@ ENV BASE_PATH "api"
 
 COPY --from=deployer /app/server/dist ./dist
 COPY --from=deployer /app/server/node_modules ./node_modules
+COPY --from=deployer /app/package.json ./npackage.json
 
 COPY entrypoint.sh .
 
