@@ -288,10 +288,8 @@ importers:
 
   packages/typings:
     specifiers:
-      '@dust-mail/tsconfig': workspace:*
       typescript: ^4.7.4
     devDependencies:
-      '@dust-mail/tsconfig': link:../tsconfig
       typescript: 4.7.4
 
 packages:

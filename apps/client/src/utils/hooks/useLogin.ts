@@ -61,10 +61,7 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 		const { version: serverVersion, type: serverVersionType }: VersionResponse =
 			versionResponse;
 
-		if (
-			serverVersion != appVersion.title ||
-			serverVersionType != appVersion.type
-		) {
+		if (serverVersion != appVersion.title) {
 			setFetching(false);
 
 			throw {
