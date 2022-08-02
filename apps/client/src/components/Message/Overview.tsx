@@ -48,7 +48,7 @@ const AddressList: FC<{
 			{data &&
 				data.map((address) => {
 					// eslint-disable-next-line react-hooks/rules-of-hooks
-					const { data: avatar } = useAvatar(address.email);
+					const avatar = useAvatar(address.email);
 
 					const name = address.displayName || address.email;
 
@@ -61,10 +61,10 @@ const AddressList: FC<{
 										mr: 2,
 										bgcolor: !avatar ? theme.palette.secondary.main : null
 									}}
-									src={avatar}
+									src={avatar?.data}
 									alt={name.charAt(0).toUpperCase()}
 								>
-									{!avatar && name.charAt(0).toLocaleUpperCase()}
+									{!avatar?.data && name.charAt(0).toLocaleUpperCase()}
 								</Avatar>
 							}
 							label={

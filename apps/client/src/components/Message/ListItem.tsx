@@ -47,7 +47,9 @@ const UnMemoizedMessageListItem: FC<{
 		.map((from) => from.displayName || from.email)
 		.join(", ");
 
-	const avatar = useAvatar(from.length != 0 ? message.from[0].email : null);
+	const avatar = useAvatar(
+		from.length != 0 ? message.from[0].email : undefined
+	);
 
 	const handleClick = (): void => {
 		if (!message.id) return;

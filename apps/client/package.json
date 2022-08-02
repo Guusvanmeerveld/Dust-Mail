@@ -52,6 +52,8 @@
 	},
 	"devDependencies": {
 		"@babel/plugin-transform-react-jsx-source": "^7.18.6",
+		"@dust-mail/tsconfig": "workspace:*",
+		"@dust-mail/typings": "workspace:*",
 		"@rollup/plugin-alias": "^3.1.9",
 		"@size-limit/preset-app": "^7.0.8",
 		"@tauri-apps/cli": "^1.0.4",
@@ -63,19 +65,19 @@
 		"@typescript-eslint/eslint-plugin": "^5.30.7",
 		"@typescript-eslint/parser": "^5.30.7",
 		"@vitejs/plugin-react": "^2.0.0",
+		"c8": "^7.12.0",
 		"eslint": "^8.20.0",
 		"eslint-plugin-jsx-a11y": "^6.6.0",
 		"eslint-plugin-prettier": "^4.2.1",
 		"eslint-plugin-react": "^7.30.1",
 		"eslint-plugin-react-hooks": "^4.6.0",
-		"@dust-mail/tsconfig": "workspace:*",
-		"@dust-mail/typings": "workspace:*",
 		"prettier": "^2.7.1",
 		"size-limit": "^7.0.8",
 		"typescript": "^4.5.4",
 		"vite": "^3.0.3",
 		"vite-plugin-pwa": "^0.12.2",
 		"vite-tsconfig-paths": "^3.4.1",
+		"vitest": "^0.20.3",
 		"workbox-window": "^6.5.3"
 	}
 }
