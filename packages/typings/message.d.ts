@@ -17,11 +17,15 @@ export interface OutgoingMessage {
 	inReplyTo?: string;
 }
 
+export interface Flags {
+	seen: boolean;
+}
+
 /**
  * An object containing basic data about an incoming email
  */
 export interface IncomingMessage {
-	flags: string[];
+	flags: Flags;
 	subject?: string;
 	date: Date;
 	from: Address[];

@@ -1,4 +1,4 @@
-import { FC, memo, MouseEvent, MutableRefObject } from "react";
+import { FC, memo, MouseEvent, MutableRefObject, useState } from "react";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 
 import CloseIcon from "@mui/icons-material/Close";
 
-import Message from "@interfaces/message";
+import { IncomingMessage } from "@dust-mail/typings/message";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useMessageActions from "@utils/hooks/useMessageActions";
@@ -19,9 +19,8 @@ import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 
 const UnMemoizedMessageListItem: FC<{
-	message: Message;
+	message: IncomingMessage;
 	selectedMessage: boolean;
-	unSeen?: boolean;
 	rightClickMenuBox: MutableRefObject<null>;
 	rightClickMenuOpen: boolean;
 	setRightClickMenuAnchor: (anchor: {
@@ -32,12 +31,13 @@ const UnMemoizedMessageListItem: FC<{
 }> = ({
 	message,
 	selectedMessage,
-	unSeen,
 	rightClickMenuBox,
 	rightClickMenuOpen,
 	setRightClickMenuAnchor
 }) => {
 	const theme = useTheme();
+
+	const [unSeen, setUnSeen] = useState(!message.flags.seen);
 
 	const messageActions = useMessageActions(message.id);
 
@@ -49,11 +49,11 @@ const UnMemoizedMessageListItem: FC<{
 
 	const avatar = useAvatar(from.length != 0 ? message.from[0].email : null);
 
-	if (unSeen === undefined)
-		unSeen = !message.flags.find((flag) => flag.match(/Seen/));
-
 	const handleClick = (): void => {
 		if (!message.id) return;
+
+		setUnSeen(false);
+
 		if (selectedMessage) setSelectedMessage();
 		else setSelectedMessage(message.id);
 	};

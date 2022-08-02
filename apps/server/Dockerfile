@@ -37,6 +37,6 @@ ENV NODE_ENV "production"
 
 COPY --from=deployer /app/dist ./dist
 COPY --from=deployer /app/node_modules ./node_modules
-COPY --from=deployer /app/package.json ./npackage.json
+COPY --from=deployer /app/package.json ./package.json
 
 CMD ["node", "dist/main"]

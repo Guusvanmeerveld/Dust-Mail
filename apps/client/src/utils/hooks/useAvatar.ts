@@ -10,16 +10,13 @@ import useFetch from "@utils/hooks/useFetch";
  */
 const REFRESH_INBOX_AVATARS = 60 * 60;
 
-function useAvatar(email: null): void;
+function useAvatar(email: undefined): void;
 function useAvatar(email: string): {
 	data?: string;
 	isLoading: boolean;
 };
 function useAvatar(
-	email: string | null
-): { data?: string; isLoading: boolean } | void;
-function useAvatar(
-	email: string | null
+	email: string | undefined
 ): { data?: string; isLoading: boolean } | void {
 	const fetcher = useFetch();
 
@@ -31,10 +28,7 @@ function useAvatar(
 
 	const { data, isLoading, error } = useQuery<string>(
 		["avatar", email],
-		() =>
-			fetcher("/avatar", {
-				params: { address: email }
-			}).then((res) => res.data),
+		() => fetcher.getAvatar(email),
 		// .catch((error: AxiosError) => {
 		// 	if (error.response?.status == 404) {
 		// 	}
@@ -42,12 +36,12 @@ function useAvatar(
 		{
 			retry: false,
 			enabled:
-				(email !== null && !blacklisted) ||
+				(email != undefined && !blacklisted) ||
 				!!(noAvatar && noAvatar < Date.now())
 		}
 	);
 
-	if (email === null) return;
+	if (email == undefined) return;
 
 	if (error && !data && !isLoading && (!noAvatar || noAvatar < Date.now())) {
 		setNoAvatar(Date.now() + REFRESH_INBOX_AVATARS * 1000);

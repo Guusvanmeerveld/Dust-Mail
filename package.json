@@ -11,7 +11,7 @@
 		"apps/*"
 	],
 	"scripts": {
-		"prettify": "prettier packages/client/src packages/autodiscover/src --write",
+		"format": "prettier apps/client/src packages/autodiscover/src --write",
 		"build": "turbo run build",
 		"lint": "turbo run lint",
 		"test": "turbo run test",

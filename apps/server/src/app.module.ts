@@ -11,7 +11,11 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 
 @Module({
 	imports: [
-		ConfigModule.forRoot({ cache: true, isGlobal: true }),
+		ConfigModule.forRoot({
+			envFilePath: ".env.local",
+			cache: true,
+			isGlobal: true
+		}),
 		ServeStaticModule.forRoot({
 			rootPath: join(process.cwd(), "public", "scripts"),
 			serveRoot: "/scripts"

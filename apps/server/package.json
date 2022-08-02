@@ -77,6 +77,7 @@
 		"ts-loader": "^9.3.0",
 		"ts-node": "^10.8.0",
 		"@dust-mail/tsconfig": "workspace:*",
+		"@dust-mail/typings": "workspace:*",
 		"tsconfig-paths": "^4.0.0",
 		"tsconfig-paths-jest": "^0.0.1",
 		"typescript": "^4.7.2"

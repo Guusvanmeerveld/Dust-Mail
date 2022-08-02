@@ -1,5 +1,4 @@
 {
-	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "@dust-mail/tsconfig/vite-react.json",
 	"compilerOptions": {
 		"noEmit": true,
@@ -10,7 +9,8 @@
 			"@utils/*": ["utils/*"],
 			"@components/*": ["components/*"],
 			"@interfaces/*": ["interfaces/*"],
-			"@styles/*": ["styles/*"]
+			"@styles/*": ["styles/*"],
+			"@src/*": ["./*"]
 		}
 	},
 	"include": ["src"],

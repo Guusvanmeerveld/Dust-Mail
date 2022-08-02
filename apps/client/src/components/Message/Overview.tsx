@@ -24,7 +24,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
 
-import { Address, FullMessage } from "@interfaces/message";
+import { Address, FullIncomingMessage } from "@dust-mail/typings/message";
 
 import scrollbarStyles from "@styles/scrollbar";
 
@@ -132,18 +132,9 @@ const UnMemoizedMessageOverview: FC = () => {
 		useState<null | Element>(null);
 	const messageActionsAnchorOpen = Boolean(messageActionsAnchor);
 
-	const { data, isFetching } = useQuery<FullMessage>(
+	const { data, isFetching } = useQuery<FullIncomingMessage>(
 		["message", selectedMessage, selectedBox?.id],
-		() =>
-			fetcher
-				.get("/mail/message", {
-					params: {
-						id: selectedMessage,
-						box: selectedBox?.id,
-						markRead: true
-					}
-				})
-				.then(({ data }) => data),
+		() => fetcher.getMessage(selectedMessage, selectedBox?.id),
 		{ enabled: selectedMessage != undefined }
 	);
 

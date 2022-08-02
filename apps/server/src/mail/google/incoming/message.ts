@@ -1,4 +1,4 @@
-import { FullIncomingMessage } from "@utils/interfaces/message";
+import { FullIncomingMessage } from "@dust-mail/typings/message";
 
 export const getMessage = async (
 	authorization: string,
@@ -6,5 +6,11 @@ export const getMessage = async (
 	boxName: string,
 	markAsRead: boolean
 ): Promise<FullIncomingMessage> => {
-	return { content: {}, date: new Date(), flags: [], from: [], id: "" };
+	return {
+		content: {},
+		date: new Date(),
+		flags: { seen: true },
+		from: [],
+		id: ""
+	};
 };

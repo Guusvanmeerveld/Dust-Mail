@@ -4,7 +4,7 @@ import EventEmitter from "events";
 import {
 	IncomingMessage,
 	FullIncomingMessage
-} from "@utils/interfaces/message";
+} from "@dust-mail/typings/message";
 
 export interface Box {
 	totalMessages: number;

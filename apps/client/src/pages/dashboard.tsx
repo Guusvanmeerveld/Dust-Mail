@@ -49,22 +49,22 @@ const Dashboard: FC = () => {
 		logout();
 	}
 
-	const { data: tokens, isFetching: isFetchingTokens } = useQuery(
+	const {
+		data: tokens,
+		error: tokensError,
+		isFetching: isFetchingTokens
+	} = useQuery<LoginResponse>(
 		"refreshTokens",
-		() =>
-			fetcher
-				.get<LoginResponse>("/auth/refresh", {
-					headers: { Authorization: `Bearer ${refreshToken?.body}` }
-				})
-				.then((res) => res.data),
+		() => fetcher.refresh(refreshToken?.body),
 		{
-			enabled: accessTokenExpired
+			enabled: !!(accessTokenExpired && refreshToken)
 		}
 	);
 
 	useEffect(() => {
-		setFetching(isFetchingTokens);
-	}, [isFetchingTokens]);
+		if (tokensError) setFetching(false);
+		else setFetching(isFetchingTokens);
+	}, [isFetchingTokens, tokensError]);
 
 	useEffect(() => {
 		if (tokens) login(tokens);

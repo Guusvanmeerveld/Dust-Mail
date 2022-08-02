@@ -24,6 +24,8 @@ COPY package.json pnpm-workspace.yaml .npmrc turbo.json ./
 
 RUN pnpm install -r --offline --ignore-scripts
 
+ENV VITE_DEFAULT_SERVER "/api"
+
 RUN pnpm run build
 
 RUN pnpm --filter @dust-mail/client --prod deploy /app/client
@@ -48,7 +50,7 @@ ENV BASE_PATH "api"
 
 COPY --from=deployer /app/server/dist ./dist
 COPY --from=deployer /app/server/node_modules ./node_modules
-COPY --from=deployer /app/package.json ./npackage.json
+COPY --from=deployer /app/server/package.json ./package.json
 
 COPY entrypoint.sh .
 

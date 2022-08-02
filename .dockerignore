@@ -11,6 +11,7 @@
 !/entrypoint.sh
 
 !/packages/tsconfig/*
+!/packages/typings/*
 
 !/packages/autodiscover/src
 !/packages/autodiscover/package.json

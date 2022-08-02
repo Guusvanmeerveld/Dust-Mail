@@ -7,7 +7,7 @@ import nodemailer, { Transporter } from "nodemailer";
 import connect from "./connect";
 import send from "./send";
 
-import { OutgoingMessage } from "@utils/interfaces/message";
+import { OutgoingMessage } from "@dust-mail/typings/message";
 
 export default class Client extends EventEmitter implements OutgoingClient {
 	private readonly _client: Transporter;

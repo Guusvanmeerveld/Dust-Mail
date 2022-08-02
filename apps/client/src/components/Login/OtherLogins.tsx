@@ -12,7 +12,7 @@ import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
-import { LoginResponse } from "@interfaces/responses";
+import { LoginResponse, PublicTokensResponse } from "@interfaces/responses";
 
 import modalStyles from "@styles/modal";
 
@@ -102,9 +102,9 @@ const OtherLogins: FC = () => {
 		data: oauthTokens,
 		isFetching,
 		error
-	} = useQuery<{ google?: string }>(
+	} = useQuery<PublicTokensResponse>(
 		["oauthTokens", backendServer],
-		() => fetcher.get("/auth/oauth/tokens").then((res) => res.data),
+		() => fetcher.getPublicOAuthTokens(),
 		{ enabled: isOpen, retry: 1 }
 	);
 

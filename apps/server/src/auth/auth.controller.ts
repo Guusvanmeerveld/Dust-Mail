@@ -27,7 +27,7 @@ import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 import handleError from "@utils/handleError";
 
 import exchangeGoogleToken from "@mail/google/exchangeToken";
-import { clientInfo as googleClientInfo } from "@mail/google/constants";
+import { getClientInfo as getGoogleClientInfo } from "@mail/google/constants";
 
 import UserError from "@utils/interfaces/error.interface";
 
@@ -240,6 +240,8 @@ export class AuthController {
 
 	@Get("oauth/tokens")
 	public async getOAuthTokens() {
-		return { google: googleClientInfo.id };
+		const clientInfo = getGoogleClientInfo();
+
+		return { google: clientInfo.id };
 	}
 }

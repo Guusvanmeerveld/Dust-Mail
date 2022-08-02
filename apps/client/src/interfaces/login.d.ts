@@ -6,5 +6,10 @@ export default interface AdvancedLogin {
 	security?: SecurityType;
 }
 
+export interface LoginConfig {
+	incoming: AdvancedLogin;
+	outgoing?: AdvancedLogin;
+}
+
 export type SecurityType = "NONE" | "STARTTLS" | "TLS";
 export type ServerType = "incoming" | "outgoing";

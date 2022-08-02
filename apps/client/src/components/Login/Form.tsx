@@ -25,7 +25,7 @@ import Typography from "@mui/material/Typography";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import Error, { APIError } from "@interfaces/error";
+import Error from "@interfaces/error";
 import AdvancedLogin, { SecurityType, ServerType } from "@interfaces/login";
 
 import modalStyles from "@styles/modal";
@@ -35,13 +35,14 @@ import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 import OtherLogins from "@components/Login/OtherLogins";
+import { ErrorResponse } from "@interfaces/responses";
 
-type Store = Record<ServerType, AdvancedLogin & { error?: APIError }> & {
+type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
 	setProperty: (
 		type: ServerType
 	) => (
-		property: keyof (AdvancedLogin & { error?: APIError })
-	) => (newValue?: string | number | SecurityType | APIError) => void;
+		property: keyof (AdvancedLogin & { error?: ErrorResponse })
+	) => (newValue?: string | number | SecurityType | ErrorResponse) => void;
 };
 
 const createLoginSettingsStore = create<Store>((set) => ({
@@ -55,9 +56,9 @@ const createLoginSettingsStore = create<Store>((set) => ({
  * Creates two input fields for the username and password
  */
 const Credentials: FC<{
-	error?: APIError;
+	error?: ErrorResponse;
 	required?: boolean;
-	setError: (error?: APIError) => void;
+	setError: (error?: ErrorResponse) => void;
 	handleKeyDown?: (e: KeyboardEvent) => void;
 	setPassword: (password: string) => void;
 	setUsername: (username: string) => void;
@@ -287,7 +288,7 @@ const LoginForm: FC = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 
-	const [error, setError] = useState<APIError>();
+	const [error, setError] = useState<ErrorResponse>();
 
 	const login = useMailLogin();
 

@@ -1,0 +1,11 @@
+{
+	"name": "@dust-mail/typings",
+	"version": "0.0.0",
+	"private": true,
+	"files": [
+		"message.d.ts"
+	],
+	"devDependencies": {
+		"typescript": "^4.7.4"
+	}
+}

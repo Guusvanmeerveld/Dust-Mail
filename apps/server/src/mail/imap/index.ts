@@ -14,7 +14,7 @@ import {
 	IncomingMessage,
 	ContentType,
 	FullIncomingMessage
-} from "@utils/interfaces/message";
+} from "@dust-mail/typings/message";
 
 export default class Client extends EventEmitter implements IncomingClient {
 	private readonly _client: Imap;
@@ -88,7 +88,7 @@ export default class Client extends EventEmitter implements IncomingClient {
 					...parseMessage(
 						message.bodies.find((body) => body.which == headerBody).body
 					),
-					flags: message.flags,
+					flags: { seen: !!message.flags.find((flag) => flag.match(/Seen/)) },
 					date: message.date
 				};
 
@@ -158,7 +158,7 @@ export default class Client extends EventEmitter implements IncomingClient {
 		return {
 			...headers.shift(),
 			date: message.date,
-			flags: message.flags
+			flags: { seen: !!message.flags.find((flag) => flag.match(/Seen/)) }
 		};
 	};
 }

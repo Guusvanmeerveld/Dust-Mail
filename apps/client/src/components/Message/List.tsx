@@ -1,5 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
-
 import { useEffect, useRef, useState, memo, FC } from "react";
 import { useInfiniteQuery } from "react-query";
 
@@ -11,8 +9,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
 import Error from "@interfaces/error";
-import Message from "@interfaces/message";
-import { LocalToken } from "@interfaces/responses";
+import { IncomingMessage } from "@dust-mail/typings/message";
 
 import useFetch from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
@@ -21,16 +18,12 @@ import useStore from "@utils/hooks/useStore";
 
 import Loading from "@components/Loading";
 import MessageListItem from "@components/Message/ListItem";
+import { messageCountForPage } from "@src/constants";
 
 const UnMemoizedMessageList: FC = () => {
 	const fetcher = useFetch();
 
-	const [accessToken] = useLocalStorageState<LocalToken>("accessToken");
-
 	const setFetching = useStore((state) => state.setFetching);
-
-	// The amount of messages to load per request
-	const messageCountForPage = import.meta.env.VITE_MESSAGE_COUNT_PAGE ?? 20;
 
 	const [selectedBox] = useSelectedBox();
 	const [selectedMessage] = useSelectedMessage();
@@ -43,22 +36,19 @@ const UnMemoizedMessageList: FC = () => {
 		isFetching,
 		isFetchingNextPage,
 		refetch
-	} = useInfiniteQuery<Message[], AxiosError<{ code: Error; message: string }>>(
-		["box", selectedBox?.id, accessToken?.body],
+	} = useInfiniteQuery<
+		IncomingMessage[],
+		AxiosError<{ code: Error; message: string }>
+	>(
+		["box", selectedBox?.id],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];
 			}
 
-			return fetcher
-				.get("/mail/box", {
-					params: {
-						cursor: pageParam,
-						limit: messageCountForPage,
-						box: selectedBox?.id
-					}
-				})
-				.then((res) => res.data);
+			if (!selectedBox?.id) return [];
+
+			return fetcher.getBox(selectedBox.id, pageParam);
 		},
 		{
 			getNextPageParam: (lastPage, pages) => {

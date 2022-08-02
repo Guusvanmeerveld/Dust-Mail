@@ -4,7 +4,7 @@ import GoogleBox from "../interfaces/box";
 
 import axios from "axios";
 
-import { IncomingMessage } from "@utils/interfaces/message";
+import { IncomingMessage } from "@dust-mail/typings/message";
 
 export const getBoxes = async (
 	authorization: string
@@ -83,7 +83,9 @@ export const getBoxMessages = async (
 					)?.value,
 					from,
 					id: data.id,
-					flags: ["\\Seen"]
+					flags: {
+						seen: true
+					}
 				};
 			})
 		),

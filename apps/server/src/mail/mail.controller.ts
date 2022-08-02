@@ -18,7 +18,7 @@ import { mailDefaultLimit, mailFetchLimit } from "./constants";
 import { Request } from "@auth/interfaces/request.interface";
 
 import handleError from "@utils/handleError";
-import { Address } from "@utils/interfaces/message";
+import { Address } from "@dust-mail/typings/message";
 
 import { AddressValidationPipe } from "./pipes/address.pipe";
 

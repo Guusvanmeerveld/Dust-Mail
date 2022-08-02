@@ -1,5 +1,5 @@
-export default interface Box {
+import { BoxResponse } from "@interfaces/responses";
+
+export default interface Box extends BoxResponse {
 	icon?: JSX.Element;
-	name: string;
-	id: string;
 }

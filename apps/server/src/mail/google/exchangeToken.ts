@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 
-import { clientInfo } from "./constants";
+import { getClientInfo } from "./constants";
 import Config from "./interfaces/config";
 
 import axios from "axios";
@@ -9,6 +9,8 @@ const exchangeToken = async (
 	code: string,
 	redirect_uri: string
 ): Promise<Omit<Config, "userID">> => {
+	const clientInfo = getClientInfo();
+
 	if (!clientInfo.id || !clientInfo.secret)
 		throw new BadRequestException(
 			"Google authentication is not supported on this server"

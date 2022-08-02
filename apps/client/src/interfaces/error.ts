@@ -6,9 +6,4 @@ enum Error {
 	Misc = 5
 }
 
-export interface APIError {
-	message: string;
-	type: Error;
-}
-
 export default Error;

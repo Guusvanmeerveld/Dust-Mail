@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 
 const useSelectedMessage = (): [
-	string | void,
+	string | undefined,
 	(messageID?: string) => void
 ] => {
 	const [selectedBox] = useSelectedBox();

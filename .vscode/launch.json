@@ -8,8 +8,8 @@
 			"env": {
 				"VITE_DEFAULT_SERVER": "http://localhost:4000"
 			},
-			"command": "yarn run dev",
-			"cwd": "${workspaceFolder}/packages/client"
+			"command": "pnpm run dev",
+			"cwd": "${workspaceFolder}/apps/client"
 		},
 		{
 			"name": "Client: start tauri server",
@@ -18,8 +18,8 @@
 			"env": {
 				"VITE_DEFAULT_SERVER": "http://localhost:4000"
 			},
-			"command": "yarn run tauri dev",
-			"cwd": "${workspaceFolder}/packages/client"
+			"command": "pnpm run tauri dev",
+			"cwd": "${workspaceFolder}/apps/client"
 		},
 		{
 			"name": "Client: start client",
@@ -31,13 +31,8 @@
 			"name": "Server: start server",
 			"type": "node-terminal",
 			"request": "launch",
-			"env": {
-				"PORT": "4000",
-				"GOOGLE_CLIENT_ID": "1005771905136-i50pkn5dfpbqder32mlb6h67tst8d89h.apps.googleusercontent.com",
-				"GOOGLE_CLIENT_SECRET": "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"
-			},
-			"command": "yarn run start:debug",
-			"cwd": "${workspaceFolder}/packages/server"
+			"command": "pnpm run start:debug",
+			"cwd": "${workspaceFolder}/apps/server"
 		}
 	]
 }

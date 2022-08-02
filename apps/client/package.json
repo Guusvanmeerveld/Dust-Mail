@@ -13,6 +13,7 @@
 		"email": "contact@guusvanmeerveld.dev"
 	},
 	"contributors": [],
+	"packageManager": "pnpm@7.5.2",
 	"size-limit": [
 		{
 			"path": "dist/assets/*.js",
@@ -25,6 +26,8 @@
 		"size": "size-limit",
 		"lint": "eslint src",
 		"build": "tsc && vite build",
+		"test": "vitest --passWithNoTests",
+		"coverage": "vitest run --coverage",
 		"preview": "vite preview",
 		"tauri": "tauri"
 	},
@@ -66,6 +69,7 @@
 		"eslint-plugin-react": "^7.30.1",
 		"eslint-plugin-react-hooks": "^4.6.0",
 		"@dust-mail/tsconfig": "workspace:*",
+		"@dust-mail/typings": "workspace:*",
 		"prettier": "^2.7.1",
 		"size-limit": "^7.0.8",
 		"typescript": "^4.5.4",

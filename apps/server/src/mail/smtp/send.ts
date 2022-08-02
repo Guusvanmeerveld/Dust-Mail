@@ -1,6 +1,6 @@
 import { Transporter } from "nodemailer";
 
-import { Address, OutgoingMessage } from "@utils/interfaces/message";
+import { Address, OutgoingMessage } from "@dust-mail/typings/message";
 
 const send = async (
 	_client: Transporter,

@@ -1,6 +1,6 @@
 import { ParsedMail } from "mailparser";
 
-import { Address } from "@utils/interfaces/message";
+import { Address } from "@dust-mail/typings/message";
 
 const parseMessage = (
 	result: ParsedMail

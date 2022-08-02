@@ -10,7 +10,7 @@ export class SystemController {
 		const version = await this.systemService.getVersion();
 
 		return {
-			type: process.env.UNSTABLE != undefined ? "git" : "stable",
+			type: process.env.UNSTABLE === "true" ? "git" : "stable",
 			version
 		};
 	}

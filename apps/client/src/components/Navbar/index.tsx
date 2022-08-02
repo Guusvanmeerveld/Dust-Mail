@@ -95,16 +95,14 @@ const UnMemoizedNavbar: FC = () => {
 							{import.meta.env.VITE_APP_NAME}
 						</Typography>
 
-						<Typography>
-							{breadcrumbs && (
-								<Breadcrumbs
-									separator={<NavigateNext fontSize="small" />}
-									aria-label="breadcrumb"
-								>
-									{breadcrumbs}
-								</Breadcrumbs>
-							)}
-						</Typography>
+						{breadcrumbs && (
+							<Breadcrumbs
+								separator={<NavigateNext fontSize="small" />}
+								aria-label="breadcrumb"
+							>
+								{breadcrumbs}
+							</Breadcrumbs>
+						)}
 					</Stack>
 
 					<Avatar />

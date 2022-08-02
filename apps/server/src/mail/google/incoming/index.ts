@@ -8,7 +8,7 @@ import { getBox, getBoxes, getBoxMessages } from "./box";
 import connect from "./connect";
 import { getMessage } from "./message";
 
-import { IncomingMessage } from "@utils/interfaces/message";
+import { IncomingMessage } from "@dust-mail/typings/message";
 
 export default class IncomingGoogleClient
 	extends EventEmitter
