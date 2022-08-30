@@ -8,8 +8,8 @@ import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
 
-import Error from "@interfaces/error";
-import { IncomingMessage } from "@dust-mail/typings/message";
+import { IncomingMessage } from "@dust-mail/typings";
+import { ErrorResponse } from "@dust-mail/typings";
 
 import useFetch from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
@@ -36,10 +36,7 @@ const UnMemoizedMessageList: FC = () => {
 		isFetching,
 		isFetchingNextPage,
 		refetch
-	} = useInfiniteQuery<
-		IncomingMessage[],
-		AxiosError<{ code: Error; message: string }>
-	>(
+	} = useInfiniteQuery<IncomingMessage[], AxiosError<ErrorResponse>>(
 		["box", selectedBox?.id],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {

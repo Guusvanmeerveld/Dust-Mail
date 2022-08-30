@@ -1,9 +1,6 @@
-import { join } from "path";
+import mailDiscover, { detectServiceFromConfig } from "@dust-mail/autodiscover";
 
-import mailDiscover from "@dust-mail/autodiscover";
-
-import { Request as ExpressRequest, Response } from "express";
-import axios from "axios";
+import type { Request as ExpressRequest } from "express";
 
 import { JwtService } from "@nestjs/jwt";
 
@@ -13,9 +10,7 @@ import {
 	Controller,
 	Get,
 	Post,
-	Query,
 	Req,
-	Res,
 	UnauthorizedException,
 	UseGuards
 } from "@nestjs/common";
@@ -26,14 +21,16 @@ import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
 import handleError from "@utils/handleError";
 
-import exchangeGoogleToken from "@mail/google/exchangeToken";
-import { getClientInfo as getGoogleClientInfo } from "@mail/google/constants";
+import { getClientInfo as getGoogleClientInfo } from "@src/google/constants";
 
-import UserError from "@utils/interfaces/error.interface";
+import { LoginResponse, UserError } from "@dust-mail/typings";
 
-import { Request } from "./interfaces/request.interface";
-import { RefreshTokenPayload } from "./interfaces/payload.interface";
-import { SecurityType } from "./interfaces/config.interface";
+import {
+	IncomingServiceType,
+	JwtToken,
+	OutgoingServiceType
+} from "./interfaces/jwt.interface";
+import type { SecurityType } from "./interfaces/config.interface";
 
 import { StringValidationPipe } from "./pipes/string.pipe";
 
@@ -73,8 +70,11 @@ export class AuthController {
 		outgoingPort?: number,
 		@Body("outgoing_security", StringValidationPipe)
 		outgoingSecurity?: SecurityType
-	) {
+	): Promise<LoginResponse> {
 		if (incomingUsername && incomingPassword) {
+			let incomingService: IncomingServiceType,
+				outgoingService: OutgoingServiceType;
+
 			if (!incomingServer || !outgoingServer) {
 				const result = await mailDiscover(incomingUsername).catch(
 					(e: Error) => {
@@ -94,12 +94,14 @@ export class AuthController {
 						incomingServer = foundIncomingServer.server;
 						incomingPort = foundIncomingServer.port;
 						incomingSecurity = foundIncomingServer.security;
+						incomingService = foundIncomingServer.type;
 					}
 
 					if (!outgoingServer) {
 						outgoingServer = foundOutgoingServer.server;
 						outgoingPort = foundOutgoingServer.port;
 						outgoingSecurity = foundOutgoingServer.security;
+						outgoingService = foundOutgoingServer.type;
 					}
 				}
 			}
@@ -132,25 +134,39 @@ export class AuthController {
 			if (!outgoingUsername) outgoingUsername = incomingUsername;
 			if (!outgoingPassword) outgoingPassword = outgoingPassword;
 
+			if (!incomingService) {
+				incomingService = await detectServiceFromConfig({
+					security: incomingSecurity,
+					port: incomingPort,
+					server: incomingServer
+				}).catch(handleError);
+			}
+
+			if (!outgoingService) {
+				outgoingService = await detectServiceFromConfig({
+					security: outgoingSecurity,
+					port: outgoingPort,
+					server: outgoingServer
+				}).catch(handleError);
+			}
+
 			return await this.authService
 				.login({
 					incoming: {
-						mail: {
-							username: incomingUsername,
-							password: incomingPassword,
-							server: incomingServer,
-							port: incomingPort,
-							security: incomingSecurity
-						}
+						username: incomingUsername,
+						password: incomingPassword,
+						server: incomingServer,
+						port: incomingPort,
+						security: incomingSecurity,
+						service: incomingService
 					},
 					outgoing: {
-						mail: {
-							username: outgoingUsername,
-							password: outgoingPassword,
-							server: outgoingServer,
-							port: outgoingPort,
-							security: outgoingSecurity
-						}
+						username: outgoingUsername,
+						password: outgoingPassword,
+						server: outgoingServer,
+						port: outgoingPort,
+						security: outgoingSecurity,
+						service: outgoingService
 					}
 				})
 				.catch(handleError);
@@ -176,13 +192,13 @@ export class AuthController {
 			authHeader?.length
 		);
 
-		const refreshTokenPayload: RefreshTokenPayload = await this.jwtService
+		const refreshTokenPayload: JwtToken = await this.jwtService
 			.verifyAsync(userRefreshToken)
 			.catch(() => {
 				throw new UnauthorizedException("Refresh token is invalid");
 			});
 
-		if (!refreshTokenPayload.accessToken)
+		if (refreshTokenPayload.tokenType == "access")
 			throw new UnauthorizedException(
 				"Can't use access token as refresh token"
 			);
@@ -194,54 +210,13 @@ export class AuthController {
 
 				throw new UnauthorizedException("Access token is still valid");
 			})
-			.catch(() => this.authService.refreshTokens(refreshTokenPayload.body));
+			.catch(() => this.authService.refreshTokens(refreshTokenPayload));
 	}
 
-	@Get("gmail")
-	@UseGuards(ThrottlerBehindProxyGuard)
-	public async googleLogin(
-		@Req() req: Request,
-		@Res() res: Response,
-		@Query("code", StringValidationPipe) code: string,
-		@Query("error", StringValidationPipe) error: string
-	) {
-		if (error) {
-			throw new BadRequestException(`OAuth login failed: ${error}`);
-		}
-
-		if (!code) throw new BadRequestException("`code` param required");
-
-		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
-
-		const config = await exchangeGoogleToken(code, redirect_uri);
-
-		const { data: user } = await axios
-			.get<{ id: string }>(
-				`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${config.accessToken}`,
-				{
-					headers: {
-						Authorization: `${config.tokenType} ${config.accessToken}`
-					}
-				}
-			)
-			.catch(() => {
-				throw new UnauthorizedException("Invalid access token");
-			});
-
-		const [accessToken, refreshToken] = await this.authService
-			.googleLogin({ google: { ...config, userID: user.id } })
-			.catch(handleError);
-
-		res.cookie("accessToken", accessToken);
-		res.cookie("refreshToken", refreshToken);
-
-		res.sendFile(join(process.cwd(), "public", "oauth.html"));
-	}
-
-	@Get("oauth/tokens")
+	@Get(["oauth", "tokens"].join("/"))
 	public async getOAuthTokens() {
-		const clientInfo = getGoogleClientInfo();
+		const googleClientInfo = getGoogleClientInfo();
 
-		return { google: clientInfo.id };
+		return { google: googleClientInfo.id };
 	}
 }

@@ -3,8 +3,8 @@ import useLocalStorageState from "use-local-storage-state";
 import axios from "axios";
 import HttpClient from "@interfaces/http";
 
-import { LocalToken, VersionResponse } from "@interfaces/responses";
-import Error from "@interfaces/error";
+import { LocalToken, VersionResponse, UserError } from "@dust-mail/typings";
+
 import { messageCountForPage } from "@src/constants";
 
 const useHttpClient = (): HttpClient => {
@@ -32,12 +32,12 @@ const useHttpClient = (): HttpClient => {
 							message: `Could not connect to remote ${
 								import.meta.env.VITE_APP_NAME
 							} server, please check your connectivity`,
-							type: Error.Misc
+							type: UserError.Misc
 						};
 					} else {
 						throw {
 							message: `An unknown error occured: ${error.message}`,
-							type: Error.Misc
+							type: UserError.Misc
 						};
 					}
 				});

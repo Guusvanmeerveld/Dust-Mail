@@ -1,1 +1,1 @@
-export const isBehindProxy = process.env.PROXY == "true" ?? false;
+export const getIsBehindProxy = () => process.env.PROXY == "true";

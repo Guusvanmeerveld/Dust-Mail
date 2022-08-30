@@ -1,0 +1,35 @@
+// Vitest Snapshot v1
+
+exports[`Test Thunderbird autoconfig discovery functionality 1`] = `
+[
+  {
+    "port": 993,
+    "security": "TLS",
+    "server": "imap.guusvanmeerveld.dev",
+    "type": "imap",
+  },
+  {
+    "port": 587,
+    "security": "STARTTLS",
+    "server": "smtp.guusvanmeerveld.dev",
+    "type": "smtp",
+  },
+]
+`;
+
+exports[`Validate autodiscover checker Test Thunderbird autoconfig discovery functionality 1`] = `
+Array [
+  Object {
+    "port": 993,
+    "security": "TLS",
+    "server": "imap.guusvanmeerveld.dev",
+    "type": "imap",
+  },
+  Object {
+    "port": 587,
+    "security": "STARTTLS",
+    "server": "smtp.guusvanmeerveld.dev",
+    "type": "smtp",
+  },
+]
+`;

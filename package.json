@@ -17,7 +17,6 @@
 		"test": "turbo run test",
 		"deploy": "turbo run deploy",
 		"dev": "turbo run dev",
-		"clean": "npx -y rimraf node_modules packages/**/node_modules/ apps/**/node_modules/ pnpm-lock.yaml && pnpm install",
 		"postinstall": "husky install",
 		"version": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
 		"postversion": "git push origin"

@@ -12,7 +12,7 @@ import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
-import { LoginResponse, PublicTokensResponse } from "@interfaces/responses";
+import { LoginResponse, PublicTokensResponse } from "@dust-mail/typings";
 
 import modalStyles from "@styles/modal";
 
@@ -120,7 +120,7 @@ const OtherLogins: FC = () => {
 				"https://www.googleapis.com/auth/userinfo.profile"
 			].join(" "),
 			client_id: oauthTokens.google,
-			redirect_uri: `${backendServer}/auth/gmail`
+			redirect_uri: `${backendServer}/google/login`
 		};
 
 		return `https://accounts.google.com/o/oauth2/v2/auth?${Object.entries(

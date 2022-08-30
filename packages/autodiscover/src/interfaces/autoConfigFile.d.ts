@@ -1,3 +1,5 @@
+import { IncomingServer, OutgoingServer } from "./emailServer";
+
 export default interface AutoConfigFile {
 	clientConfig: {
 		emailProvider: {
@@ -15,6 +17,9 @@ export interface Server {
 	port: number;
 	socketType: "STARTTLS" | "SSL" | "plain";
 	authentication: Authentication;
+	"@": {
+		type: IncomingServer | OutgoingServer;
+	};
 }
 
 type Authentication =

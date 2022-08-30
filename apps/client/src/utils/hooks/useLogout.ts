@@ -1,6 +1,6 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { LocalToken } from "@interfaces/responses";
+import { LocalToken } from "@dust-mail/typings";
 
 import useStore from "@utils/hooks/useStore";
 

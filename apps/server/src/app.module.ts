@@ -1,13 +1,17 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
+import { join } from "path";
+
 import { AuthModule } from "./auth/auth.module";
 import { LoggerMiddleware } from "./logger.middleware";
 import { MailModule } from "./mail/mail.module";
 import { AvatarModule } from "./avatar/avatar.module";
 import { SystemModule } from "./system/system.module";
-import { join } from "path";
 import { ServeStaticModule } from "@nestjs/serve-static";
+import { CacheModule } from "./cache/cache.module";
+import { ImapModule } from "./imap/imap.module";
+import { SmtpModule } from "./smtp/smtp.module";
 
 @Module({
 	imports: [
@@ -23,7 +27,10 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 		AuthModule,
 		MailModule,
 		AvatarModule,
-		SystemModule
+		SystemModule,
+		CacheModule,
+		ImapModule,
+		SmtpModule
 	]
 })
 export class AppModule implements NestModule {

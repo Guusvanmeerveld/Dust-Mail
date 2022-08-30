@@ -1,0 +1,66 @@
+import { join } from "path";
+
+import {
+	BadRequestException,
+	Controller,
+	Get,
+	Query,
+	Req,
+	Res,
+	UnauthorizedException,
+	UseGuards
+} from "@nestjs/common";
+
+import { LoginResponse } from "@dust-mail/typings";
+
+import type { Request, Response } from "express";
+
+import { StringValidationPipe } from "@auth/pipes/string.pipe";
+
+import handleError from "@utils/handleError";
+import createTokenResponse from "@utils/createTokenResponse";
+
+import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
+
+import { GoogleService } from "./google.service";
+
+@Controller("google")
+export class GoogleController {
+	constructor(private readonly googleService: GoogleService) {}
+
+	private readonly pathToOAuthPage = join(
+		process.cwd(),
+		"public",
+		"oauth.html"
+	);
+
+	@Get("login")
+	@UseGuards(ThrottlerBehindProxyGuard)
+	public async login(
+		@Req() req: Request,
+		@Res() res: Response,
+		@Query("code", StringValidationPipe) code: string,
+		@Query("error", StringValidationPipe) error: string
+	) {
+		if (error) {
+			throw new UnauthorizedException(`OAuth login failed: ${error}`);
+		}
+
+		if (!code) throw new BadRequestException("`code` param required");
+
+		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
+
+		const [accessToken, refreshToken] = await this.googleService
+			.login(code, redirect_uri)
+			.catch(handleError);
+
+		const tokens: LoginResponse = [
+			createTokenResponse("access", accessToken),
+			createTokenResponse("refresh", refreshToken)
+		];
+
+		res.cookie("tokens", tokens);
+
+		res.sendFile(this.pathToOAuthPage);
+	}
+}

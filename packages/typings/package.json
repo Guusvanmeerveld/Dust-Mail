@@ -3,9 +3,22 @@
 	"version": "0.0.0",
 	"private": true,
 	"files": [
-		"message.d.ts"
+		"message.d.ts",
+		"responses.js"
 	],
+	"types": "dist/index.d.ts",
+	"main": "dist/index.cjs",
+	"module": "dist/index.ejs",
+	"scripts": {
+		"build": "rollup -c --configPlugin rollup-plugin-typescript2",
+		"dev": "rollup -cw --configPlugin rollup-plugin-typescript2"
+	},
 	"devDependencies": {
+		"@dust-mail/tsconfig": "workspace:*",
+		"@types/node": "^18.7.13",
+		"rollup": "^2.56.3",
+		"rollup-plugin-ts": "^3.0.2",
+		"rollup-plugin-typescript2": "^0.31.1",
 		"typescript": "^4.7.4"
 	}
 }

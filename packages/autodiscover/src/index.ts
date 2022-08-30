@@ -7,7 +7,6 @@ import validateEmail from "./utils/validateEmail";
 /**
  * Will try to find an imap and smtp server based on an email address
  *
- *
  * @param email
  * @returns
  */
@@ -39,5 +38,7 @@ const fetchServerFromEmail = async (
 
 	return response;
 };
+
+export * from "./detectService";
 
 export default fetchServerFromEmail;

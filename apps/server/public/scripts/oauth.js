@@ -19,13 +19,13 @@ const getCookie = (cname) => {
 
 	return "";
 };
-const accessToken = JSON.parse(getCookie("accessToken").replace("j:", ""));
-const refreshToken = JSON.parse(getCookie("refreshToken").replace("j:", ""));
+
+const tokens = JSON.parse(getCookie("tokens").replace("j:", ""));
 
 if ("__TAURI__" in window) {
-	window.__TAURI__.tauri.invoke("oauth_login_token", token);
+	window.__TAURI__.tauri.invoke("oauth_login_token", tokens);
 } else if ("opener" in window && "postMessage" in window.opener) {
-	window.opener.postMessage(JSON.stringify([accessToken, refreshToken]), "*");
+	window.opener.postMessage(JSON.stringify(tokens), "*");
 
 	document.getElementById("text").innerHTML =
 		"Login complete, you can now close this window.";

@@ -25,7 +25,6 @@ import Typography from "@mui/material/Typography";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import Error from "@interfaces/error";
 import AdvancedLogin, { SecurityType, ServerType } from "@interfaces/login";
 
 import modalStyles from "@styles/modal";
@@ -35,7 +34,7 @@ import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 import OtherLogins from "@components/Login/OtherLogins";
-import { ErrorResponse } from "@interfaces/responses";
+import { ErrorResponse, UserError } from "@dust-mail/typings";
 
 type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
 	setProperty: (
@@ -81,15 +80,17 @@ const Credentials: FC<{
 					setUsername(e.currentTarget.value);
 				}}
 				id="username"
-				error={error && error.type == Error.Credentials}
-				helperText={error && error.type == Error.Credentials && error.message}
+				error={error && error.type == UserError.Credentials}
+				helperText={
+					error && error.type == UserError.Credentials && error.message
+				}
 				label="Username"
 				variant="outlined"
 				type="email"
 			/>
 
 			<FormControl
-				error={error && error.type == Error.Credentials}
+				error={error && error.type == UserError.Credentials}
 				required={required}
 				variant="outlined"
 			>
@@ -220,7 +221,7 @@ const AdvancedLoginMenu: FC = () => {
 		if (missingFields) {
 			setProperty("incoming")("error")({
 				message: "Missing required fields",
-				type: Error.Misc
+				type: UserError.Misc
 			});
 
 			return;
@@ -254,9 +255,9 @@ const AdvancedLoginMenu: FC = () => {
 					<br />
 
 					{error &&
-						(error.type == Error.Timeout ||
-							error.type == Error.Misc ||
-							error.type == Error.Network) && (
+						(error.type == UserError.Timeout ||
+							error.type == UserError.Misc ||
+							error.type == UserError.Network) && (
 							<>
 								<Alert sx={{ textAlign: "left" }} severity="error">
 									<AlertTitle>Error</AlertTitle>
@@ -306,7 +307,7 @@ const LoginForm: FC = () => {
 
 		// Reject the form if there any fields empty
 		if (missingFields) {
-			setError({ message: "Missing required fields", type: Error.Misc });
+			setError({ message: "Missing required fields", type: UserError.Misc });
 			return;
 		}
 
@@ -352,9 +353,9 @@ const LoginForm: FC = () => {
 				</Button>
 
 				{error &&
-					(error.type == Error.Timeout ||
-						error.type == Error.Misc ||
-						error.type == Error.Network) && (
+					(error.type == UserError.Timeout ||
+						error.type == UserError.Misc ||
+						error.type == UserError.Network) && (
 						<Alert sx={{ textAlign: "left" }} severity="error">
 							<AlertTitle>Error</AlertTitle>
 							{error.message}

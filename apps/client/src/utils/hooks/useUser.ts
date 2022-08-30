@@ -1,6 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { LocalToken } from "@interfaces/responses";
+import { LocalToken } from "@dust-mail/typings";
+
 import User from "@interfaces/user";
 
 const useUser = (): User => {

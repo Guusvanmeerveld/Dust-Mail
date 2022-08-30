@@ -7,7 +7,7 @@ import { Navigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
-import { LocalToken, LoginResponse } from "@interfaces/responses";
+import { LocalToken, LoginResponse } from "@dust-mail/typings";
 
 import scrollbarStyles from "@styles/scrollbar";
 

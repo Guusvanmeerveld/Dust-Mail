@@ -1,4 +1,4 @@
 node_modules
+
 /lib
-yarn-error.lock
-yarn-error.log
+/coverage

@@ -24,7 +24,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
 
-import { Address, FullIncomingMessage } from "@dust-mail/typings/message";
+import { Address, FullIncomingMessage } from "@dust-mail/typings";
 
 import scrollbarStyles from "@styles/scrollbar";
 

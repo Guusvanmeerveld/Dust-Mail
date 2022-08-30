@@ -15,10 +15,16 @@ import { AccessTokenAuthGuard } from "@src/auth/jwt-auth.guard";
 
 import { mailDefaultLimit, mailFetchLimit } from "./constants";
 
-import { Request } from "@auth/interfaces/request.interface";
+import type { Request } from "@auth/interfaces/request.interface";
 
 import handleError from "@utils/handleError";
-import { Address } from "@dust-mail/typings/message";
+
+import type {
+	Address,
+	BoxResponse,
+	FullIncomingMessage,
+	IncomingMessage
+} from "@dust-mail/typings";
 
 import { AddressValidationPipe } from "./pipes/address.pipe";
 
@@ -29,7 +35,7 @@ export class MailController {
 	@Get("boxes")
 	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
-	async fetchBoxes(@Req() req: Request) {
+	async fetchBoxes(@Req() req: Request): Promise<BoxResponse[]> {
 		const client = req.user.incomingClient;
 
 		return await client.getBoxes().catch(handleError);
@@ -43,7 +49,7 @@ export class MailController {
 		@Query("limit", ParseIntPipe) limit: number,
 		@Query("cursor", ParseIntPipe) page: number,
 		@Query("box") box: string
-	) {
+	): Promise<IncomingMessage[]> {
 		if (!limit) limit = mailDefaultLimit;
 
 		if (!box) box = "INBOX";
@@ -83,7 +89,7 @@ export class MailController {
 		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
 		@Query("id") id?: string,
 		@Query("box") box?: string
-	) {
+	): Promise<FullIncomingMessage | void> {
 		if (!id) throw new BadRequestException("Missing message `id` param");
 
 		if (!box) throw new BadRequestException("Missing message `box` param");
@@ -108,7 +114,7 @@ export class MailController {
 		@Body("bcc", AddressValidationPipe) bcc: Address | Address[],
 		@Body("content") content: string,
 		@Body("subject") subject: string
-	) {
+	): Promise<string> {
 		if (Array.isArray(from)) {
 			throw new BadRequestException("`from` property can't be an array");
 		}

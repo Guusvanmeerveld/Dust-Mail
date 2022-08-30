@@ -19,6 +19,7 @@
 		"test:e2e": "jest --config ./jest-e2e.ts"
 	},
 	"dependencies": {
+		"@dust-mail/autodiscover": "workspace:*",
 		"@nestjs/common": "^8.4.6",
 		"@nestjs/config": "^2.0.1",
 		"@nestjs/core": "^8.4.6",
@@ -27,6 +28,8 @@
 		"@nestjs/platform-express": "^8.4.6",
 		"@nestjs/serve-static": "^3.0.0",
 		"@nestjs/throttler": "^2.0.1",
+		"@redis/client": "^1.2.0",
+		"@redis/json": "^1.0.3",
 		"axios": "^0.27.2",
 		"cache-manager": "^4.0.1",
 		"cookie-parser": "^1.4.6",
@@ -35,11 +38,11 @@
 		"imap": "^0.8.19",
 		"ioredis": "^5.2.1",
 		"kleur": "^4.1.4",
-		"@dust-mail/autodiscover": "workspace:*",
 		"mailparser": "^3.5.0",
 		"nodemailer": "^6.7.7",
 		"passport": "^0.6.0",
 		"passport-jwt": "^4.0.0",
+		"redis": "^4.2.0",
 		"reflect-metadata": "^0.1.13",
 		"rimraf": "^3.0.2",
 		"rxjs": "^7.5.5",
@@ -48,6 +51,8 @@
 		"validator": "^13.7.0"
 	},
 	"devDependencies": {
+		"@dust-mail/tsconfig": "workspace:*",
+		"@dust-mail/typings": "workspace:*",
 		"@nestjs/cli": "^9.0.0",
 		"@nestjs/schematics": "^8.0.11",
 		"@nestjs/testing": "^8.4.6",
@@ -76,8 +81,6 @@
 		"ts-jest": "^28.0.3",
 		"ts-loader": "^9.3.0",
 		"ts-node": "^10.8.0",
-		"@dust-mail/tsconfig": "workspace:*",
-		"@dust-mail/typings": "workspace:*",
 		"tsconfig-paths": "^4.0.0",
 		"tsconfig-paths-jest": "^0.0.1",
 		"typescript": "^4.7.2"

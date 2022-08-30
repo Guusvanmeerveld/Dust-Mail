@@ -3,9 +3,11 @@
 	"compilerOptions": {
 		"target": "es5",
 		"module": "ES2015",
+		"composite": true,
 		"resolveJsonModule": true,
-		"outDir": "dist",
-		"rootDir": "src"
+		"declaration": true,
+		"declarationDir": "lib/types",
+		"outDir": "lib"
 	},
-	"include": ["src", "src/tests"]
+	"include": ["src/**/*", "rollup.config.ts", "package.json", "tests"]
 }

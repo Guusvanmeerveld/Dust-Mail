@@ -1,19 +1,16 @@
-import { State } from "@mail/interfaces/state.interface";
-import EventEmitter from "events";
-
 import {
 	IncomingMessage,
-	FullIncomingMessage
-} from "@dust-mail/typings/message";
+	FullIncomingMessage,
+	BoxResponse
+} from "@dust-mail/typings";
 
 export interface Box {
 	totalMessages: number;
 	name: string;
 }
 
-export default interface IncomingClient extends EventEmitter {
-	state: State;
-	getBoxes: () => Promise<{ name: string; id: string }[]>;
+export default interface IncomingClient {
+	getBoxes: () => Promise<BoxResponse[]>;
 	getBox: (boxName: string, readOnly?: boolean) => Promise<Box>;
 	getBoxMessages: (
 		boxName: string,
@@ -24,5 +21,4 @@ export default interface IncomingClient extends EventEmitter {
 		boxName: string,
 		markAsRead: boolean
 	) => Promise<FullIncomingMessage | void>;
-	connect: () => Promise<void>;
 }

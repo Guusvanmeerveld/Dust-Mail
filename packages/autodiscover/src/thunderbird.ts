@@ -3,6 +3,7 @@ import axios from "axios";
 import { XMLParser } from "fast-xml-parser";
 
 import AutoConfigFile, { Server } from "./interfaces/autoConfigFile";
+
 import AutodiscoverResponse, {
 	EmailServer,
 	IncomingServer,
@@ -68,7 +69,11 @@ const fetchServerWithThunderbird = async (
 const parseAutoConfigFile = (
 	autoConfigFile: string
 ): AutodiscoverResponse | undefined => {
-	const parser = new XMLParser();
+	const parser = new XMLParser({
+		ignoreAttributes: false,
+		attributeNamePrefix: "",
+		attributesGroupName: "@"
+	});
 
 	const data: AutoConfigFile | undefined = parser.parse(autoConfigFile);
 
@@ -82,6 +87,8 @@ const parseAutoConfigFile = (
 		if (incomingServers.length != 0) incomingServer = incomingServers[0];
 	} else incomingServer = incomingServers;
 
+	const incomingServerType = incomingServer?.["@"].type as IncomingServer;
+
 	const outgoingServers = data.clientConfig.emailProvider.outgoingServer;
 
 	let outgoingServer: Server | undefined;
@@ -90,9 +97,11 @@ const parseAutoConfigFile = (
 		if (outgoingServers.length != 0) outgoingServer = outgoingServers[0];
 	} else outgoingServer = outgoingServers;
 
+	const outgoingServerType = outgoingServer?.["@"].type as OutgoingServer;
+
 	return [
-		createEmailServer("imap", incomingServer),
-		createEmailServer("smtp", outgoingServer)
+		createEmailServer(incomingServerType, incomingServer),
+		createEmailServer(outgoingServerType, outgoingServer)
 	];
 };
 

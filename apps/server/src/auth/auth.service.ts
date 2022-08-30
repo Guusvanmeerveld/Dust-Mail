@@ -1,191 +1,111 @@
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
-import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
+import { ImapService } from "@src/imap/imap.service";
+import { SmtpService } from "@src/smtp/smtp.service";
 
-import ImapClient from "@mail/imap";
-import SmtpClient from "@mail/smtp";
+import { LoginResponse } from "@dust-mail/typings";
 
-import IncomingGoogleClient from "@mail/google/incoming";
+import {
+	IncomingServiceType,
+	JwtToken,
+	OutgoingServiceType
+} from "./interfaces/jwt.interface";
 
-import { createIdentifier } from "@utils/createIdentifier";
+import { jwtConstants } from "@src/constants";
+
+import createTokenResponse from "@utils/createTokenResponse";
 
 import Config from "./interfaces/config.interface";
 
-import { jwtConstants } from "./constants";
-
-type TokenType = "access_token" | "refresh_token";
-type TokenResponse = { type: TokenType; body: string; expires: Date };
+type ConfigWithServiceType<T> = Config & {
+	service: T;
+};
 
 @Injectable()
 export class AuthService {
-	constructor(private jwtService: JwtService) {}
+	constructor(
+		private readonly jwtService: JwtService,
+		private readonly imapService: ImapService,
+		private readonly smtpService: SmtpService
+	) {}
 
-	private readonly incomingClients: Map<string, IncomingClient> = new Map();
-	private readonly outgoingClients: Map<string, OutgoingClient> = new Map();
-
-	public createTokenResponse(type: TokenType, token: string): TokenResponse {
-		let expiry: number;
-
-		if (type == "access_token") expiry = jwtConstants.accessTokenExpires;
-		else if (type == "refresh_token") expiry = jwtConstants.refreshTokenExpires;
-
-		return {
-			type,
-			body: token,
-			expires: new Date(Date.now() + expiry * 1000)
-		};
-	}
-
-	public refreshTokens(config: {
-		incoming: Config;
-		outgoing: Config;
-	}): TokenResponse[] {
+	public refreshTokens(oldRefreshToken: JwtToken): LoginResponse {
 		const accessToken = this.jwtService.sign(
-			{ accessToken: false, body: config },
+			{
+				tokenType: "access",
+				services: oldRefreshToken.services,
+				body: oldRefreshToken.body
+			} as JwtToken,
 			{
 				expiresIn: jwtConstants.accessTokenExpires
 			}
 		);
 
 		const refreshToken = this.jwtService.sign({
+			tokenType: "refresh",
 			accessToken,
-			body: config
-		});
+			services: oldRefreshToken.services,
+			body: oldRefreshToken.body
+		} as JwtToken);
 
 		return [
-			this.createTokenResponse("access_token", accessToken),
-			this.createTokenResponse("refresh_token", refreshToken)
+			createTokenResponse("access", accessToken),
+			createTokenResponse("refresh", refreshToken)
 		];
 	}
 
 	public async login(config: {
-		incoming: Config;
-		outgoing: Config;
-	}): Promise<TokenResponse[]> {
-		await this.createIncomingClient(
-			createIdentifier(config.incoming),
-			config.incoming
-		);
+		incoming: ConfigWithServiceType<IncomingServiceType>;
+		outgoing: ConfigWithServiceType<OutgoingServiceType>;
+	}): Promise<LoginResponse> {
+		console.log(config.incoming.service, config.outgoing.service);
 
-		await this.createOutgoingClient(
-			createIdentifier(config.outgoing),
-			config.outgoing
-		);
+		switch (config.incoming.service) {
+			case "imap":
+				await this.imapService.login(config.incoming);
+				break;
 
-		const accessToken = this.jwtService.sign(
-			{ accessToken: false, body: config },
-			{
-				expiresIn: jwtConstants.accessTokenExpires
-			}
-		);
+			default:
+				break;
+		}
 
-		const refreshToken = this.jwtService.sign({
-			accessToken,
+		switch (config.outgoing.service) {
+			case "smtp":
+				await this.smtpService.login(config.outgoing);
+				break;
+
+			default:
+				break;
+		}
+
+		const services = {
+			incoming: config.incoming.service,
+			outgoing: config.outgoing.service
+		};
+
+		const accessTokenPayload: JwtToken = {
+			tokenType: "access",
+			services,
 			body: config
+		};
+
+		const accessToken = this.jwtService.sign(accessTokenPayload, {
+			expiresIn: jwtConstants.accessTokenExpires
 		});
 
-		return [
-			this.createTokenResponse("access_token", accessToken),
-			this.createTokenResponse("refresh_token", refreshToken)
-		];
-	}
-
-	public async googleLogin(config: Config): Promise<TokenResponse[]> {
-		const identifier = createIdentifier(config);
-
-		await this.createIncomingClient(identifier, config);
-
-		// await this.createOutgoingClient(identifier, config);
-
-		const payloadBody = { incoming: config, outgoing: config };
-
-		const accessToken = this.jwtService.sign(
-			{ accessToken: false, body: payloadBody },
-			{
-				expiresIn: jwtConstants.accessTokenExpires
-			}
-		);
-
-		const refreshToken = this.jwtService.sign({
+		const refreshTokenPayload: JwtToken = {
+			tokenType: "refresh",
 			accessToken,
-			body: payloadBody
-		});
+			services,
+			body: config
+		};
+
+		const refreshToken = this.jwtService.sign(refreshTokenPayload);
 
 		return [
-			this.createTokenResponse("access_token", accessToken),
-			this.createTokenResponse("refresh_token", refreshToken)
+			createTokenResponse("access", accessToken),
+			createTokenResponse("refresh", refreshToken)
 		];
-	}
-
-	private async createIncomingClient(
-		identifier: string,
-		config: Config
-	): Promise<IncomingClient> {
-		let client: IncomingClient;
-
-		if (config.mail) client = new ImapClient(config);
-		else if (config.google) client = new IncomingGoogleClient(config);
-
-		await client.connect();
-
-		this.incomingClients.set(identifier, client);
-
-		client.on("end", () => this.incomingClients.delete(identifier));
-
-		setTimeout(
-			() => this.incomingClients.delete(identifier),
-			jwtConstants.accessTokenExpires * 1000
-		);
-
-		return client;
-	}
-
-	private async createOutgoingClient(
-		identifier: string,
-		config: Config
-	): Promise<OutgoingClient> {
-		let client: OutgoingClient;
-
-		if (config.mail) client = new SmtpClient(config);
-
-		await client.connect();
-
-		this.outgoingClients.set(identifier, client);
-
-		client.on("end", () => this.outgoingClients.delete(identifier));
-
-		setTimeout(
-			() => this.outgoingClients.delete(identifier),
-			jwtConstants.accessTokenExpires * 1000
-		);
-
-		return client;
-	}
-
-	public async findConnection(config: {
-		incoming: Config;
-		outgoing: Config;
-	}): Promise<[IncomingClient, OutgoingClient]> {
-		const incomingIdentifier = createIdentifier(config.incoming);
-		const outgoingIdentifier = createIdentifier(config.outgoing);
-
-		let incomingClient = this.incomingClients.get(incomingIdentifier);
-		const outgoingClient = this.outgoingClients.get(outgoingIdentifier);
-
-		if (!incomingClient)
-			incomingClient = await this.createIncomingClient(
-				incomingIdentifier,
-				config.incoming
-			);
-
-		// if (!outgoingClient)
-		// 	outgoingClient = await this.createOutgoingClient(
-		// 		outgoingIdentifier,
-		// 		config.outgoing
-		// 	);
-
-		return [incomingClient, outgoingClient];
 	}
 }

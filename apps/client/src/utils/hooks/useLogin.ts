@@ -2,14 +2,15 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { useNavigate } from "react-router-dom";
 
-import Error from "@interfaces/error";
 import { LoginConfig } from "@interfaces/login";
+
 import {
 	ErrorResponse,
 	LocalToken,
 	LoginResponse,
-	VersionResponse
-} from "@interfaces/responses";
+	VersionResponse,
+	UserError
+} from "@dust-mail/typings";
 
 import createGravatarUrl from "@utils/createGravatarUrl";
 import useFetch from "@utils/hooks/useFetch";
@@ -66,7 +67,7 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 
 			throw {
 				message: `Server and client versions did not match, server has version ${serverVersion} (${serverVersionType}) while client has version ${appVersion.title} (${appVersion.type})`,
-				type: Error.Misc
+				type: UserError.Misc
 			};
 		}
 
@@ -87,34 +88,34 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 
 					// Check the error type
 					switch (error.response?.data.type) {
-						case Error.Credentials:
+						case UserError.Credentials:
 							throw {
 								message: `Failed to authorize with server, please check your credentials: ${error.response?.data.message}`,
-								type: Error.Credentials
+								type: UserError.Credentials
 							};
 
-						case Error.Timeout:
+						case UserError.Timeout:
 							throw {
 								message: "Server connection timed out",
-								type: Error.Timeout
+								type: UserError.Timeout
 							};
 
-						case Error.Network:
+						case UserError.Network:
 							throw {
 								message: `Failed to connect to remote imap server, please check your configuration: ${error.response?.data.message}`,
-								type: Error.Network
+								type: UserError.Network
 							};
 
 						default:
 							throw {
 								message: `Unknown error ocurred: ${error.response?.data.message}`,
-								type: Error.Misc
+								type: UserError.Misc
 							};
 					}
 				} else {
 					throw {
 						message: `Unknown error with status code ${status} occured`,
-						type: Error.Misc
+						type: UserError.Misc
 					};
 				}
 			});
@@ -150,11 +151,11 @@ const useLogin = (): ((
 	const fetchBoxes = useFetchBoxes();
 
 	return async (tokens, options) => {
-		const accessToken = tokens.find(({ type }) => type == "access_token");
+		const accessToken = tokens.find(({ type }) => type == "access");
 
 		if (!accessToken) return;
 
-		const refreshToken = tokens.find(({ type }) => type == "refresh_token");
+		const refreshToken = tokens.find(({ type }) => type == "refresh");
 
 		if (!refreshToken) return;
 

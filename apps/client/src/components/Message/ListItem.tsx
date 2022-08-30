@@ -11,7 +11,7 @@ import Typography from "@mui/material/Typography";
 
 import CloseIcon from "@mui/icons-material/Close";
 
-import { IncomingMessage } from "@dust-mail/typings/message";
+import { IncomingMessage } from "@dust-mail/typings";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useMessageActions from "@utils/hooks/useMessageActions";

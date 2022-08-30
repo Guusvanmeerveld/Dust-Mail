@@ -3,7 +3,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module";
-import { port } from "./constants";
+import { getPort } from "./constants";
 import { AppLogger } from "./utils/logger";
 
 async function bootstrap() {
@@ -18,6 +18,8 @@ async function bootstrap() {
 	app.use(helmet({ crossOriginOpenerPolicy: { policy: "unsafe-none" } }));
 
 	app.use(cookieParser());
+
+	const port = getPort();
 
 	await app.listen(port);
 }
