@@ -34,7 +34,6 @@ importers:
       '@mui/material': ^5.8.0
       '@mui/styled-engine': ^5.8.0
       '@rollup/plugin-alias': ^3.1.9
-      '@rollup/plugin-commonjs': ^22.0.2
       '@size-limit/preset-app': ^7.0.8
       '@tauri-apps/api': ^1.0.2
       '@tauri-apps/cli': ^1.0.4
@@ -95,7 +94,6 @@ importers:
       '@dust-mail/tsconfig': link:../../packages/tsconfig
       '@dust-mail/typings': link:../../packages/typings
       '@rollup/plugin-alias': 3.1.9
-      '@rollup/plugin-commonjs': 22.0.2
       '@size-limit/preset-app': 7.0.8_size-limit@7.0.8
       '@tauri-apps/cli': 1.0.5
       '@types/jest': 28.1.6
@@ -2967,21 +2965,6 @@ packages:
       rollup: 2.77.2
     dev: true
 
-  /@rollup/plugin-commonjs/22.0.2:
-    resolution: {integrity: sha512-//NdP6iIwPbMTcazYsiBMbJW7gfmpHom33u1beiIoHDEM0Q9clvtQB1T0efvMqHeKsGohiHo97BCPCkBXdscwg==}
-    engines: {node: '>= 12.0.0'}
-    peerDependencies:
-      rollup: ^2.68.0
-    dependencies:
-      '@rollup/pluginutils': 3.1.0
-      commondir: 1.0.1
-      estree-walker: 2.0.2
-      glob: 7.2.3
-      is-reference: 1.2.1
-      magic-string: 0.25.9
-      resolve: 1.22.1
-    dev: true
-
   /@rollup/plugin-json/4.1.0_rollup@2.77.2:
     resolution: {integrity: sha512-yfLbTdNS6amI/2OpmbiBoW12vngr5NW2jCJVZSBEz+H5KfUJZ2M7sDjk0U6GOOdCWFVScShte29o9NezJ53TPw==}
     peerDependencies:
@@ -3014,17 +2997,6 @@ packages:
       '@rollup/pluginutils': 3.1.0_rollup@2.77.2
       magic-string: 0.25.9
       rollup: 2.77.2
-    dev: true
-
-  /@rollup/pluginutils/3.1.0:
-    resolution: {integrity: sha512-GksZ6pr6TpIjHm8h9lSQ8pi8BE9VeubNT0OMJ3B5uZJ8pz73NPiqOtCog/x2/QzM1ENChPKxMDhiQuRHsqc+lg==}
-    engines: {node: '>= 8.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0
-    dependencies:
-      '@types/estree': 0.0.39
-      estree-walker: 1.0.1
-      picomatch: 2.3.1
     dev: true
 
   /@rollup/pluginutils/3.1.0_rollup@2.77.2:
@@ -7153,12 +7125,6 @@ packages:
     resolution: {integrity: sha512-VRSzKkbMm5jMDoKLbltAkFQ5Qr7VDiTFGXxYFXXowVj387GeGNOCsOH6Msy00SGZ3Fp84b1Naa1psqgcCIEP5Q==}
     engines: {node: '>=0.10.0'}
     dev: false
-
-  /is-reference/1.2.1:
-    resolution: {integrity: sha512-U82MsXXiFIrjCK4otLT+o2NA2Cd2g5MLoOVXUZjIOhLurrRxpEXzI8O0KZHr3IjLvlAH1kTPYSuqer5T9ZVBKQ==}
-    dependencies:
-      '@types/estree': 0.0.51
-    dev: true
 
   /is-regex/1.1.4:
     resolution: {integrity: sha512-kvRdxDsxZjhzUX07ZnLydzS1TU/TJlTUHHY4YLL87e37oUA49DfkLqgy+VjFocowy29cKvcSiu+kIv728jTTVg==}
