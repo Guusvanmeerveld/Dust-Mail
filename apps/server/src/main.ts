@@ -3,7 +3,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module";
-import { getPort } from "./constants";
+import { getBasePath, getPort } from "./constants";
 import { AppLogger } from "./utils/logger";
 
 async function bootstrap() {
@@ -11,7 +11,9 @@ async function bootstrap() {
 
 	const app = await NestFactory.create(AppModule, { logger: new AppLogger() });
 
-	if (process.env.BASE_PATH) app.setGlobalPrefix(process.env.BASE_PATH);
+	const basePath = getBasePath();
+
+	if (basePath) app.setGlobalPrefix(basePath);
 
 	app.enableCors();
 

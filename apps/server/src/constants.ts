@@ -1,5 +1,7 @@
 export const getPort = () => parseInt(process.env.PORT) || 3000;
 
+export const getBasePath = () => process.env.BASE_PATH;
+
 export const jwtConstants = {
 	getSecret: () => process.env.JWT_SECRET ?? "change_me",
 	/**

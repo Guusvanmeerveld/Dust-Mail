@@ -20,6 +20,7 @@
 	},
 	"dependencies": {
 		"@dust-mail/autodiscover": "workspace:*",
+		"@dust-mail/typings": "workspace:*",
 		"@nestjs/common": "^8.4.6",
 		"@nestjs/config": "^2.0.1",
 		"@nestjs/core": "^8.4.6",
@@ -52,7 +53,6 @@
 	},
 	"devDependencies": {
 		"@dust-mail/tsconfig": "workspace:*",
-		"@dust-mail/typings": "workspace:*",
 		"@nestjs/cli": "^9.0.0",
 		"@nestjs/schematics": "^8.0.11",
 		"@nestjs/testing": "^8.4.6",
