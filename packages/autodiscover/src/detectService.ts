@@ -1,9 +1,7 @@
 import net from "net";
-
 import tls from "tls";
 
 import { IncomingServer, OutgoingServer } from "./interfaces/emailServer";
-
 import ServerConfig from "./interfaces/serverConfig";
 
 /**

@@ -14,6 +14,7 @@
 	"module": "lib/index.es",
 	"types": "lib/types/src",
 	"scripts": {
+		"format": "prettier src --write",
 		"build": "rollup -c --configPlugin rollup-plugin-typescript2",
 		"dev": "rollup -cw --configPlugin rollup-plugin-typescript2",
 		"test": "vitest run",

@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
 import { readJson } from "fs-extra";
 import { join } from "path";
+
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class SystemService {

@@ -1,16 +1,15 @@
+import { AuthController } from "./auth.controller";
+import { AuthService } from "./auth.service";
+import { JwtStrategy } from "./jwt.strategy";
+
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { ThrottlerModule } from "@nestjs/throttler";
 
-import { AuthService } from "./auth.service";
-import { JwtStrategy } from "./jwt.strategy";
-import { AuthController } from "./auth.controller";
-
+import { jwtConstants } from "@src/constants";
 import { GoogleModule } from "@src/google/google.module";
 import { ImapModule } from "@src/imap/imap.module";
 import { SmtpModule } from "@src/smtp/smtp.module";
-
-import { jwtConstants } from "@src/constants";
 
 @Module({
 	imports: [

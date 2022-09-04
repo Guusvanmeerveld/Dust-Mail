@@ -1,6 +1,6 @@
-import { UnauthorizedException } from "@nestjs/common";
-
 import axios from "axios";
+
+import { UnauthorizedException } from "@nestjs/common";
 
 const getUserID = async (tokenType: string, accessToken: string) => {
 	const { data: user } = await axios

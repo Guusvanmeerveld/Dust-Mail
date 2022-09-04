@@ -1,8 +1,7 @@
-import { Injectable } from "@nestjs/common";
-
-import { ThrottlerGuard } from "@nestjs/throttler";
-
 import { Request } from "express";
+
+import { Injectable } from "@nestjs/common";
+import { ThrottlerGuard } from "@nestjs/throttler";
 
 import { parseIpAdressFromRequest } from "@src/utils";
 

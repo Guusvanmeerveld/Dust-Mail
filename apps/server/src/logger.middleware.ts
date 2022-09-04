@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-
-import { Injectable, Logger, NestMiddleware } from "@nestjs/common";
+import { gray } from "kleur";
+import { UAParser } from "ua-parser-js";
 
 import { parseIpAdressFromRequest } from "./utils";
 
-import { gray } from "kleur";
-import { UAParser } from "ua-parser-js";
+import { Injectable, Logger, NestMiddleware } from "@nestjs/common";
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {

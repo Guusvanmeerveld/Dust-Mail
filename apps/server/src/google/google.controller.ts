@@ -1,4 +1,10 @@
+import { StringValidationPipe } from "@auth/pipes/string.pipe";
+import type { Request, Response } from "express";
 import { join } from "path";
+
+import { GoogleService } from "./google.service";
+
+import { LoginResponse } from "@dust-mail/typings";
 
 import {
 	BadRequestException,
@@ -11,18 +17,9 @@ import {
 	UseGuards
 } from "@nestjs/common";
 
-import { LoginResponse } from "@dust-mail/typings";
-
-import type { Request, Response } from "express";
-
-import { StringValidationPipe } from "@auth/pipes/string.pipe";
-
-import handleError from "@utils/handleError";
 import createTokenResponse from "@utils/createTokenResponse";
-
 import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
-
-import { GoogleService } from "./google.service";
+import handleError from "@utils/handleError";
 
 @Controller("google")
 export class GoogleController {

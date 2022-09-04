@@ -1,8 +1,8 @@
+import { ImapService } from "./imap.service";
+
 import { Module } from "@nestjs/common";
 
 import { CacheModule } from "@src/cache/cache.module";
-
-import { ImapService } from "./imap.service";
 
 @Module({
 	imports: [CacheModule],

@@ -1,21 +1,19 @@
-import Imap from "imap";
-
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
-
-import { CacheService } from "@src/cache/cache.service";
-
-import parseMessage, { createAddress } from "@src/imap/utils/parseMessage";
+import Imap from "imap";
 
 import { getBox, closeBox, getBoxes } from "./box";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
-
-import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 
 import {
 	IncomingMessage,
 	ContentType,
 	FullIncomingMessage
 } from "@dust-mail/typings";
+
+import { CacheService } from "@src/cache/cache.service";
+import parseMessage, { createAddress } from "@src/imap/utils/parseMessage";
+
+import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 
 export default class Client implements IncomingClient {
 	constructor(

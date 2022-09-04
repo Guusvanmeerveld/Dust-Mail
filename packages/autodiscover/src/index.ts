@@ -1,7 +1,6 @@
-import fetchServerWithThunderbird from "./thunderbird";
 // import fetchServerWithAutodiscover from "./autodiscover";
-
 import AutodiscoverResponse from "./interfaces/emailServer";
+import fetchServerWithThunderbird from "./thunderbird";
 import validateEmail from "./utils/validateEmail";
 
 /**

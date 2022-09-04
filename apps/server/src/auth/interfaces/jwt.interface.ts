@@ -1,8 +1,8 @@
+import DefaultConfig from "./config.interface";
+
 import { TokenType } from "@dust-mail/typings";
 
 import GoogleConfig from "@src/google/interfaces/config";
-
-import DefaultConfig from "./config.interface";
 
 export type IncomingServiceType = "imap" | "pop3" | "google";
 export type OutgoingServiceType = "smtp" | "google";

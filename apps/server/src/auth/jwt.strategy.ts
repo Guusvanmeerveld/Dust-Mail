@@ -1,20 +1,17 @@
-import { ExtractJwt, Strategy } from "passport-jwt";
-
-import { PassportStrategy } from "@nestjs/passport";
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
-
-import { GoogleService } from "@src/google/google.service";
-import { ImapService } from "@src/imap/imap.service";
-import { SmtpService } from "@src/smtp/smtp.service";
-
-import GoogleConfig from "@src/google/interfaces/config";
-
-import { jwtConstants } from "@src/constants";
+import { ExtractJwt, Strategy } from "passport-jwt";
 
 import { JwtToken, MultiConfig } from "./interfaces/jwt.interface";
+
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+
+import { jwtConstants } from "@src/constants";
+import { GoogleService } from "@src/google/google.service";
+import GoogleConfig from "@src/google/interfaces/config";
+import { ImapService } from "@src/imap/imap.service";
+import { SmtpService } from "@src/smtp/smtp.service";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

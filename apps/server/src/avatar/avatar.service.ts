@@ -1,15 +1,14 @@
 import { createReadStream } from "fs";
 import { join } from "path";
+import { Readable } from "stream";
+
+import { avatars } from "./constants";
 
 import axios from "axios";
-
-import { Readable } from "stream";
 
 import { Injectable, NotFoundException } from "@nestjs/common";
 
 import { createHash } from "@utils/createHash";
-
-import { avatars } from "./constants";
 
 @Injectable()
 export class AvatarService {

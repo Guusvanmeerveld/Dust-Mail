@@ -1,11 +1,12 @@
 import useLocalStorageState from "use-local-storage-state";
 
 import axios from "axios";
-import HttpClient from "@interfaces/http";
 
 import { LocalToken, VersionResponse, UserError } from "@dust-mail/typings";
 
 import { messageCountForPage } from "@src/constants";
+
+import HttpClient from "@interfaces/http";
 
 const useHttpClient = (): HttpClient => {
 	const [backendServer] = useLocalStorageState<string>("customServerUrl", {

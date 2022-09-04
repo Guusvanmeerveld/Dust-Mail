@@ -1,17 +1,14 @@
+import Config from "@auth/interfaces/config.interface";
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import Imap from "imap";
+
+import Client from "./client";
+import connect from "./connect";
 
 import { Inject, Injectable } from "@nestjs/common";
 
-import Config from "@auth/interfaces/config.interface";
-
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
-
 import { CacheService } from "@src/cache/cache.service";
-
 import { createIdentifier } from "@src/utils/createIdentifier";
-
-import connect from "./connect";
-import Client from "./client";
 
 @Injectable()
 export class ImapService {

@@ -1,13 +1,12 @@
-import { Module } from "@nestjs/common";
-
-import { JwtModule } from "@nestjs/jwt";
-
 import { CacheModule } from "@cache/cache.module";
 
-import { jwtConstants } from "@src/constants";
-
-import { GoogleService } from "./google.service";
 import { GoogleController } from "./google.controller";
+import { GoogleService } from "./google.service";
+
+import { Module } from "@nestjs/common";
+import { JwtModule } from "@nestjs/jwt";
+
+import { jwtConstants } from "@src/constants";
 
 @Module({
 	imports: [

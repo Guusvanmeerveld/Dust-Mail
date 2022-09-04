@@ -1,45 +1,28 @@
-import { FC, memo, MouseEvent, MutableRefObject, useState } from "react";
-
-import Avatar from "@mui/material/Avatar";
-import Box from "@mui/material/Box";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import Skeleton from "@mui/material/Skeleton";
-import Typography from "@mui/material/Typography";
-
-import CloseIcon from "@mui/icons-material/Close";
+import { FC, memo, MouseEvent, useState } from "react";
 
 import { IncomingMessage } from "@dust-mail/typings";
 
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Skeleton from "@mui/material/Skeleton";
+import Typography from "@mui/material/Typography";
+
 import useAvatar from "@utils/hooks/useAvatar";
-import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 
 const UnMemoizedMessageListItem: FC<{
 	message: IncomingMessage;
 	selectedMessage: boolean;
-	rightClickMenuBox: MutableRefObject<null>;
-	rightClickMenuOpen: boolean;
 	setRightClickMenuAnchor: (anchor: {
 		x: number;
 		y: number;
 		id?: string;
 	}) => void;
-}> = ({
-	message,
-	selectedMessage,
-	rightClickMenuBox,
-	rightClickMenuOpen,
-	setRightClickMenuAnchor
-}) => {
+}> = ({ message, selectedMessage, setRightClickMenuAnchor }) => {
 	const theme = useTheme();
 
 	const [unSeen, setUnSeen] = useState(!message.flags.seen);
-
-	const messageActions = useMessageActions(message.id);
 
 	const [, setSelectedMessage] = useSelectedMessage();
 
@@ -63,45 +46,11 @@ const UnMemoizedMessageListItem: FC<{
 	const handleContextMenu = (e: MouseEvent): void => {
 		e.preventDefault();
 
-		setRightClickMenuAnchor({ x: e.screenX, y: e.screenY, id: message.id });
+		setRightClickMenuAnchor({ x: e.pageX, y: e.pageY, id: message.id });
 	};
-
-	const handleMenuClose = (): void => setRightClickMenuAnchor({ x: 0, y: 0 });
 
 	return (
 		<>
-			{rightClickMenuOpen && (
-				<Menu
-					id="message-context-menu"
-					open={rightClickMenuOpen}
-					onClose={handleMenuClose}
-					anchorEl={rightClickMenuBox?.current}
-					MenuListProps={{
-						"aria-labelledby": "message-context-menu-button"
-					}}
-				>
-					{messageActions.map((action) => (
-						<MenuItem
-							key={action.name}
-							onClick={() => {
-								handleMenuClose();
-								action.handler();
-							}}
-						>
-							<ListItemIcon>{action.icon}</ListItemIcon>
-							<ListItemText>{action.name}</ListItemText>
-						</MenuItem>
-					))}
-
-					<MenuItem onClick={handleMenuClose}>
-						<ListItemIcon>
-							<CloseIcon fontSize="small" />
-						</ListItemIcon>
-						<ListItemText>Close</ListItemText>
-					</MenuItem>
-				</Menu>
-			)}
-
 			<Box
 				onClick={handleClick}
 				onContextMenu={handleContextMenu}

@@ -5,7 +5,7 @@ export type writer = () => Promise<void>;
 
 export default interface Cache {
 	init: initter;
-	get: getter;
-	set: setter;
+	// get: getter;
+	// set: setter;
 	write: writer;
 }

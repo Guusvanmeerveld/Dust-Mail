@@ -1,22 +1,20 @@
-import { Injectable } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-
-import { ImapService } from "@src/imap/imap.service";
-import { SmtpService } from "@src/smtp/smtp.service";
-
-import { LoginResponse } from "@dust-mail/typings";
-
+import Config from "./interfaces/config.interface";
 import {
 	IncomingServiceType,
 	JwtToken,
 	OutgoingServiceType
 } from "./interfaces/jwt.interface";
 
+import { LoginResponse } from "@dust-mail/typings";
+
+import { Injectable } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+
 import { jwtConstants } from "@src/constants";
+import { ImapService } from "@src/imap/imap.service";
+import { SmtpService } from "@src/smtp/smtp.service";
 
 import createTokenResponse from "@utils/createTokenResponse";
-
-import Config from "./interfaces/config.interface";
 
 type ConfigWithServiceType<T> = Config & {
 	service: T;

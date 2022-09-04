@@ -2,7 +2,7 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { useNavigate } from "react-router-dom";
 
-import { LoginConfig } from "@interfaces/login";
+import { AxiosError } from "axios";
 
 import {
 	ErrorResponse,
@@ -12,11 +12,12 @@ import {
 	UserError
 } from "@dust-mail/typings";
 
+import Box from "@interfaces/box";
+import { LoginConfig } from "@interfaces/login";
+
 import createGravatarUrl from "@utils/createGravatarUrl";
 import useFetch from "@utils/hooks/useFetch";
 import useStore from "@utils/hooks/useStore";
-import Box from "@interfaces/box";
-import { AxiosError } from "axios";
 
 /**
  * Request the users inboxes and puts them in local storage
@@ -114,7 +115,7 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 					}
 				} else {
 					throw {
-						message: `Unknown error with status code ${status} occured`,
+						message: `Unknown error with status code ${error.response?.status} occured`,
 						type: UserError.Misc
 					};
 				}
@@ -170,6 +171,8 @@ const useLogin = (): ((
 
 			setAvatar(createGravatarUrl(options.username));
 		}
+
+		console.log(accessToken);
 
 		setAccessToken(accessToken);
 		setRefreshToken(refreshToken);

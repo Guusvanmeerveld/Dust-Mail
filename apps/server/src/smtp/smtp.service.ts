@@ -1,16 +1,13 @@
-import { Inject, Injectable } from "@nestjs/common";
-
+import Config from "@auth/interfaces/config.interface";
 import nodemailer, { Transporter } from "nodemailer";
 
-import Config from "@auth/interfaces/config.interface";
+import Client from "./client";
 
-import OutgoingClient from "@src/mail/interfaces/client/outgoing.interface";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { CacheService } from "@src/cache/cache.service";
-
+import OutgoingClient from "@src/mail/interfaces/client/outgoing.interface";
 import { createIdentifier } from "@src/utils/createIdentifier";
-
-import Client from "./client";
 
 @Injectable()
 export class SmtpService {

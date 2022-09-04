@@ -1,3 +1,15 @@
+import type { Request } from "@auth/interfaces/request.interface";
+
+import { mailDefaultLimit, mailFetchLimit } from "./constants";
+import { AddressValidationPipe } from "./pipes/address.pipe";
+
+import type {
+	Address,
+	BoxResponse,
+	FullIncomingMessage,
+	IncomingMessage
+} from "@dust-mail/typings";
+
 import {
 	BadRequestException,
 	Body,
@@ -13,20 +25,7 @@ import {
 
 import { AccessTokenAuthGuard } from "@src/auth/jwt-auth.guard";
 
-import { mailDefaultLimit, mailFetchLimit } from "./constants";
-
-import type { Request } from "@auth/interfaces/request.interface";
-
 import handleError from "@utils/handleError";
-
-import type {
-	Address,
-	BoxResponse,
-	FullIncomingMessage,
-	IncomingMessage
-} from "@dust-mail/typings";
-
-import { AddressValidationPipe } from "./pipes/address.pipe";
 
 // import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
@@ -78,6 +77,12 @@ export class MailController {
 				start,
 				end
 			})
+			.then((messages) =>
+				messages.map((message) => ({
+					...message,
+					id: Buffer.from(message.id, "utf-8").toString("base64")
+				}))
+			)
 			.catch(handleError);
 	}
 
@@ -97,6 +102,8 @@ export class MailController {
 		if (typeof id != "string" || typeof box != "string") {
 			throw new BadRequestException("`id` or `box` property must be a string");
 		}
+
+		id = Buffer.from(id, "base64").toString("utf-8");
 
 		const client = req.user.incomingClient;
 

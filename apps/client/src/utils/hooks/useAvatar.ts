@@ -10,11 +10,6 @@ import useFetch from "@utils/hooks/useFetch";
  */
 const REFRESH_INBOX_AVATARS = 60 * 60;
 
-// export default function useAvatar(email: undefined): void;
-// export default function useAvatar(email: string): {
-// 	data?: string;
-// 	isLoading: boolean;
-// };
 export default function useAvatar(
 	email?: string | undefined
 ): { data?: string; isLoading: boolean } | void {

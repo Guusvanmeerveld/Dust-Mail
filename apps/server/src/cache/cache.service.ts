@@ -1,14 +1,11 @@
-import { Injectable } from "@nestjs/common";
-
+import fs from "fs-extra";
+import { join } from "path";
 import { createClient, RedisClientType } from "redis";
 
-import fs from "fs-extra";
-
-import { join } from "path";
-
+import { getCacheTimeout, getJsonCacheDir, getRedisUri } from "./constants";
 import Cache, { getter, initter, setter, writer } from "./interfaces/cache";
 
-import { getJsonCacheDir, getRedisUri } from "./constants";
+import { Injectable } from "@nestjs/common";
 
 const getCacheFile = () => join(getJsonCacheDir(), "cache.json");
 
@@ -20,9 +17,13 @@ export class CacheService implements Cache {
 
 	private readonly isRedisCache: boolean;
 
-	private inMemoryCache: Record<string, any>;
+	private readonly cacheTimeout: number;
+
+	private data: Record<string, any>;
 
 	constructor() {
+		this.cacheTimeout = getCacheTimeout();
+
 		this.isRedisCache = !!getRedisUri();
 
 		if (this.isRedisCache)
@@ -40,12 +41,12 @@ export class CacheService implements Cache {
 				await fs
 					.readJSON(this.cacheFile)
 					.then((currentCache) => {
-						this.inMemoryCache = currentCache;
+						this.data = currentCache;
 
 						return false;
 					})
 					.catch(() => {
-						this.inMemoryCache = {};
+						this.data = {};
 
 						return true;
 					})
@@ -54,28 +55,16 @@ export class CacheService implements Cache {
 		}
 	};
 
-	public get: getter = <T>(key: string[]) => {
-		let path = this.inMemoryCache;
+	// public get: getter = async (path: string[]) => {
+	// 	return {};
+	// };
 
-		for (let i = 0; i < key.length; i++) {
-			path = this.inMemoryCache[key[i]];
-		}
-
-		return path as T;
-	};
-
-	public set: setter = async (key: string[], value: string) => {
-		let path = this.inMemoryCache;
-
-		for (let i = 0; i < key.length - 1; i++) {
-			path = this.inMemoryCache[key[i]];
-		}
-	};
+	// public set: setter = async (path: string[], value: string) => {};
 
 	public write: writer = async () => {
 		if (this.isRedisCache) {
 		} else {
-			await fs.outputJSON(this.cacheFile, this.inMemoryCache);
+			await fs.outputJSON(this.cacheFile, this.data);
 		}
 	};
 }

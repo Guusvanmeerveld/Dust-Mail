@@ -1,8 +1,8 @@
-import axios from "axios";
-
 import dns from "dns/promises";
 
 import AutodiscoverResponse from "./interfaces/emailServer";
+
+import axios from "axios";
 
 interface Credentials {
 	username: string;

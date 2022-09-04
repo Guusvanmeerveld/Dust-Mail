@@ -4,6 +4,12 @@
 	"semi": true,
 	"printWidth": 80,
 	"arrowParens": "always",
+	"importOrderParserPlugins": [
+		"classProperties",
+		"decorators-legacy",
+		"typescript",
+		"jsx"
+	],
 	"importOrderSeparation": true,
 	"importOrder": [
 		"@rollup/.*",
@@ -14,6 +20,8 @@
 		"^preact$",
 		"^preact.*",
 		"^axios.*",
+		"@dust-mail/.*",
+		"^@nestjs/.*",
 		"^@emotion/.*",
 		"^@mui/material/.*",
 		"^@mui/.*",
@@ -27,5 +35,6 @@
 		".*sass$",
 		".*css$",
 		"^@svg/.*"
-	]
+	],
+	"plugins": ["@trivago/prettier-plugin-sort-imports"]
 }

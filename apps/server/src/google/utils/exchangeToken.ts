@@ -1,9 +1,9 @@
-import { UnauthorizedException } from "@nestjs/common";
-
 import { getClientInfo } from "../constants";
 import Config from "../interfaces/config";
 
 import axios from "axios";
+
+import { UnauthorizedException } from "@nestjs/common";
 
 const exchangeToken = async (
 	code: string,

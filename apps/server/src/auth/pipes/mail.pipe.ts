@@ -1,6 +1,6 @@
-import { PipeTransform, Injectable, BadRequestException } from "@nestjs/common";
-
 import isEmail from "validator/lib/isEmail";
+
+import { PipeTransform, Injectable, BadRequestException } from "@nestjs/common";
 
 @Injectable()
 export class MailValidationPipe implements PipeTransform {

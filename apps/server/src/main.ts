@@ -1,10 +1,11 @@
-import { NestFactory } from "@nestjs/core";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module";
 import { getBasePath, getPort } from "./constants";
 import { AppLogger } from "./utils/logger";
+
+import { NestFactory } from "@nestjs/core";
 
 async function bootstrap() {
 	// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

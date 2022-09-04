@@ -6,7 +6,9 @@ import ReplyIcon from "@mui/icons-material/Reply";
 
 import MessageAction from "@interfaces/messageAction";
 
-const useMessageActions = (messageID: string): MessageAction[] => {
+const useMessageActions = (messageID?: string): MessageAction[] => {
+	if (!messageID) return [];
+
 	const actions: MessageAction[] = [
 		{
 			name: "Move message",

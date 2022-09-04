@@ -1,5 +1,6 @@
-import { LoggerService } from "@nestjs/common";
 import { gray, green, reset, red, yellow, cyan, blue } from "kleur";
+
+import { LoggerService } from "@nestjs/common";
 
 export class AppLogger implements LoggerService {
 	private base(

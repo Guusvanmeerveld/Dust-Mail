@@ -1,8 +1,17 @@
-import mailDiscover, { detectServiceFromConfig } from "@dust-mail/autodiscover";
-
 import type { Request as ExpressRequest } from "express";
 
-import { JwtService } from "@nestjs/jwt";
+import { AuthService } from "./auth.service";
+import { allowedDomains } from "./constants";
+import type { SecurityType } from "./interfaces/config.interface";
+import {
+	IncomingServiceType,
+	JwtToken,
+	OutgoingServiceType
+} from "./interfaces/jwt.interface";
+import { StringValidationPipe } from "./pipes/string.pipe";
+
+import mailDiscover, { detectServiceFromConfig } from "@dust-mail/autodiscover";
+import { LoginResponse, UserError } from "@dust-mail/typings";
 
 import {
 	BadRequestException,
@@ -14,27 +23,12 @@ import {
 	UnauthorizedException,
 	UseGuards
 } from "@nestjs/common";
-
-import { allowedDomains } from "./constants";
-
-import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
-
-import handleError from "@utils/handleError";
+import { JwtService } from "@nestjs/jwt";
 
 import { getClientInfo as getGoogleClientInfo } from "@src/google/constants";
 
-import { LoginResponse, UserError } from "@dust-mail/typings";
-
-import {
-	IncomingServiceType,
-	JwtToken,
-	OutgoingServiceType
-} from "./interfaces/jwt.interface";
-import type { SecurityType } from "./interfaces/config.interface";
-
-import { StringValidationPipe } from "./pipes/string.pipe";
-
-import { AuthService } from "./auth.service";
+import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
+import handleError from "@utils/handleError";
 
 @Controller("auth")
 export class AuthController {

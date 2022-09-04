@@ -1,5 +1,4 @@
 import { CacheService } from "@cache/cache.service";
-
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 
 import GoogleConfig from "../interfaces/config";

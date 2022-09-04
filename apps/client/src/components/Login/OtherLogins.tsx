@@ -4,6 +4,8 @@ import useLocalStorageState from "use-local-storage-state";
 import { FC, useEffect, useMemo, useState } from "react";
 import { useQuery } from "react-query";
 
+import { LoginResponse, PublicTokensResponse } from "@dust-mail/typings";
+
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -11,8 +13,6 @@ import Container from "@mui/material/Container";
 import Modal from "@mui/material/Modal";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-
-import { LoginResponse, PublicTokensResponse } from "@dust-mail/typings";
 
 import modalStyles from "@styles/modal";
 

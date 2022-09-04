@@ -3,6 +3,8 @@ import useLocalStorageState from "use-local-storage-state";
 import { useEffect, useRef, useState, memo, FC, MouseEvent } from "react";
 import { useQuery } from "react-query";
 
+import { Address, FullIncomingMessage, LocalToken } from "@dust-mail/typings";
+
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -24,8 +26,6 @@ import ImageIcon from "@mui/icons-material/Image";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
 
-import { Address, FullIncomingMessage } from "@dust-mail/typings";
-
 import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
@@ -36,43 +36,46 @@ import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
+const AddressListItem: FC<{ email: string; displayName: string }> = ({
+	email,
+	displayName
+}) => {
+	const theme = useTheme();
+
+	const avatar = useAvatar(email);
+
+	const name = displayName || email;
+
+	return (
+		<Chip
+			avatar={
+				<Avatar
+					sx={{
+						mr: 2,
+						bgcolor: !avatar ? theme.palette.secondary.main : null
+					}}
+					src={avatar?.data}
+					alt={name.charAt(0).toUpperCase()}
+				>
+					{!avatar?.data && name.charAt(0).toLocaleUpperCase()}
+				</Avatar>
+			}
+			label={name == email ? name : `${name} <${email}>`}
+		/>
+	);
+};
+
 const AddressList: FC<{
 	data: Address[];
 	prefixText: string;
 }> = ({ data, prefixText }) => {
-	const theme = useTheme();
-
 	return (
 		<Stack direction="row" alignItems="center" spacing={2}>
 			<Typography>{prefixText}</Typography>
 			{data &&
-				data.map((address) => {
-					// eslint-disable-next-line react-hooks/rules-of-hooks
-					const avatar = useAvatar(address.email);
-
-					const name = address.displayName || address.email;
-
-					return (
-						<Chip
-							key={address.email}
-							avatar={
-								<Avatar
-									sx={{
-										mr: 2,
-										bgcolor: !avatar ? theme.palette.secondary.main : null
-									}}
-									src={avatar?.data}
-									alt={name.charAt(0).toUpperCase()}
-								>
-									{!avatar?.data && name.charAt(0).toLocaleUpperCase()}
-								</Avatar>
-							}
-							label={
-								name == address.email ? name : `${name} <${address.email}>`
-							}
-						/>
-					);
-				})}
+				data.map((address, i) => (
+					<AddressListItem {...address} key={address.email + i} />
+				))}
 		</Stack>
 	);
 };
@@ -132,8 +135,10 @@ const UnMemoizedMessageOverview: FC = () => {
 		useState<null | Element>(null);
 	const messageActionsAnchorOpen = Boolean(messageActionsAnchor);
 
+	const [token] = useLocalStorageState<LocalToken>("accessToken");
+
 	const { data, isFetching } = useQuery<FullIncomingMessage>(
-		["message", selectedMessage, selectedBox?.id],
+		["message", selectedMessage, selectedBox?.id, token?.body],
 		() => fetcher.getMessage(selectedMessage, selectedBox?.id),
 		{ enabled: selectedMessage != undefined }
 	);

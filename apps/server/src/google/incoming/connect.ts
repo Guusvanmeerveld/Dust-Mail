@@ -1,6 +1,6 @@
-import { UnauthorizedException } from "@nestjs/common";
-
 import axios from "axios";
+
+import { UnauthorizedException } from "@nestjs/common";
 
 const connect = async (token: string): Promise<void> => {
 	await axios

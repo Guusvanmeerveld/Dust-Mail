@@ -1,15 +1,14 @@
-import axios from "axios";
-
 import { XMLParser } from "fast-xml-parser";
 
 import AutoConfigFile, { Server } from "./interfaces/autoConfigFile";
-
 import AutodiscoverResponse, {
 	EmailServer,
 	IncomingServer,
 	OutgoingServer,
 	Security
 } from "./interfaces/emailServer";
+
+import axios from "axios";
 
 const fetchServerWithThunderbird = async (
 	server: string,

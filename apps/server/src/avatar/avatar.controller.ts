@@ -1,3 +1,7 @@
+import { MailValidationPipe } from "@auth/pipes/mail.pipe";
+
+import { AvatarService } from "./avatar.service";
+
 import {
 	CacheInterceptor,
 	Controller,
@@ -7,10 +11,7 @@ import {
 	UseInterceptors
 } from "@nestjs/common";
 
-import { MailValidationPipe } from "@auth/pipes/mail.pipe";
 import { AccessTokenAuthGuard } from "@src/auth/jwt-auth.guard";
-
-import { AvatarService } from "./avatar.service";
 
 @Controller("avatar")
 export class AvatarController {

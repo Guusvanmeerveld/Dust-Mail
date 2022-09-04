@@ -1,24 +1,33 @@
-import { useEffect, useRef, useState, memo, FC } from "react";
+import useLocalStorageState from "use-local-storage-state";
+
+import { useEffect, useRef, useState, memo, FC, useMemo } from "react";
 import { useInfiniteQuery } from "react-query";
 
 import { AxiosError } from "axios";
 
+import { IncomingMessage, ErrorResponse, LocalToken } from "@dust-mail/typings";
+
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 
-import { IncomingMessage } from "@dust-mail/typings";
-import { ErrorResponse } from "@dust-mail/typings";
+import CloseIcon from "@mui/icons-material/Close";
+
+import { messageCountForPage } from "@src/constants";
 
 import useFetch from "@utils/hooks/useFetch";
+import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 
 import Loading from "@components/Loading";
 import MessageListItem from "@components/Message/ListItem";
-import { messageCountForPage } from "@src/constants";
 
 const UnMemoizedMessageList: FC = () => {
 	const fetcher = useFetch();
@@ -27,6 +36,8 @@ const UnMemoizedMessageList: FC = () => {
 
 	const [selectedBox] = useSelectedBox();
 	const [selectedMessage] = useSelectedMessage();
+
+	const [token] = useLocalStorageState<LocalToken>("accessToken");
 
 	// Request the messages using react-query
 	const {
@@ -37,7 +48,7 @@ const UnMemoizedMessageList: FC = () => {
 		isFetchingNextPage,
 		refetch
 	} = useInfiniteQuery<IncomingMessage[], AxiosError<ErrorResponse>>(
-		["box", selectedBox?.id],
+		["box", selectedBox?.id, token?.body],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];
@@ -72,13 +83,56 @@ const UnMemoizedMessageList: FC = () => {
 		id?: string;
 	}>({ x: 0, y: 0 });
 
+	const messageActions = useMessageActions(rightClickMenuAnchor?.id);
+
+	const rightClickMenuOpen = useMemo(
+		() => rightClickMenuAnchor.x != 0 || rightClickMenuAnchor.y != 0,
+		[rightClickMenuAnchor, selectedMessage]
+	);
+
+	const handleMenuClose = (): void => setRightClickMenuAnchor({ x: 0, y: 0 });
+
 	return (
 		<>
 			{(isFetching || isFetchingNextPage) && <Loading />}
 
+			{rightClickMenuOpen && rightClickMenuBox && (
+				<Menu
+					id="message-context-menu"
+					open={rightClickMenuOpen}
+					onClose={handleMenuClose}
+					anchorEl={rightClickMenuBox?.current}
+					MenuListProps={{
+						"aria-labelledby": "message-context-menu-button"
+					}}
+				>
+					{messageActions.map((action) => (
+						<MenuItem
+							key={action.name}
+							onClick={() => {
+								handleMenuClose();
+								action.handler();
+							}}
+						>
+							<ListItemIcon>{action.icon}</ListItemIcon>
+							<ListItemText>{action.name}</ListItemText>
+						</MenuItem>
+					))}
+
+					<MenuItem onClick={handleMenuClose}>
+						<ListItemIcon>
+							<CloseIcon fontSize="small" />
+						</ListItemIcon>
+						<ListItemText>Close</ListItemText>
+					</MenuItem>
+				</Menu>
+			)}
+
 			<Box
 				sx={{
 					position: "absolute",
+					width: "1px",
+					height: "1px",
 					left: rightClickMenuAnchor.x,
 					top: rightClickMenuAnchor.y
 				}}
@@ -96,11 +150,6 @@ const UnMemoizedMessageList: FC = () => {
 								key={message.id}
 								selectedMessage={selected}
 								message={message}
-								rightClickMenuBox={rightClickMenuBox}
-								rightClickMenuOpen={
-									rightClickMenuAnchor.id == message.id &&
-									(rightClickMenuAnchor.x != 0 || rightClickMenuAnchor.y != 0)
-								}
 								setRightClickMenuAnchor={setRightClickMenuAnchor}
 							/>
 						);

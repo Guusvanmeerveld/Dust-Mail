@@ -1,26 +1,21 @@
-import { Inject, Injectable } from "@nestjs/common";
-
-import { JwtService } from "@nestjs/jwt";
-
-import { CacheService } from "@cache/cache.service";
-
 import {
 	JwtToken,
 	IncomingServiceType,
 	OutgoingServiceType
 } from "@auth/interfaces/jwt.interface";
-
+import { CacheService } from "@cache/cache.service";
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
-import { jwtConstants } from "@src/constants";
-
+import IncomingGoogleClient from "./incoming";
+import Config from "./interfaces/config";
 import exchangeToken from "./utils/exchangeToken";
 import getUserID from "./utils/getUserID";
 
-import Config from "./interfaces/config";
+import { Inject, Injectable } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 
-import IncomingGoogleClient from "./incoming";
+import { jwtConstants } from "@src/constants";
 
 @Injectable()
 export class GoogleService {

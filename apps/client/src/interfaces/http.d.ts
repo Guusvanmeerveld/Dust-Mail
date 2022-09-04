@@ -1,5 +1,3 @@
-import { LoginConfig } from "@interfaces/login";
-
 import {
 	BoxResponse,
 	LoginResponse,
@@ -7,6 +5,8 @@ import {
 	PublicTokensResponse,
 	IncomingMessage
 } from "@dust-mail/typings";
+
+import { LoginConfig } from "@interfaces/login";
 
 export default interface HttpClient {
 	getVersion: () => Promise<VersionResponse>;

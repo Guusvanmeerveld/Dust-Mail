@@ -4,6 +4,8 @@ import { description } from "../../../package.json";
 
 import { useEffect, useState, FC, memo, KeyboardEvent, FormEvent } from "react";
 
+import { ErrorResponse, UserError } from "@dust-mail/typings";
+
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
@@ -34,7 +36,6 @@ import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 import OtherLogins from "@components/Login/OtherLogins";
-import { ErrorResponse, UserError } from "@dust-mail/typings";
 
 type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
 	setProperty: (
