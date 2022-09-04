@@ -1,8 +1,7 @@
 import { expect, test } from "vitest";
 
-import fetchServerWithThunderbird from "../src/thunderbird";
-
 import { detectServiceFromConfig } from "../src/detectService";
+import fetchServerWithThunderbird from "../src/thunderbird";
 
 // import fetchServerWithAutodiscover from "../autodiscover";
 
@@ -26,7 +25,7 @@ test("Test Thunderbird autoconfig discovery functionality", async () => {
 test("Detect imap service from config", async () => {
 	await detectServiceFromConfig({
 		port: 993,
-		server: "imap.guusvanmeerveld.dev",
+		server: "imap.live.com",
 		security: "TLS"
 	}).then((data) => expect(data).toBe("imap"));
 });
@@ -34,7 +33,7 @@ test("Detect imap service from config", async () => {
 test("Detect smtp service from config", async () => {
 	await detectServiceFromConfig({
 		port: 465,
-		server: "smtp.guusvanmeerveld.dev",
+		server: "smtp.live.com",
 		security: "TLS"
 	}).then((data) => expect(data).toBe("smtp"));
 });
