@@ -1,11 +1,11 @@
 import Config from "./interfaces/config.interface";
+import { JwtToken } from "./interfaces/jwt.interface";
+
 import {
 	IncomingServiceType,
-	JwtToken,
-	OutgoingServiceType
-} from "./interfaces/jwt.interface";
-
-import { LoginResponse } from "@dust-mail/typings";
+	OutgoingServiceType,
+	LoginResponse
+} from "@dust-mail/typings";
 
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";

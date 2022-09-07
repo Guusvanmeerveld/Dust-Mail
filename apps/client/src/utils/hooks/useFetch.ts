@@ -100,14 +100,17 @@ const useHttpClient = (): HttpClient => {
 
 			return data;
 		},
-		async getMessage(messageID, boxID) {
+		async getMessage(noImages, darkMode, messageID, boxID) {
 			const { data } = await instance.get("/mail/message", {
 				params: {
 					id: messageID,
 					box: boxID,
+					darkMode,
+					noImages,
 					markRead: true
 				}
 			});
+
 			return data;
 		},
 		async getAvatar(address) {

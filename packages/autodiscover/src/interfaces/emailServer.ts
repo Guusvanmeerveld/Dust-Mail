@@ -1,3 +1,5 @@
+import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
+
 export interface EmailServer<T> {
 	server: string;
 	port: number;
@@ -7,13 +9,9 @@ export interface EmailServer<T> {
 
 export type Security = "STARTTLS" | "TLS" | "NONE";
 
-export type IncomingServer = "imap" | "pop3";
-
-export type OutgoingServer = "smtp";
-
 type AutodiscoverResponse = [
-	EmailServer<IncomingServer> | undefined,
-	EmailServer<OutgoingServer> | undefined
+	EmailServer<IncomingServiceType> | undefined,
+	EmailServer<OutgoingServiceType> | undefined
 ];
 
 export default AutodiscoverResponse;

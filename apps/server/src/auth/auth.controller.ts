@@ -3,15 +3,16 @@ import type { Request as ExpressRequest } from "express";
 import { AuthService } from "./auth.service";
 import { allowedDomains } from "./constants";
 import type { SecurityType } from "./interfaces/config.interface";
-import {
-	IncomingServiceType,
-	JwtToken,
-	OutgoingServiceType
-} from "./interfaces/jwt.interface";
+import { JwtToken } from "./interfaces/jwt.interface";
 import { StringValidationPipe } from "./pipes/string.pipe";
 
 import mailDiscover, { detectServiceFromConfig } from "@dust-mail/autodiscover";
-import { LoginResponse, UserError } from "@dust-mail/typings";
+import {
+	LoginResponse,
+	UserError,
+	IncomingServiceType,
+	OutgoingServiceType
+} from "@dust-mail/typings";
 
 import {
 	BadRequestException,
@@ -70,16 +71,9 @@ export class AuthController {
 				outgoingService: OutgoingServiceType;
 
 			if (!incomingServer || !outgoingServer) {
-				const result = await mailDiscover(incomingUsername).catch(
-					(e: Error) => {
-						if (!incomingServer) {
-							throw new BadRequestException({
-								code: UserError.Misc,
-								message: e.message
-							});
-						}
-					}
-				);
+				const result = await mailDiscover(incomingUsername).catch(() => {
+					incomingServer = "mail.";
+				});
 
 				if (result) {
 					const [foundIncomingServer, foundOutgoingServer] = result;
@@ -129,19 +123,19 @@ export class AuthController {
 			if (!outgoingPassword) outgoingPassword = outgoingPassword;
 
 			if (!incomingService) {
-				incomingService = await detectServiceFromConfig({
+				incomingService = (await detectServiceFromConfig({
 					security: incomingSecurity,
 					port: incomingPort,
 					server: incomingServer
-				}).catch(handleError);
+				}).catch(handleError)) as IncomingServiceType;
 			}
 
 			if (!outgoingService) {
-				outgoingService = await detectServiceFromConfig({
+				outgoingService = (await detectServiceFromConfig({
 					security: outgoingSecurity,
 					port: outgoingPort,
 					server: outgoingServer
-				}).catch(handleError);
+				}).catch(handleError)) as OutgoingServiceType;
 			}
 
 			return await this.authService

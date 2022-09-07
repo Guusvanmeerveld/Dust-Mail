@@ -1,7 +1,7 @@
 import { RollupOptions } from "rollup";
 
-import typescript from "rollup-plugin-typescript2";
 import ts from "rollup-plugin-ts";
+import typescript from "rollup-plugin-typescript2";
 
 import pkg from "./package.json";
 
@@ -14,7 +14,7 @@ const options: RollupOptions = {
 const config: RollupOptions[] = [
 	{
 		output: {
-			file: "dist/index.d.ts"
+			file: pkg.types
 		},
 		input: "src/index.ts",
 		plugins: [ts()]

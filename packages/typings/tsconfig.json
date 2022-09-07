@@ -1,10 +1,10 @@
 {
 	"extends": "@dust-mail/tsconfig/base.json",
 	"compilerOptions": {
-		"declaration": true,
 		"target": "ES2017",
 		"module": "ES2015",
 		"allowSyntheticDefaultImports": true,
+		"declaration": true,
 		"resolveJsonModule": true,
 		"outDir": "dist"
 	},

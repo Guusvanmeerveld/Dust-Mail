@@ -1,8 +1,4 @@
-import {
-	JwtToken,
-	IncomingServiceType,
-	OutgoingServiceType
-} from "@auth/interfaces/jwt.interface";
+import { JwtToken } from "@auth/interfaces/jwt.interface";
 import { CacheService } from "@cache/cache.service";
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
@@ -11,6 +7,8 @@ import IncomingGoogleClient from "./incoming";
 import Config from "./interfaces/config";
 import exchangeToken from "./utils/exchangeToken";
 import getUserID from "./utils/getUserID";
+
+import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
 
 import { Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";

@@ -10,6 +10,7 @@ import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -48,6 +49,7 @@ const AddressListItem: FC<{ email: string; displayName: string }> = ({
 
 	return (
 		<Chip
+			sx={{ mr: 1, mb: 1 }}
 			avatar={
 				<Avatar
 					sx={{
@@ -65,18 +67,32 @@ const AddressListItem: FC<{ email: string; displayName: string }> = ({
 	);
 };
 
+const ADDRESSES_TO_SHOW = 3;
+
 const AddressList: FC<{
 	data: Address[];
 	prefixText: string;
 }> = ({ data, prefixText }) => {
+	const [showMore, setShowMore] = useState(false);
+
 	return (
-		<Stack direction="row" alignItems="center" spacing={2}>
-			<Typography>{prefixText}</Typography>
+		<Box sx={{ alignItems: "center" }}>
+			<Typography sx={{ display: "inline", mr: 1 }}>{prefixText}</Typography>
 			{data &&
-				data.map((address, i) => (
-					<AddressListItem {...address} key={address.email + i} />
-				))}
-		</Stack>
+				data
+					.slice(0, showMore ? data.length : ADDRESSES_TO_SHOW)
+					.map((address, i) => (
+						<AddressListItem {...address} key={address.email + i} />
+					))}
+			{data && data.length > ADDRESSES_TO_SHOW && (
+				<Link
+					onClick={() => setShowMore((state) => !state)}
+					sx={{ cursor: "pointer" }}
+				>
+					{showMore ? "Hide" : `And ${data.length - ADDRESSES_TO_SHOW} more`}
+				</Link>
+			)}
+		</Box>
 	);
 };
 
@@ -138,8 +154,21 @@ const UnMemoizedMessageOverview: FC = () => {
 	const [token] = useLocalStorageState<LocalToken>("accessToken");
 
 	const { data, isFetching } = useQuery<FullIncomingMessage>(
-		["message", selectedMessage, selectedBox?.id, token?.body],
-		() => fetcher.getMessage(selectedMessage, selectedBox?.id),
+		[
+			"message",
+			selectedMessage,
+			selectedBox?.id,
+			showImages,
+			darkMode,
+			token?.body
+		],
+		() =>
+			fetcher.getMessage(
+				!showImages,
+				darkMode,
+				selectedMessage,
+				selectedBox?.id
+			),
 		{ enabled: selectedMessage != undefined }
 	);
 

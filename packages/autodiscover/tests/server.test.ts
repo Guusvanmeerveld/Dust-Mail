@@ -25,16 +25,16 @@ test("Test Thunderbird autoconfig discovery functionality", async () => {
 test("Detect imap service from config", async () => {
 	await detectServiceFromConfig({
 		port: 993,
-		server: "imap.live.com",
+		server: "outlook.office365.com",
 		security: "TLS"
 	}).then((data) => expect(data).toBe("imap"));
 });
 
 test("Detect smtp service from config", async () => {
 	await detectServiceFromConfig({
-		port: 465,
-		server: "smtp.live.com",
-		security: "TLS"
+		port: 587,
+		server: "smtp-mail.outlook.com",
+		security: "STARTTLS"
 	}).then((data) => expect(data).toBe("smtp"));
 });
 

@@ -1,4 +1,4 @@
-import { IncomingServer, OutgoingServer } from "./emailServer";
+import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
 
 export default interface AutoConfigFile {
 	clientConfig: {
@@ -18,7 +18,7 @@ export interface Server {
 	socketType: "STARTTLS" | "SSL" | "plain";
 	authentication: Authentication;
 	"@": {
-		type: IncomingServer | OutgoingServer;
+		type: IncomingServiceType | OutgoingServiceType;
 	};
 }
 

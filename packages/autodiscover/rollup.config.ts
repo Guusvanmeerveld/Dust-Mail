@@ -1,6 +1,7 @@
 import json from "@rollup/plugin-json";
 
 import typescript from "rollup-plugin-typescript2";
+import ts from "rollup-plugin-ts";
 
 import { OutputOptions, RollupOptions } from "rollup";
 
@@ -22,16 +23,28 @@ const outputOptions: OutputOptions = {
 `
 };
 
+const external = [
+	...Object.keys(pkg.dependencies || {}),
+	...Object.keys(pkg.devDependencies || {}),
+	"net",
+	"tls"
+];
+
 const options: RollupOptions = {
-	external: [
-		...Object.keys(pkg.dependencies || {}),
-		...Object.keys(pkg.devDependencies || {})
-	],
+	external,
 	plugins: [json(), typescript({ useTsconfigDeclarationDir: true })],
 	input: "src/index.ts"
 };
 
 const config: RollupOptions[] = [
+	{
+		external,
+		output: {
+			file: pkg.types
+		},
+		input: "src/index.ts",
+		plugins: [ts({})]
+	},
 	{
 		...options,
 		output: {

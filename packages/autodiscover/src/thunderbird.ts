@@ -1,10 +1,10 @@
 import { XMLParser } from "fast-xml-parser";
 
+import { OutgoingServiceType, IncomingServiceType } from "@dust-mail/typings";
+
 import AutoConfigFile, { Server } from "./interfaces/autoConfigFile";
 import AutodiscoverResponse, {
 	EmailServer,
-	IncomingServer,
-	OutgoingServer,
 	Security
 } from "./interfaces/emailServer";
 
@@ -86,7 +86,7 @@ const parseAutoConfigFile = (
 		if (incomingServers.length != 0) incomingServer = incomingServers[0];
 	} else incomingServer = incomingServers;
 
-	const incomingServerType = incomingServer?.["@"].type as IncomingServer;
+	const incomingServerType = incomingServer?.["@"].type as IncomingServiceType;
 
 	const outgoingServers = data.clientConfig.emailProvider.outgoingServer;
 
@@ -96,7 +96,7 @@ const parseAutoConfigFile = (
 		if (outgoingServers.length != 0) outgoingServer = outgoingServers[0];
 	} else outgoingServer = outgoingServers;
 
-	const outgoingServerType = outgoingServer?.["@"].type as OutgoingServer;
+	const outgoingServerType = outgoingServer?.["@"].type as OutgoingServiceType;
 
 	return [
 		createEmailServer(incomingServerType, incomingServer),
@@ -105,17 +105,17 @@ const parseAutoConfigFile = (
 };
 
 function createEmailServer(
-	type: IncomingServer,
+	type: IncomingServiceType,
 	server?: Server
-): EmailServer<IncomingServer>;
+): EmailServer<IncomingServiceType>;
 function createEmailServer(
-	type: OutgoingServer,
+	type: OutgoingServiceType,
 	server?: Server
-): EmailServer<OutgoingServer>;
+): EmailServer<OutgoingServiceType>;
 function createEmailServer(
-	type: IncomingServer | OutgoingServer,
+	type: IncomingServiceType | OutgoingServiceType,
 	server?: Server
-): EmailServer<IncomingServer | OutgoingServer> | undefined {
+): EmailServer<IncomingServiceType | OutgoingServiceType> | undefined {
 	if (!server) return;
 
 	let security: Security;

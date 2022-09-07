@@ -1,0 +1,22 @@
+body,
+tbody,
+div,
+span,
+p,
+table,
+td,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+center {
+	background-color: #000 !important;
+	color: #fff !important;
+}
+
+a,
+a * {
+	color: #8ab4f8 !important;
+}

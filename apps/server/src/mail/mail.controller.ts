@@ -92,6 +92,8 @@ export class MailController {
 	async fetchMessage(
 		@Req() req: Request,
 		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
+		@Query("noImages", ParseBoolPipe) noImages: boolean,
+		@Query("darkMode", ParseBoolPipe) darkMode: boolean,
 		@Query("id") id?: string,
 		@Query("box") box?: string
 	): Promise<FullIncomingMessage | void> {
@@ -107,7 +109,7 @@ export class MailController {
 
 		const client = req.user.incomingClient;
 
-		return await client.getMessage(id, box, markAsRead);
+		return await client.getMessage(id, box, markAsRead, noImages, darkMode);
 	}
 
 	@Post("send")

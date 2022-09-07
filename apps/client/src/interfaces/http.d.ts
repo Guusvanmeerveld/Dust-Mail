@@ -17,6 +17,8 @@ export default interface HttpClient {
 	getAvatar: (address?: string) => Promise<string>;
 	getBox: (boxID: string, pageParam: number) => Promise<IncomingMessage[]>;
 	getMessage: (
+		noImages: boolean,
+		darkMode: boolean,
 		messageID?: string,
 		boxID?: string
 	) => Promise<FullIncomingMessage>;

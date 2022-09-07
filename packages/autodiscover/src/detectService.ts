@@ -1,15 +1,16 @@
 import net from "net";
 import tls from "tls";
 
-import { IncomingServer, OutgoingServer } from "./interfaces/emailServer";
 import ServerConfig from "./interfaces/serverConfig";
+
+import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
 
 /**
  * Will take a config to connect with an email related server and detect what kind of email service is running on that server
  */
 export const detectServiceFromConfig = async (
 	config: ServerConfig
-): Promise<IncomingServer | OutgoingServer> => {
+): Promise<IncomingServiceType | OutgoingServiceType> => {
 	const responseFromImapCommand: string = await connectToServerAndSendCommand(
 		config,
 		"abcd CAPABILITY"
@@ -26,7 +27,7 @@ export const detectServiceFromConfig = async (
 
 const detectServiceFromResponse = (
 	response: string
-): IncomingServer | OutgoingServer | void => {
+): IncomingServiceType | OutgoingServiceType | void => {
 	const split = response.toLowerCase().split(" ");
 
 	const isImap = split.find((string) => string.match(/imap/));

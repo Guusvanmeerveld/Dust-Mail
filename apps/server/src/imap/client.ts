@@ -80,7 +80,9 @@ export default class Client implements IncomingClient {
 	public getMessage = async (
 		id: string,
 		boxName: string,
-		markAsRead: boolean
+		markAsRead: boolean,
+		noImages: boolean,
+		darkMode: boolean
 	): Promise<FullIncomingMessage | void> => {
 		await this.getBox(boxName, false);
 
@@ -110,7 +112,7 @@ export default class Client implements IncomingClient {
 				...parseMessage(result.body),
 				content: {
 					html: result.body.html
-						? cleanMainHtml(result.body.html)
+						? cleanMainHtml(result.body.html, noImages, darkMode)
 						: cleanTextHtml(result.body.textAsHtml),
 					type: (result.body.html ? "html" : "text") as ContentType
 				},

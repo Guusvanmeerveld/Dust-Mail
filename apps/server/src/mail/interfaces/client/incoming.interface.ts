@@ -19,6 +19,8 @@ export default interface IncomingClient {
 	getMessage: (
 		id: string,
 		boxName: string,
-		markAsRead: boolean
+		markAsRead: boolean,
+		noImages: boolean,
+		darkMode: boolean
 	) => Promise<FullIncomingMessage | void>;
 }
