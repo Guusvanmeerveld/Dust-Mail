@@ -172,8 +172,6 @@ const useLogin = (): ((
 			setAvatar(createGravatarUrl(options.username));
 		}
 
-		console.log(accessToken);
-
 		setAccessToken(accessToken);
 		setRefreshToken(refreshToken);
 

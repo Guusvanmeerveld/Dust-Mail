@@ -8,8 +8,7 @@ const scrollbarStyles = (theme: Theme): SxProps => ({
 		bgcolor: "transparent"
 	},
 	"&::-webkit-scrollbar-thumb": {
-		backgroundImage:
-			"linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))"
+		backgroundColor: theme.palette.action.hover
 	}
 });
 

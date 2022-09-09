@@ -1,5 +1,3 @@
-import { MailValidationPipe } from "@auth/pipes/mail.pipe";
-
 import { AvatarService } from "./avatar.service";
 
 import {
@@ -12,6 +10,8 @@ import {
 } from "@nestjs/common";
 
 import { AccessTokenAuthGuard } from "@src/auth/jwt-auth.guard";
+
+import { MailValidationPipe } from "@auth/pipes/mail.pipe";
 
 @Controller("avatar")
 export class AvatarController {

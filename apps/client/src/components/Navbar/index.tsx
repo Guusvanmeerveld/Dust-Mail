@@ -1,8 +1,10 @@
 import { FC, memo, useMemo, useState, MouseEvent, KeyboardEvent } from "react";
 
 import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
 import Breadcrumbs from "@mui/material/Breadcrumbs";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -11,6 +13,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import NavigateNext from "@mui/icons-material/NavigateNext";
 
 import useSelectedBox from "@utils/hooks/useSelectedBox";
+import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 
 import Avatar from "@components/Navbar/Avatar";
@@ -18,6 +21,8 @@ import Drawer from "@components/Navbar/Drawer";
 
 const UnMemoizedNavbar: FC = () => {
 	const theme = useTheme();
+
+	const fetching = useStore((state) => state.fetching);
 
 	const [drawerState, setDrawerState] = useState(false);
 
@@ -51,11 +56,6 @@ const UnMemoizedNavbar: FC = () => {
 
 						setSelectedBox({ id: boxName, name: boxName });
 					}}
-					color={
-						i + 1 == boxNameSplit.length
-							? theme.palette.text.primary
-							: theme.palette.text.secondary
-					}
 				>
 					{crumb}
 				</Typography>
@@ -65,48 +65,58 @@ const UnMemoizedNavbar: FC = () => {
 
 	return (
 		<>
-			<AppBar position="static">
-				<Toolbar>
-					<Stack
-						direction="row"
-						sx={{ flexGrow: 1, alignItems: "center" }}
-						spacing={2}
-					>
-						<IconButton
-							size="large"
-							edge="start"
-							color="inherit"
-							aria-label="menu"
-							sx={{
-								display: { md: "none", sm: "inline-flex" }
-							}}
-							onClick={toggleDrawer(true)}
+			<AppBar position="relative">
+				<>
+					<Toolbar>
+						<Stack
+							direction="row"
+							sx={{ flexGrow: 1, alignItems: "center" }}
+							spacing={2}
 						>
-							<MenuIcon />
-						</IconButton>
-
-						<img
-							src="/android-chrome-192x192.png"
-							style={{ width: theme.spacing(5) }}
-							alt="Logo"
-						/>
-
-						<Typography variant="h6">
-							{import.meta.env.VITE_APP_NAME}
-						</Typography>
-
-						{breadcrumbs && (
-							<Breadcrumbs
-								separator={<NavigateNext fontSize="small" />}
-								aria-label="breadcrumb"
+							<IconButton
+								size="large"
+								edge="start"
+								color="inherit"
+								aria-label="menu"
+								sx={{
+									display: { md: "none", sm: "inline-flex" }
+								}}
+								onClick={toggleDrawer(true)}
 							>
-								{breadcrumbs}
-							</Breadcrumbs>
-						)}
-					</Stack>
+								<MenuIcon />
+							</IconButton>
 
-					<Avatar />
-				</Toolbar>
+							<img
+								src="/android-chrome-192x192.png"
+								style={{ width: theme.spacing(5) }}
+								alt="Logo"
+							/>
+
+							<Typography variant="h6">
+								{import.meta.env.VITE_APP_NAME}
+							</Typography>
+
+							{breadcrumbs && (
+								<Breadcrumbs
+									sx={{
+										color: theme.palette.primary.contrastText
+									}}
+									separator={<NavigateNext fontSize="small" />}
+									aria-label="breadcrumb"
+								>
+									{breadcrumbs}
+								</Breadcrumbs>
+							)}
+						</Stack>
+
+						<Avatar />
+					</Toolbar>
+					{fetching && (
+						<Box sx={{ position: "absolute", bottom: 0, width: 1, height: 2 }}>
+							<LinearProgress color="secondary" />
+						</Box>
+					)}
+				</>
 			</AppBar>
 
 			<Drawer drawerState={drawerState} toggleDrawer={toggleDrawer} />

@@ -1,4 +1,3 @@
-import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 import { Transporter } from "nodemailer";
 
 import send from "./send";
@@ -6,6 +5,8 @@ import send from "./send";
 import { OutgoingMessage } from "@dust-mail/typings";
 
 import { CacheService } from "@src/cache/cache.service";
+
+import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
 export default class Client implements OutgoingClient {
 	constructor(

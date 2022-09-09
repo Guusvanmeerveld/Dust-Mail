@@ -1,9 +1,9 @@
-import { AuthModule } from "@auth/auth.module";
-
 import { MailController } from "./mail.controller";
 
 import { Module } from "@nestjs/common";
 import { ThrottlerModule } from "@nestjs/throttler";
+
+import { AuthModule } from "@auth/auth.module";
 
 @Module({
 	imports: [

@@ -1,4 +1,3 @@
-import { StringValidationPipe } from "@auth/pipes/string.pipe";
 import type { Request, Response } from "express";
 import { join } from "path";
 
@@ -20,6 +19,8 @@ import {
 import createTokenResponse from "@utils/createTokenResponse";
 import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 import handleError from "@utils/handleError";
+
+import { StringValidationPipe } from "@auth/pipes/string.pipe";
 
 @Controller("google")
 export class GoogleController {

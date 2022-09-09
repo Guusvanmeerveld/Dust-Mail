@@ -1,5 +1,4 @@
 import { CacheService } from "@cache/cache.service";
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
 
 import GoogleConfig from "../interfaces/config";
 import { getBox, getBoxes, getBoxMessages } from "./box";
@@ -7,6 +6,8 @@ import connect from "./connect";
 import { getMessage } from "./message";
 
 import { IncomingMessage } from "@dust-mail/typings";
+
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
 
 export default class IncomingGoogleClient implements IncomingClient {
 	private messages: Map<string, IncomingMessage[]> = new Map();

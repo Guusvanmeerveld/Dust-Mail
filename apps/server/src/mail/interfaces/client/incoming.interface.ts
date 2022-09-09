@@ -14,7 +14,7 @@ export default interface IncomingClient {
 	getBox: (boxName: string, readOnly?: boolean) => Promise<Box>;
 	getBoxMessages: (
 		boxName: string,
-		options: { start: number; end: number }
+		options: { filter: string; start: number; end: number }
 	) => Promise<IncomingMessage[]>;
 	getMessage: (
 		id: string,

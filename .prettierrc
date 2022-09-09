@@ -31,6 +31,8 @@
 		"^@styles/.*",
 		"^@shared/.*",
 		"^@utils/.*",
+		"^@mail/.*",
+		"^@auth/.*",
 		"^@components/.*",
 		".*sass$",
 		".*css$",

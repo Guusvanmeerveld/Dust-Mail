@@ -1,6 +1,14 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { useEffect, useRef, useState, memo, FC, useMemo } from "react";
+import {
+	useEffect,
+	useRef,
+	useState,
+	memo,
+	FC,
+	useMemo,
+	FormEvent
+} from "react";
 import { useInfiniteQuery } from "react-query";
 
 import { AxiosError } from "axios";
@@ -10,13 +18,23 @@ import { IncomingMessage, ErrorResponse, LocalToken } from "@dust-mail/typings";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
+import FormControl from "@mui/material/FormControl";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import InputLabel from "@mui/material/InputLabel";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
 import CloseIcon from "@mui/icons-material/Close";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import SearchIcon from "@mui/icons-material/Search";
 
 import { messageCountForPage } from "@src/constants";
 
@@ -26,13 +44,107 @@ import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 
-import Loading from "@components/Loading";
 import MessageListItem from "@components/Message/ListItem";
+
+const ActionBar: FC<{
+	setFilter: (filter: string) => void;
+	refetch: () => void;
+}> = ({ setFilter, refetch }) => {
+	const theme = useTheme();
+
+	const [search, setSearch] = useState<string>("");
+
+	const [messageListWidth] = useLocalStorageState<number>("messageListWidth", {
+		defaultValue: 400
+	});
+
+	const handleSubmit = (e: FormEvent): void => {
+		e.preventDefault();
+
+		setFilter(search);
+	};
+
+	useEffect(() => {
+		if (search.length == 0) setFilter("");
+	}, [search]);
+
+	const label = "Search messages";
+
+	return (
+		<>
+			<Stack
+				sx={{
+					backgroundColor: theme.palette.background.default,
+					borderBottom: `${theme.palette.divider} 1px solid`,
+					width: `${messageListWidth}px`,
+					p: 2
+				}}
+				direction="row"
+				alignItems="center"
+				justifyContent="space-between"
+			>
+				<Box>
+					<form onSubmit={handleSubmit}>
+						<FormControl variant="outlined">
+							<InputLabel size="small" htmlFor="search">
+								{label}
+							</InputLabel>
+							<OutlinedInput
+								endAdornment={
+									<InputAdornment position="end">
+										<Tooltip title="Clear">
+											<IconButton
+												sx={{
+													visibility: search.length != 0 ? "visible" : "hidden"
+												}}
+												size="small"
+												aria-label="clear input"
+												onClick={() => {
+													setSearch("");
+												}}
+												edge="end"
+											>
+												<CloseIcon />
+											</IconButton>
+										</Tooltip>
+									</InputAdornment>
+								}
+								value={search}
+								onChange={(e) => {
+									setSearch(e.target.value);
+								}}
+								required
+								size="small"
+								id="search"
+								label={label}
+								type="text"
+							/>
+						</FormControl>
+
+						<Tooltip title="Search">
+							<IconButton onClick={() => setFilter(search)} sx={{ ml: 1 }}>
+								<SearchIcon />
+							</IconButton>
+						</Tooltip>
+					</form>
+				</Box>
+
+				<Tooltip title="Refresh messages">
+					<IconButton onClick={() => refetch()}>
+						<RefreshIcon />
+					</IconButton>
+				</Tooltip>
+			</Stack>
+		</>
+	);
+};
 
 const UnMemoizedMessageList: FC = () => {
 	const fetcher = useFetch();
 
 	const setFetching = useStore((state) => state.setFetching);
+
+	const [filter, setFilter] = useState("");
 
 	const [selectedBox] = useSelectedBox();
 	const [selectedMessage] = useSelectedMessage();
@@ -48,15 +160,15 @@ const UnMemoizedMessageList: FC = () => {
 		isFetchingNextPage,
 		refetch
 	} = useInfiniteQuery<IncomingMessage[], AxiosError<ErrorResponse>>(
-		["box", selectedBox?.id, token?.body],
+		["box", selectedBox?.id, filter, token?.body],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];
 			}
 
-			if (!selectedBox?.id) return [];
+			if (!selectedBox?.id || !token?.body) return [];
 
-			return fetcher.getBox(selectedBox.id, pageParam);
+			return fetcher.getBox(selectedBox.id, pageParam, filter);
 		},
 		{
 			getNextPageParam: (lastPage, pages) => {
@@ -94,8 +206,6 @@ const UnMemoizedMessageList: FC = () => {
 
 	return (
 		<>
-			{(isFetching || isFetchingNextPage) && <Loading />}
-
 			{rightClickMenuOpen && rightClickMenuBox && (
 				<Menu
 					id="message-context-menu"
@@ -138,6 +248,8 @@ const UnMemoizedMessageList: FC = () => {
 				}}
 				ref={rightClickMenuBox}
 			/>
+
+			<ActionBar refetch={refetch} setFilter={setFilter} />
 
 			{data &&
 				data.pages &&
@@ -185,7 +297,7 @@ const UnMemoizedMessageList: FC = () => {
 
 			{data && data.pages && data.pages[0].length == 0 && (
 				<Typography variant="h6" sx={{ textAlign: "center", mt: 1 }}>
-					Mail box is empty
+					Empty 🙃
 				</Typography>
 			)}
 

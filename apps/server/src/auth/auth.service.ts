@@ -57,8 +57,6 @@ export class AuthService {
 		incoming: ConfigWithServiceType<IncomingServiceType>;
 		outgoing: ConfigWithServiceType<OutgoingServiceType>;
 	}): Promise<LoginResponse> {
-		console.log(config.incoming.service, config.outgoing.service);
-
 		switch (config.incoming.service) {
 			case "imap":
 				await this.imapService.login(config.incoming);

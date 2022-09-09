@@ -10,9 +10,11 @@ import { jwtConstants } from "@src/constants";
 
 @Module({
 	imports: [
-		JwtModule.register({
-			secret: jwtConstants.getSecret(),
-			signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
+		JwtModule.registerAsync({
+			useFactory: async () => ({
+				secret: await jwtConstants.getSecret(),
+				signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
+			})
 		}),
 		CacheModule
 	],

@@ -1,5 +1,3 @@
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
-import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 import { ExtractJwt, Strategy } from "passport-jwt";
 
 import { JwtToken, MultiConfig } from "./interfaces/jwt.interface";
@@ -13,6 +11,9 @@ import GoogleConfig from "@src/google/interfaces/config";
 import { ImapService } from "@src/imap/imap.service";
 import { SmtpService } from "@src/smtp/smtp.service";
 
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
 	constructor(
@@ -23,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 		super({
 			jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
 			ignoreExpiration: false,
-			secretOrKey: jwtConstants.getSecret()
+			secretOrKey: jwtConstants.getSecretSync()
 		});
 	}
 

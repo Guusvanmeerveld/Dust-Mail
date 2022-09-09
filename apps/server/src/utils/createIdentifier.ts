@@ -1,6 +1,6 @@
-import Config from "@auth/interfaces/config.interface";
-
 import { createHash } from "@utils/createHash";
+
+import Config from "@auth/interfaces/config.interface";
 
 export function createIdentifier(config: Config): string {
 	return createHash(

@@ -1,14 +1,19 @@
+import useLocalStorageState from "use-local-storage-state";
+
 import { FC } from "react";
 import { Navigate } from "react-router-dom";
 
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import InfoIcon from "@mui/icons-material/Info";
 import LightModeIcon from "@mui/icons-material/LightMode";
+
+import MailBox from "@interfaces/box";
 
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -22,14 +27,25 @@ import LoginSettingsMenu from "@components/Login/Settings";
 const Login: FC = () => {
 	const theme = useTheme();
 
+	const fetching = useStore((state) => state.fetching);
+
 	const appVersion = useStore((state) => state.appVersion);
 	const setShowAbout = useStore((state) => state.setShowAbout);
 
 	const user = useUser();
 
+	const [defaultBox] = useLocalStorageState<MailBox>("defaultBox");
+
 	return (
 		<>
-			{user.isLoggedIn && <Navigate to="/dashboard" replace={true} />}
+			{fetching && (
+				<Box sx={{ position: "fixed", width: 1, height: 2, top: 0 }}>
+					<LinearProgress color="secondary" />
+				</Box>
+			)}
+			{user.isLoggedIn && (
+				<Navigate to={`/dashboard/${defaultBox?.id}`} replace={true} />
+			)}
 			<Layout>
 				<Box
 					sx={{

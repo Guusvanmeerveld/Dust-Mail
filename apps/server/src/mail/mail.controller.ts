@@ -1,5 +1,3 @@
-import type { Request } from "@auth/interfaces/request.interface";
-
 import { mailDefaultLimit, mailFetchLimit } from "./constants";
 import { AddressValidationPipe } from "./pipes/address.pipe";
 
@@ -23,9 +21,11 @@ import {
 	UseGuards
 } from "@nestjs/common";
 
-import { AccessTokenAuthGuard } from "@src/auth/jwt-auth.guard";
-
 import handleError from "@utils/handleError";
+
+import type { Request } from "@auth/interfaces/request.interface";
+import { AccessTokenAuthGuard } from "@auth/jwt-auth.guard";
+import { StringValidationPipe } from "@auth/pipes/string.pipe";
 
 // import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
@@ -47,15 +47,12 @@ export class MailController {
 		@Req() req: Request,
 		@Query("limit", ParseIntPipe) limit: number,
 		@Query("cursor", ParseIntPipe) page: number,
-		@Query("box") box: string
+		@Query("filter", StringValidationPipe) filter: string,
+		@Query("box", StringValidationPipe) box: string
 	): Promise<IncomingMessage[]> {
 		if (!limit) limit = mailDefaultLimit;
 
 		if (!box) box = "INBOX";
-
-		if (typeof box != "string") {
-			throw new BadRequestException("`box` property must be a string");
-		}
 
 		if (limit < 0 || limit > mailFetchLimit) {
 			throw new BadRequestException(
@@ -67,6 +64,10 @@ export class MailController {
 			throw new BadRequestException("Page can't be lower than 0");
 		}
 
+		if (!filter) {
+			filter = "";
+		}
+
 		const client = req.user.incomingClient;
 
 		const start = page * limit;
@@ -74,6 +75,7 @@ export class MailController {
 
 		return await client
 			.getBoxMessages(box, {
+				filter,
 				start,
 				end
 			})

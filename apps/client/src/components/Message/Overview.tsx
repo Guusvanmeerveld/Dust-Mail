@@ -153,7 +153,7 @@ const UnMemoizedMessageOverview: FC = () => {
 
 	const [token] = useLocalStorageState<LocalToken>("accessToken");
 
-	const { data, isFetching } = useQuery<FullIncomingMessage>(
+	const { data, isFetching } = useQuery<FullIncomingMessage | undefined>(
 		[
 			"message",
 			selectedMessage,
@@ -162,13 +162,16 @@ const UnMemoizedMessageOverview: FC = () => {
 			darkMode,
 			token?.body
 		],
-		() =>
-			fetcher.getMessage(
-				!showImages,
-				darkMode,
-				selectedMessage,
-				selectedBox?.id
-			),
+		() => {
+			if (!token?.body) return undefined;
+			else
+				return fetcher.getMessage(
+					!showImages,
+					darkMode,
+					selectedMessage,
+					selectedBox?.id
+				);
+		},
 		{ enabled: selectedMessage != undefined }
 	);
 
@@ -185,35 +188,41 @@ const UnMemoizedMessageOverview: FC = () => {
 						}}
 					>
 						<Stack direction="row">
-							<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
-								<Box>
-									<Typography variant="h5">
-										{isFetching || !data ? (
-											<Skeleton />
-										) : (
-											data.subject ?? "(No subject)"
-										)}
-									</Typography>
-									<Typography
-										variant="subtitle1"
-										color={theme.palette.text.secondary}
-									>
-										{isFetching || !data ? (
-											<Skeleton />
-										) : (
-											`${new Date(data.date).toLocaleDateString()} - ${new Date(
-												data.date
-											).toLocaleTimeString()}`
-										)}
-									</Typography>
-								</Box>
-								{data?.from && (
-									<AddressList data={data.from} prefixText="From:" />
-								)}
-								{data?.to && <AddressList data={data.to} prefixText="To:" />}
-								{data?.cc && <AddressList data={data.cc} prefixText="CC:" />}
-								{data?.bcc && <AddressList data={data.bcc} prefixText="BCC:" />}
-							</Stack>
+							{data && (
+								<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
+									<Box>
+										<Typography variant="h5">
+											{isFetching || !data ? (
+												<Skeleton />
+											) : (
+												data.subject ?? "(No subject)"
+											)}
+										</Typography>
+										<Typography
+											variant="subtitle1"
+											color={theme.palette.text.secondary}
+										>
+											{isFetching || !data ? (
+												<Skeleton />
+											) : (
+												`${new Date(
+													data.date
+												).toLocaleDateString()} - ${new Date(
+													data.date
+												).toLocaleTimeString()}`
+											)}
+										</Typography>
+									</Box>
+									{data?.from && (
+										<AddressList data={data.from} prefixText="From:" />
+									)}
+									{data?.to && <AddressList data={data.to} prefixText="To:" />}
+									{data?.cc && <AddressList data={data.cc} prefixText="CC:" />}
+									{data?.bcc && (
+										<AddressList data={data.bcc} prefixText="BCC:" />
+									)}
+								</Stack>
+							)}
 
 							<Stack direction="column" spacing={0.5}>
 								<Tooltip title="Close current message">
@@ -284,7 +293,6 @@ const UnMemoizedMessageOverview: FC = () => {
 							<>
 								{data.content.type == "text" && (
 									<Box
-										sx={{}}
 										dangerouslySetInnerHTML={{
 											__html: data.content.html ?? ""
 										}}

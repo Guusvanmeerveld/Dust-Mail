@@ -1,4 +1,3 @@
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import Imap from "imap";
 
 import { getBox, closeBox, getBoxes } from "./box";
@@ -14,6 +13,8 @@ import { CacheService } from "@src/cache/cache.service";
 import parseMessage, { createAddress } from "@src/imap/utils/parseMessage";
 
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
+
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
 
 export default class Client implements IncomingClient {
 	constructor(
@@ -44,7 +45,7 @@ export default class Client implements IncomingClient {
 
 	public getBoxMessages = async (
 		boxName: string,
-		{ start, end }: { start: number; end: number }
+		{ filter, start, end }: { filter: string; start: number; end: number }
 	): Promise<IncomingMessage[]> => {
 		const box = await this.getBox(boxName);
 
@@ -54,11 +55,25 @@ export default class Client implements IncomingClient {
 
 		const headerBody = "HEADER.FIELDS (FROM SUBJECT MESSAGE-ID)";
 
-		const results = await this.fetch({
-			start: totalMessages - start,
-			end: totalMessages - end > 0 ? totalMessages - end : 1,
-			bodies: headerBody
-		}).then((results) =>
+		let fetchOptions: FetchOptions = { bodies: headerBody };
+
+		if (filter.length != 0)
+			fetchOptions.id = await this.search({
+				filters: [["TEXT", filter]]
+			});
+		else
+			fetchOptions = {
+				...fetchOptions,
+				start: totalMessages - start,
+				end: totalMessages - end > 0 ? totalMessages - end : 1
+			};
+
+		if (fetchOptions.id) {
+			if (fetchOptions.id.length == 0) return [];
+			else fetchOptions.id = fetchOptions.id.slice(0, end - start + 1);
+		}
+
+		const results = await this.fetch(fetchOptions).then((results) =>
 			results.map((message) => {
 				const parsed = {
 					...parseMessage(

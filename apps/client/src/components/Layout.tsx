@@ -1,5 +1,3 @@
-import Loading from "./Loading";
-
 import { FC, ReactNode } from "react";
 
 import About from "@components/About";
@@ -13,7 +11,6 @@ const Layout: FC<{ withNavbar?: boolean; children?: ReactNode }> = ({
 }) => {
 	return (
 		<>
-			<Loading />
 			<About />
 			{withNavbar && <Navbar />}
 			<Settings />

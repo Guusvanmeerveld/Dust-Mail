@@ -13,9 +13,11 @@ import { SmtpModule } from "@src/smtp/smtp.module";
 
 @Module({
 	imports: [
-		JwtModule.register({
-			secret: jwtConstants.getSecret(),
-			signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
+		JwtModule.registerAsync({
+			useFactory: async () => ({
+				secret: await jwtConstants.getSecret(),
+				signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
+			})
 		}),
 		ThrottlerModule.forRoot({
 			ttl: 60,

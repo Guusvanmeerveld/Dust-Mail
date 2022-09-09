@@ -1,10 +1,10 @@
-import { Box } from "@mail/interfaces/client/incoming.interface";
-
 import GoogleBox from "../interfaces/box";
 
 import axios from "axios";
 
 import { IncomingMessage } from "@dust-mail/typings";
+
+import { Box } from "@mail/interfaces/client/incoming.interface";
 
 export const getBoxes = async (
 	authorization: string

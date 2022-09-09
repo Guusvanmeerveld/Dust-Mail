@@ -35,6 +35,12 @@ RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/m
 
 ENV NODE_ENV "production"
 
+ENV JWT_SECRET_LOCATION "/data/jwt/secret"
+
+ENV CACHE_DIR "/data/cache"
+
+RUN mkdir /data/jwt /data/cache -p
+
 COPY --from=deployer /app/dist ./dist
 COPY --from=deployer /app/node_modules ./node_modules
 COPY --from=deployer /app/package.json ./package.json

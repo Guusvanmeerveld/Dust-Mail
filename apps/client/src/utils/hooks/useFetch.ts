@@ -24,8 +24,8 @@ const useHttpClient = (): HttpClient => {
 
 	return {
 		async getVersion() {
-			const { data } = await instance
-				.get<VersionResponse>("/system/version")
+			const { data } = await axios
+				.get<VersionResponse>("/system/version", { baseURL: backendServer })
 				.catch((error) => {
 					// Handle axios errors
 					if (error.code == "ERR_NETWORK") {
@@ -46,20 +46,24 @@ const useHttpClient = (): HttpClient => {
 			return data;
 		},
 		async login(config) {
-			const { data } = await instance.post("/auth/login", {
-				incoming_username: config.incoming.username,
-				incoming_password: config.incoming.password,
-				incoming_server: config.incoming.server,
-				incoming_port: config.incoming.port,
-				incoming_security: config.incoming.security,
-				outgoing_username:
-					config.outgoing?.username ?? config.incoming.username,
-				outgoing_password:
-					config.outgoing?.password ?? config.incoming.password,
-				outgoing_server: config.outgoing?.server ?? config.incoming.server,
-				outgoing_port: config.outgoing?.port,
-				outgoing_security: config.outgoing?.security
-			});
+			const { data } = await axios.post(
+				"/auth/login",
+				{
+					incoming_username: config.incoming.username,
+					incoming_password: config.incoming.password,
+					incoming_server: config.incoming.server,
+					incoming_port: config.incoming.port,
+					incoming_security: config.incoming.security,
+					outgoing_username:
+						config.outgoing?.username ?? config.incoming.username,
+					outgoing_password:
+						config.outgoing?.password ?? config.incoming.password,
+					outgoing_server: config.outgoing?.server ?? config.incoming.server,
+					outgoing_port: config.outgoing?.port,
+					outgoing_security: config.outgoing?.security
+				},
+				{ baseURL: backendServer }
+			);
 
 			return data;
 		},
@@ -87,14 +91,15 @@ const useHttpClient = (): HttpClient => {
 
 			return data;
 		},
-		async getBox(boxID, pageParam) {
+		async getBox(boxID, pageParam, filter) {
 			// The amount of messages to load per request
 
 			const { data } = await instance.get("/mail/box", {
 				params: {
 					cursor: pageParam,
 					limit: messageCountForPage,
-					box: boxID
+					box: boxID,
+					filter
 				}
 			});
 

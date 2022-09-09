@@ -15,7 +15,11 @@ export default interface HttpClient {
 	getBoxes: (token?: string) => Promise<BoxResponse[]>;
 	getPublicOAuthTokens: () => Promise<PublicTokensResponse>;
 	getAvatar: (address?: string) => Promise<string>;
-	getBox: (boxID: string, pageParam: number) => Promise<IncomingMessage[]>;
+	getBox: (
+		boxID: string,
+		pageParam: number,
+		filter: string
+	) => Promise<IncomingMessage[]>;
 	getMessage: (
 		noImages: boolean,
 		darkMode: boolean,

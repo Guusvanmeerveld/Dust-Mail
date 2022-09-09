@@ -138,6 +138,7 @@ const Dashboard: FC = () => {
 								sx={{
 									...scrollbarStyles(theme),
 									width: boxesListWidth,
+
 									overflowY: "scroll"
 								}}
 							>
@@ -149,7 +150,7 @@ const Dashboard: FC = () => {
 									handleDragStart(boxesListWidth, e, "boxes")
 								}
 								sx={{
-									width: grabberWidth,
+									width: `${grabberWidth}px`,
 									bgcolor: theme.palette.divider,
 									cursor: "col-resize"
 								}}
@@ -161,6 +162,7 @@ const Dashboard: FC = () => {
 						sx={{
 							...scrollbarStyles(theme),
 							width: messageListWidth,
+							overflowX: "hidden",
 							overflowY: "scroll"
 						}}
 					>
@@ -172,7 +174,7 @@ const Dashboard: FC = () => {
 							handleDragStart(messageListWidth, e, "messages")
 						}
 						sx={{
-							width: grabberWidth,
+							width: `${grabberWidth}px`,
 							bgcolor: theme.palette.divider,
 							cursor: "col-resize"
 						}}
