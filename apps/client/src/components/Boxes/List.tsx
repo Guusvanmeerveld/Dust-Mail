@@ -104,7 +104,7 @@ const FolderTree: FC<{ boxes: MailBox[] }> = ({ boxes }) => (
 const ListItem: FC<{ box: MailBox }> = ({ box }) => {
 	const [selectedBox, setSelectedBox] = useSelectedBox();
 
-	const [isOpen, setOpen] = useState(false);
+	const [isOpen, setOpen] = useState(true);
 
 	const theme = useTheme();
 

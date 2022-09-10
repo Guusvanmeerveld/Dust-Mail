@@ -47,7 +47,7 @@ const UnMemoizedDrawer: FC<{
 				</IconButton>
 			</Box>
 			<Divider />
-			<BoxesList switchBox={toggleDrawer(false)} />
+			<BoxesList />
 		</MUIDrawer>
 	);
 };

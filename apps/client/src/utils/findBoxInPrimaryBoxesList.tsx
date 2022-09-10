@@ -9,6 +9,7 @@ import Unread from "@mui/icons-material/MarkEmailUnread";
 import People from "@mui/icons-material/People";
 import Person from "@mui/icons-material/Person";
 import Promotions from "@mui/icons-material/Recommend";
+import Schedule from "@mui/icons-material/Schedule";
 import Send from "@mui/icons-material/Send";
 import Star from "@mui/icons-material/Star";
 import Updates from "@mui/icons-material/TipsAndUpdates";
@@ -28,6 +29,9 @@ const DEFAULT_PRIMARY_BOXES: Box[] = [
 	{ name: "Unread", id: "UNREAD", icon: <Unread /> },
 	{ name: "Spam", id: "Spam", icon: <Dangerous /> },
 	{ name: "Trash", id: "Trash", icon: <Delete /> },
+	{ name: "Deleted", id: "Deleted", icon: <Delete /> },
+	{ name: "Scheduled", id: "Scheduled", icon: <Schedule /> },
+
 	{ name: "Archive", id: "Archive", icon: <Archive /> },
 	{ name: "Junk", id: "Junk", icon: <ChangeCircle /> },
 	{ name: "Forums", id: "CATEGORY_FORUMS", icon: <Forum /> },
