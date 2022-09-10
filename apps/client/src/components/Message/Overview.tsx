@@ -213,12 +213,16 @@ const UnMemoizedMessageOverview: FC = () => {
 											)}
 										</Typography>
 									</Box>
-									{data?.from && (
+									{data?.from && data?.from.length != 0 && (
 										<AddressList data={data.from} prefixText="From:" />
 									)}
-									{data?.to && <AddressList data={data.to} prefixText="To:" />}
-									{data?.cc && <AddressList data={data.cc} prefixText="CC:" />}
-									{data?.bcc && (
+									{data?.to && data?.to.length != 0 && (
+										<AddressList data={data.to} prefixText="To:" />
+									)}
+									{data?.cc && data?.cc.length != 0 && (
+										<AddressList data={data.cc} prefixText="CC:" />
+									)}
+									{data?.bcc && data?.bcc.length != 0 && (
 										<AddressList data={data.bcc} prefixText="BCC:" />
 									)}
 								</Stack>

@@ -1,27 +1,40 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { useEffect, useMemo, memo, FC, MouseEvent } from "react";
+import { useEffect, useMemo, memo, FC, useState } from "react";
 
+import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
-import ListItem from "@mui/material/ListItem";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import MUIListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Stack from "@mui/material/Stack";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
+import AddIcon from "@mui/icons-material/Add";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
 
 import MailBox from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
+import useStore from "@utils/hooks/useStore";
+import useTheme from "@utils/hooks/useTheme";
 
-const UnMemoizedBoxesList: FC<{
-	switchBox?: (e: MouseEvent) => void;
-}> = ({ switchBox: switchBoxCb }) => {
+import AddBox from "@components/Boxes/Add";
+
+const UnMemoizedBoxesList: FC = () => {
 	const [boxes] = useLocalStorageState<{ name: string; id: string }[]>("boxes");
 
-	const [selectedBox, setSelectedBox] = useSelectedBox();
+	const [selectedBox] = useSelectedBox();
+
+	const showAddBox = useStore((state) => state.showAddBox);
+	const setShowAddBox = useStore((state) => state.setShowAddBox);
 
 	useEffect(() => {
 		if (selectedBox) {
@@ -43,7 +56,7 @@ const UnMemoizedBoxesList: FC<{
 					const found = findBoxInPrimaryBoxesList(box.name);
 
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-					return { ...found!, id: box.id };
+					return { ...box, ...found! };
 				}),
 		[boxes]
 	);
@@ -57,35 +70,90 @@ const UnMemoizedBoxesList: FC<{
 		[boxes]
 	);
 
-	const switchBox = (e: MouseEvent, box: MailBox): void => {
-		setSelectedBox(box);
+	return (
+		<>
+			{showAddBox && <AddBox />}
+			<Stack
+				sx={{ padding: 1 }}
+				direction="row"
+				alignItems="center"
+				justifyContent="right"
+			>
+				<IconButton onClick={() => setShowAddBox(true)}>
+					<Tooltip title="Add new folder">
+						<AddIcon />
+					</Tooltip>
+				</IconButton>
+			</Stack>
+			{(primaryBoxes || otherBoxes) && <Divider />}
+			{primaryBoxes && <FolderTree boxes={primaryBoxes} />}
+			{primaryBoxes && <Divider />}
+			{otherBoxes && <FolderTree boxes={otherBoxes} />}
+		</>
+	);
+};
 
-		if (switchBoxCb) switchBoxCb(e);
+const FolderTree: FC<{ boxes: MailBox[] }> = ({ boxes }) => (
+	<List>
+		{boxes.map((box) => (
+			<ListItem key={box.id} box={box} />
+		))}
+	</List>
+);
+
+const ListItem: FC<{ box: MailBox }> = ({ box }) => {
+	const [selectedBox, setSelectedBox] = useSelectedBox();
+
+	const [isOpen, setOpen] = useState(false);
+
+	const theme = useTheme();
+
+	const switchBox = (box: MailBox): void => {
+		setSelectedBox(box);
 	};
 
-	const createFolderTree = (boxes: MailBox[]): JSX.Element[] =>
-		boxes.map((box) => (
-			<ListItem
-				key={box.id}
-				selected={box.id == selectedBox?.id}
-				disablePadding
-			>
-				<ListItemButton onClick={(e: MouseEvent) => switchBox(e, box)}>
-					<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
-					<ListItemText>
-						<Typography noWrap textOverflow="ellipsis">
-							{box.name}
-						</Typography>
-					</ListItemText>
-				</ListItemButton>
-			</ListItem>
-		));
+	const indent = theme.spacing(box.id.split(".").length);
 
 	return (
 		<>
-			{primaryBoxes && createFolderTree(primaryBoxes)}
-			{primaryBoxes && <Divider />}
-			{otherBoxes && createFolderTree(otherBoxes)}
+			{box.children && box.children.length != 0 && (
+				<>
+					<ListItemButton
+						onClick={() => switchBox(box)}
+						selected={box.id == selectedBox?.id}
+						sx={{ pl: indent }}
+					>
+						<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
+						<ListItemText>
+							<Typography noWrap textOverflow="ellipsis">
+								{box.name}
+							</Typography>
+						</ListItemText>
+						<IconButton onClick={() => setOpen((state) => !state)}>
+							{isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+						</IconButton>
+					</ListItemButton>
+					<Collapse in={isOpen} timeout="auto" unmountOnExit>
+						<List component="div" disablePadding>
+							{box.children.map((box) => (
+								<ListItem key={box.id} box={box} />
+							))}
+						</List>
+					</Collapse>
+				</>
+			)}
+			{(!box.children || (box.children && box.children.length == 0)) && (
+				<MUIListItem selected={box.id == selectedBox?.id} disablePadding>
+					<ListItemButton sx={{ pl: indent }} onClick={() => switchBox(box)}>
+						<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
+						<ListItemText>
+							<Typography noWrap textOverflow="ellipsis">
+								{box.name}
+							</Typography>
+						</ListItemText>
+					</ListItemButton>
+				</MUIListItem>
+			)}
 		</>
 	);
 };

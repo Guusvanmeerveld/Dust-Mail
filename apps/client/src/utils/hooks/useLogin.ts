@@ -18,6 +18,7 @@ import { LoginConfig } from "@interfaces/login";
 import createGravatarUrl from "@utils/createGravatarUrl";
 import useFetch from "@utils/hooks/useFetch";
 import useStore from "@utils/hooks/useStore";
+import parseBoxes from "@utils/parseBoxes";
 
 /**
  * Request the users inboxes and puts them in local storage
@@ -32,7 +33,7 @@ const useFetchBoxes = (): ((token: string) => Promise<void>) => {
 
 		const boxes = await fetcher.getBoxes(token);
 
-		setBoxes(boxes);
+		setBoxes(parseBoxes(boxes));
 	};
 };
 

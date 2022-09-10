@@ -5,6 +5,8 @@ import { version as appVersion } from "../../../package.json";
 interface Store {
 	fetching: boolean;
 	setFetching: (fetching: boolean) => void;
+	showAddBox: boolean;
+	setShowAddBox: (show: boolean) => void;
 	showAbout: boolean;
 	setShowAbout: (show: boolean) => void;
 	showSettings: boolean;
@@ -24,6 +26,8 @@ const createStore = create<Store>((set) => ({
 			showAbout,
 			showSettings: showAbout === true ? false : state.showSettings
 		})),
+	showAddBox: false,
+	setShowAddBox: (showAddBox) => set({ showAddBox }),
 	showSettings: false,
 	setShowSettings: (showSettings) => set({ showSettings }),
 	toggleShowSettings: () =>
