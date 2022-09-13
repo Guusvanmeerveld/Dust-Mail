@@ -24,11 +24,11 @@
 !/apps/server/tsconfig.build.json
 !/apps/server/tsconfig.json
 
-!/apps/client/src
-!/apps/client/.env
-!/apps/client/index.html
-!/apps/client/splashscreen.html
-!/apps/client/tsconfig.json
-!/apps/client/tsconfig.node.json
-!/apps/client/vite.config.ts
-!/apps/client/package.json
+!/apps/web/src
+!/apps/web/.env
+!/apps/web/index.html
+!/apps/web/splashscreen.html
+!/apps/web/tsconfig.json
+!/apps/web/tsconfig.node.json
+!/apps/web/vite.config.ts
+!/apps/web/package.json

@@ -2,7 +2,7 @@
     <img height="128" src="https://raw.githubusercontent.com/Guusvanmeerveld/Dust-Mail/main/icons/logo-192x192.png" />
 </div>
 
-<h1 align="center">@dust-mail/client</h1>
+<h1 align="center">@dust-mail/web</h1>
 
 <div align="center">
     <img src="https://github.com/Guusvanmeerveld/Dust-Mail/actions/workflows/deploy-client.yml/badge.svg" alt="Deploy Client" />

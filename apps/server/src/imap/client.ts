@@ -13,6 +13,7 @@ import { CacheService } from "@src/cache/cache.service";
 import parseMessage, { createAddress } from "@src/imap/utils/parseMessage";
 
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
+import uniqueBy from "@utils/uniqueBy";
 
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 
@@ -73,7 +74,7 @@ export default class Client implements IncomingClient {
 			else fetchOptions.id = fetchOptions.id.slice(0, end - start + 1);
 		}
 
-		const results = await this.fetch(fetchOptions).then((results) =>
+		let results = await this.fetch(fetchOptions).then((results) =>
 			results.map((message) => {
 				const parsed = {
 					...parseMessage(
@@ -86,6 +87,8 @@ export default class Client implements IncomingClient {
 				return parsed;
 			})
 		);
+
+		results = uniqueBy(results, (key) => key.id);
 
 		// await this.closeBox();
 

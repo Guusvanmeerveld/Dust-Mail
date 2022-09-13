@@ -41,6 +41,22 @@ const UnMemoizedNavbar: FC = () => {
 			setDrawerState(open);
 		};
 
+	const secondaryColor = useMemo(
+		() =>
+			theme.palette.mode == "dark"
+				? theme.palette.text.secondary
+				: theme.palette.primary.contrastText,
+		[theme.palette]
+	);
+
+	const primaryColor = useMemo(
+		() =>
+			theme.palette.mode == "dark"
+				? theme.palette.text.primary
+				: theme.palette.primary.contrastText,
+		[theme.palette]
+	);
+
 	const breadcrumbs = useMemo(() => {
 		const boxNameSplit = selectedBox?.name.split(".");
 
@@ -49,7 +65,10 @@ const UnMemoizedNavbar: FC = () => {
 
 			return (
 				<Typography
-					sx={{ cursor: boxName == selectedBox?.name ? "inherit" : "pointer" }}
+					sx={{
+						color: boxName == selectedBox?.name ? primaryColor : secondaryColor,
+						cursor: boxName == selectedBox?.name ? "inherit" : "pointer"
+					}}
 					key={boxName}
 					onClick={() => {
 						if (boxName == selectedBox?.name) return;
@@ -61,7 +80,7 @@ const UnMemoizedNavbar: FC = () => {
 				</Typography>
 			);
 		});
-	}, [selectedBox?.name, theme.palette.text]);
+	}, [selectedBox?.name, primaryColor, secondaryColor]);
 
 	return (
 		<>
@@ -99,7 +118,7 @@ const UnMemoizedNavbar: FC = () => {
 							{breadcrumbs && (
 								<Breadcrumbs
 									sx={{
-										color: theme.palette.primary.contrastText
+										color: secondaryColor
 									}}
 									separator={<NavigateNext fontSize="small" />}
 									aria-label="breadcrumb"

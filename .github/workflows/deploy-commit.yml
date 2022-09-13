@@ -50,7 +50,7 @@ jobs:
 
     strategy:
       matrix:
-        type: [server, client]
+        type: [server, web]
 
     steps:
       - name: Setup

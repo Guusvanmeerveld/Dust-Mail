@@ -1,5 +1,5 @@
 {
-	"name": "@dust-mail/client",
+	"name": "@dust-mail/web",
 	"displayName": "Dust Mail Client",
 	"description": "A simple and fast mail client",
 	"version": "0.1.4",

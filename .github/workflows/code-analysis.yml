@@ -5,9 +5,9 @@ on:
     branches: [main]
     paths:
       - .github/workflows/code-analysis.yml
-      - packages/client/src/**
-      - packages/server/src/**
-      - packages/mail-discover/src/**
+      - apps/web/src/**
+      - apps/server/src/**
+      - packages/autodiscover/src/**
   pull_request:
     branches: [main]
 

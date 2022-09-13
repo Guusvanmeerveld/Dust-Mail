@@ -20,9 +20,9 @@ COPY package.json pnpm-workspace.yaml .npmrc turbo.json ./
 
 RUN pnpm install -r --offline --ignore-scripts
 
-RUN pnpm run build --filter @dust-mail/client 
+RUN pnpm run build --filter @dust-mail/web 
 
-RUN pnpm --filter @dust-mail/client --prod deploy /app
+RUN pnpm --filter @dust-mail/web --prod deploy /app
 
 FROM nginx:alpine AS runner
 

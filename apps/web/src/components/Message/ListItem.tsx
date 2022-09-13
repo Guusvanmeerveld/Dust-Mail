@@ -62,7 +62,6 @@ const UnMemoizedMessageListItem: FC<{
 
 					borderBottom: `${theme.palette.divider} 1px solid`
 				}}
-				key={message.id}
 			>
 				<Box
 					sx={{

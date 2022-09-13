@@ -80,10 +80,12 @@ export class MailController {
 				end
 			})
 			.then((messages) =>
-				messages.map((message) => ({
-					...message,
-					id: Buffer.from(message.id, "utf-8").toString("base64")
-				}))
+				messages
+					.filter((msg) => msg.id != undefined)
+					.map((message) => ({
+						...message,
+						id: Buffer.from(message.id, "utf-8").toString("base64")
+					}))
 			)
 			.catch(handleError);
 	}

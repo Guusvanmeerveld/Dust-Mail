@@ -1,7 +1,10 @@
 import useLocalStorageState from "use-local-storage-state";
+import create from "zustand";
 
 import { useEffect, useMemo, memo, FC, useState } from "react";
 
+// import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -15,6 +18,8 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import AddIcon from "@mui/icons-material/Add";
+import CheckBoxIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import CloseIcon from "@mui/icons-material/Close";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderIcon from "@mui/icons-material/Folder";
@@ -28,6 +33,26 @@ import useTheme from "@utils/hooks/useTheme";
 
 import AddBox from "@components/Boxes/Add";
 
+type Store = {
+	showSelector: boolean;
+	setShowSelector: (show: boolean) => void;
+	selectedBoxes: MailBox[];
+	addSelectedBox: (box: MailBox) => void;
+	removeSelectedBox: (box: MailBox) => void;
+};
+
+const useSelectStore = create<Store>((set) => ({
+	showSelector: false,
+	setShowSelector: (showSelector) => set({ showSelector }),
+	selectedBoxes: [],
+	addSelectedBox: (box) =>
+		set((state) => ({ selectedBoxes: [...state.selectedBoxes, box] })),
+	removeSelectedBox: (box) =>
+		set((state) => ({
+			selectedBoxes: state.selectedBoxes.filter((item) => item.id != box.id)
+		}))
+}));
+
 const UnMemoizedBoxesList: FC = () => {
 	const [boxes] = useLocalStorageState<{ name: string; id: string }[]>("boxes");
 
@@ -35,6 +60,9 @@ const UnMemoizedBoxesList: FC = () => {
 
 	const showAddBox = useStore((state) => state.showAddBox);
 	const setShowAddBox = useStore((state) => state.setShowAddBox);
+
+	const setShowSelector = useSelectStore((state) => state.setShowSelector);
+	const showSelector = useSelectStore((state) => state.showSelector);
 
 	useEffect(() => {
 		if (selectedBox) {
@@ -50,10 +78,10 @@ const UnMemoizedBoxesList: FC = () => {
 	const primaryBoxes: MailBox[] | undefined = useMemo(
 		() =>
 			boxes
-				?.filter((box) => findBoxInPrimaryBoxesList(box.name))
-				.sort((a, b) => a.name.localeCompare(b.name))
+				?.filter((box) => findBoxInPrimaryBoxesList(box.id))
+				.sort((a, b) => a.id.localeCompare(b.id))
 				.map((box) => {
-					const found = findBoxInPrimaryBoxesList(box.name);
+					const found = findBoxInPrimaryBoxesList(box.id);
 
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					return { ...box, ...found! };
@@ -65,8 +93,8 @@ const UnMemoizedBoxesList: FC = () => {
 	const otherBoxes: MailBox[] | undefined = useMemo(
 		() =>
 			boxes
-				?.filter((box) => !findBoxInPrimaryBoxesList(box.name))
-				.sort((a, b) => a.name.localeCompare(b.name)),
+				?.filter((box) => !findBoxInPrimaryBoxesList(box.id))
+				.sort((a, b) => a.id.localeCompare(b.id)),
 		[boxes]
 	);
 
@@ -75,15 +103,34 @@ const UnMemoizedBoxesList: FC = () => {
 			{showAddBox && <AddBox />}
 			<Stack
 				sx={{ padding: 1 }}
+				spacing={1}
 				direction="row"
 				alignItems="center"
 				justifyContent="right"
 			>
-				<IconButton onClick={() => setShowAddBox(true)}>
-					<Tooltip title="Add new folder">
-						<AddIcon />
-					</Tooltip>
-				</IconButton>
+				{!showSelector && (
+					<>
+						<IconButton onClick={() => setShowSelector(true)}>
+							<Tooltip title="Select folders">
+								<CheckBoxIcon />
+							</Tooltip>
+						</IconButton>
+						<IconButton onClick={() => setShowAddBox(true)}>
+							<Tooltip title="Add new folder">
+								<AddIcon />
+							</Tooltip>
+						</IconButton>
+					</>
+				)}
+				{showSelector && (
+					<>
+						<IconButton onClick={() => setShowSelector(false)}>
+							<Tooltip title="Stop selecting folders">
+								<CloseIcon />
+							</Tooltip>
+						</IconButton>
+					</>
+				)}
 			</Stack>
 			{(primaryBoxes || otherBoxes) && <Divider />}
 			{primaryBoxes && <FolderTree boxes={primaryBoxes} />}
@@ -93,16 +140,29 @@ const UnMemoizedBoxesList: FC = () => {
 	);
 };
 
-const FolderTree: FC<{ boxes: MailBox[] }> = ({ boxes }) => (
-	<List>
-		{boxes.map((box) => (
-			<ListItem key={box.id} box={box} />
-		))}
-	</List>
-);
+const UnMemoizedFolderTree: FC<{ boxes: MailBox[] }> = ({ boxes }) => {
+	const [selectedBox] = useSelectedBox();
 
-const ListItem: FC<{ box: MailBox }> = ({ box }) => {
-	const [selectedBox, setSelectedBox] = useSelectedBox();
+	return (
+		<List>
+			{boxes.map((box) => (
+				<ListItem
+					key={box.id}
+					isSelectedBox={box.id == selectedBox?.id}
+					box={box}
+				/>
+			))}
+		</List>
+	);
+};
+
+const FolderTree = memo(UnMemoizedFolderTree);
+
+const UnMemoizedListItem: FC<{ box: MailBox; isSelectedBox: boolean }> = ({
+	box,
+	isSelectedBox
+}) => {
+	const [, setSelectedBox] = useSelectedBox();
 
 	const [isOpen, setOpen] = useState(true);
 
@@ -112,7 +172,10 @@ const ListItem: FC<{ box: MailBox }> = ({ box }) => {
 		setSelectedBox(box);
 	};
 
-	const indent = theme.spacing(box.id.split(".").length);
+	const indent = useMemo(
+		() => theme.spacing(2 + box.id.split(".").length),
+		[theme.spacing, box.id]
+	);
 
 	return (
 		<>
@@ -120,9 +183,11 @@ const ListItem: FC<{ box: MailBox }> = ({ box }) => {
 				<>
 					<ListItemButton
 						onClick={() => switchBox(box)}
-						selected={box.id == selectedBox?.id}
+						selected={isSelectedBox}
 						sx={{ pl: indent }}
 					>
+						<SelectorCheckBox box={box} />
+
 						<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
@@ -135,16 +200,15 @@ const ListItem: FC<{ box: MailBox }> = ({ box }) => {
 					</ListItemButton>
 					<Collapse in={isOpen} timeout="auto" unmountOnExit>
 						<List component="div" disablePadding>
-							{box.children.map((box) => (
-								<ListItem key={box.id} box={box} />
-							))}
+							<FolderTree boxes={box.children} />
 						</List>
 					</Collapse>
 				</>
 			)}
 			{(!box.children || (box.children && box.children.length == 0)) && (
-				<MUIListItem selected={box.id == selectedBox?.id} disablePadding>
+				<MUIListItem selected={isSelectedBox} disablePadding>
 					<ListItemButton sx={{ pl: indent }} onClick={() => switchBox(box)}>
+						<SelectorCheckBox box={box} />
 						<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
@@ -155,6 +219,27 @@ const ListItem: FC<{ box: MailBox }> = ({ box }) => {
 				</MUIListItem>
 			)}
 		</>
+	);
+};
+
+const ListItem = memo(UnMemoizedListItem);
+
+const SelectorCheckBox: FC<{ box: MailBox }> = ({ box }) => {
+	const addSelectedBox = useSelectStore((state) => state.addSelectedBox);
+	const removeSelectedBox = useSelectStore((state) => state.removeSelectedBox);
+	const showSelector = useSelectStore((state) => state.showSelector);
+
+	const [checked, setChecked] = useState(false);
+
+	useEffect(() => {
+		if (checked) addSelectedBox(box);
+		else removeSelectedBox(box);
+	}, [checked]);
+
+	if (!showSelector) return <></>;
+
+	return (
+		<Checkbox checked={checked} onChange={(checked) => setChecked(!checked)} />
 	);
 };
 

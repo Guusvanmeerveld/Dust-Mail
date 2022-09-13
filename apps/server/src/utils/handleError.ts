@@ -1,6 +1,11 @@
 import { UserError, PackageError } from "@dust-mail/typings";
 
-import { BadRequestException } from "@nestjs/common";
+import {
+	BadGatewayException,
+	GatewayTimeoutException,
+	InternalServerErrorException,
+	UnauthorizedException
+} from "@nestjs/common";
 
 export const parseError = (error: PackageError): UserError => {
 	// console.log(error);
@@ -25,10 +30,26 @@ export const parseError = (error: PackageError): UserError => {
 };
 
 const handleError = (error: PackageError) => {
-	throw new BadRequestException({
-		code: parseError(error),
+	const errorType = parseError(error);
+
+	const errorMessage = {
+		code: errorType,
 		message: error.message
-	});
+	};
+
+	switch (errorType) {
+		case UserError.Credentials:
+			throw new UnauthorizedException(errorMessage);
+
+		case UserError.Timeout:
+			throw new GatewayTimeoutException(errorMessage);
+
+		case UserError.Network || UserError.Protocol:
+			throw new BadGatewayException(errorMessage);
+
+		default:
+			throw new InternalServerErrorException(errorMessage);
+	}
 };
 
 export default handleError;

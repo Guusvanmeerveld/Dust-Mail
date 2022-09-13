@@ -28,7 +28,7 @@ ENV VITE_DEFAULT_SERVER "/api"
 
 RUN pnpm run build
 
-RUN pnpm --filter @dust-mail/client --prod deploy /app/client
+RUN pnpm --filter @dust-mail/web --prod deploy /app/client
 RUN pnpm --filter @dust-mail/server --prod deploy /app/server
 
 # Run nginx + api

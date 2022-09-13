@@ -81,10 +81,11 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 			.catch((error: AxiosError<ErrorResponse>) => {
 				// If there was anything wrong with the request, catch it
 
+				setFetching(false);
+
 				// Check if the request was successfull
 				if (error.response?.status == 400) {
 					// Hide the fetching animation
-					setFetching(false);
 
 					console.log("An error occured when requesting the JWT token");
 

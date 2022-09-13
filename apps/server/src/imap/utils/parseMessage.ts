@@ -9,7 +9,7 @@ const parseMessage = (
 	id: string;
 	from: Address[];
 } => ({
-	from: result.from.value.map(createAddress),
+	from: result.from?.value.map(createAddress) ?? [],
 	subject: result.subject,
 	id: result.messageId
 });
