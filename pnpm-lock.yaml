@@ -196,6 +196,7 @@ importers:
       react-query: ^3.39.1
       react-router: ^6.3.0
       react-router-dom: ^6.3.0
+      rollup-plugin-visualizer: ^5.8.1
       size-limit: ^7.0.8
       slate: ^0.81.1
       slate-react: ^0.81.0
@@ -248,10 +249,11 @@ importers:
       eslint-plugin-react: 7.30.1_eslint@8.20.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.20.0
       prettier: 2.7.1
+      rollup-plugin-visualizer: 5.8.1
       size-limit: 7.0.8
       typescript: 4.7.4
       vite: 3.0.4
-      vite-plugin-pwa: 0.12.3_6x7hwu2tvelmeqj2f3gkeezd4u
+      vite-plugin-pwa: 0.12.3_vite@3.0.4
       vite-tsconfig-paths: 3.5.0_vite@3.0.4
       vitest: 0.20.3_c8@7.12.0
       workbox-window: 6.5.4
@@ -5162,6 +5164,11 @@ packages:
       clone: 1.0.4
     dev: true
 
+  /define-lazy-prop/2.0.0:
+    resolution: {integrity: sha512-Ds09qNh8yw3khSjiJjiUInaGX9xlqZDY7JVryGxdxV7NPeuqQfplOpQ66yJFZut3jLa5zOwkXw1g9EI2uKh4Og==}
+    engines: {node: '>=8'}
+    dev: true
+
   /define-properties/1.1.4:
     resolution: {integrity: sha512-uckOqKcfaVvtBdsVkdPv3XjveQJsNQqmhXgRi8uhvWWuPYZCNlzT8qAyblUgNoXdHdjMTzAqeGjAoli8f+bzPA==}
     engines: {node: '>= 0.4'}
@@ -7027,6 +7034,12 @@ packages:
       has-tostringtag: 1.0.0
     dev: true
 
+  /is-docker/2.2.1:
+    resolution: {integrity: sha512-F+i2BKsFrH66iaUFc0woD8sLy8getkwTwtOBjvs56Cx4CgJDeKQeqfz8wAYiSb8JOprWhHH5p77PbmYCvvUuXQ==}
+    engines: {node: '>=8'}
+    hasBin: true
+    dev: true
+
   /is-extglob/2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
     engines: {node: '>=0.10.0'}
@@ -7162,6 +7175,13 @@ packages:
   /is-windows/1.0.2:
     resolution: {integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==}
     engines: {node: '>=0.10.0'}
+    dev: true
+
+  /is-wsl/2.2.0:
+    resolution: {integrity: sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==}
+    engines: {node: '>=8'}
+    dependencies:
+      is-docker: 2.2.1
     dev: true
 
   /isarray/0.0.1:
@@ -8557,6 +8577,15 @@ packages:
       mimic-fn: 2.1.0
     dev: true
 
+  /open/8.4.0:
+    resolution: {integrity: sha512-XgFPPM+B28FtCCgSb9I+s9szOC1vZRSwgWsRUA5ylIxRTgKozqjOCrVOqGsYABPYK5qnfqClxZTFBa8PKt2v6Q==}
+    engines: {node: '>=12'}
+    dependencies:
+      define-lazy-prop: 2.0.0
+      is-docker: 2.2.1
+      is-wsl: 2.2.0
+    dev: true
+
   /optionator/0.9.1:
     resolution: {integrity: sha512-74RlY5FCnhq4jRxVUPKDaRwrVNXMqsGsiW6AJw4XK8hmtm10wC0ypZBLw5IIp85NZMr91+qd1RvvENwg7jjRFw==}
     engines: {node: '>= 0.8.0'}
@@ -9480,6 +9509,22 @@ packages:
       rollup: 2.77.2
       tslib: 2.4.0
       typescript: 4.7.4
+    dev: true
+
+  /rollup-plugin-visualizer/5.8.1:
+    resolution: {integrity: sha512-NBT/xN/LWCwDM2/j5vYmjzpEAKHyclo/8Cv8AfTCwgADAG+tLJDy1vzxMw6NO0dSDjmTeRELD9UU3FwknLv0GQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+    peerDependencies:
+      rollup: ^2.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+    dependencies:
+      nanoid: 3.3.4
+      open: 8.4.0
+      source-map: 0.7.3
+      yargs: 17.5.1
     dev: true
 
   /rollup/2.77.2:
@@ -10816,11 +10861,10 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  /vite-plugin-pwa/0.12.3_6x7hwu2tvelmeqj2f3gkeezd4u:
+  /vite-plugin-pwa/0.12.3_vite@3.0.4:
     resolution: {integrity: sha512-gmYdIVXpmBuNjzbJFPZFzxWYrX4lHqwMAlOtjmXBbxApiHjx9QPXKQPJjSpeTeosLKvVbNcKSAAhfxMda0QVNQ==}
     peerDependencies:
       vite: ^2.0.0 || ^3.0.0-0
-      workbox-window: ^6.4.0
     dependencies:
       debug: 4.3.4
       fast-glob: 3.2.11

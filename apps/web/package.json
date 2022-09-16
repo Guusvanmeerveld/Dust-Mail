@@ -73,6 +73,7 @@
 		"eslint-plugin-react": "^7.30.1",
 		"eslint-plugin-react-hooks": "^4.6.0",
 		"prettier": "^2.7.1",
+		"rollup-plugin-visualizer": "^5.8.1",
 		"size-limit": "^7.0.8",
 		"typescript": "^4.5.4",
 		"vite": "^3.0.3",

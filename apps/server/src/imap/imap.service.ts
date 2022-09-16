@@ -29,7 +29,11 @@ export class ImapService {
 			password: config.password,
 			host: config.server,
 			port: config.port,
-			tls: config.security != "NONE"
+			tls: config.security != "NONE",
+			authTimeout: 30 * 1000,
+			tlsOptions: {
+				rejectUnauthorized: false
+			}
 		});
 
 		return await connect(client).then((_client) => {

@@ -1,7 +1,7 @@
 import type { Request as ExpressRequest } from "express";
 
 import { AuthService } from "./auth.service";
-import { allowedDomains } from "./constants";
+import { allowedAddresses, allowedDomains } from "./constants";
 import type { SecurityType } from "./interfaces/config.interface";
 import { JwtToken } from "./interfaces/jwt.interface";
 import { StringValidationPipe } from "./pipes/string.pipe";
@@ -34,12 +34,14 @@ import handleError from "@utils/handleError";
 @Controller("auth")
 export class AuthController {
 	private allowedDomains?: string[];
+	private allowedAddresses?: string[];
 
 	constructor(
 		private authService: AuthService,
 		private jwtService: JwtService
 	) {
 		if (allowedDomains) this.allowedDomains = allowedDomains.split(",");
+		if (allowedAddresses) this.allowedAddresses = allowedAddresses.split(",");
 	}
 
 	@Post("login")
@@ -72,7 +74,10 @@ export class AuthController {
 
 			if (!incomingServer || !outgoingServer) {
 				const result = await mailDiscover(incomingUsername).catch(() => {
-					incomingServer = "mail.";
+					const server = incomingUsername.split("@").pop() as string;
+
+					incomingServer = "mail." + server;
+					outgoingServer = "mail." + server;
 				});
 
 				if (result) {
@@ -121,6 +126,17 @@ export class AuthController {
 
 			if (!outgoingUsername) outgoingUsername = incomingUsername;
 			if (!outgoingPassword) outgoingPassword = outgoingPassword;
+
+			if (
+				this.allowedAddresses &&
+				(!this.allowedAddresses.includes(incomingUsername) ||
+					!this.allowedAddresses.includes(outgoingUsername))
+			) {
+				throw new BadRequestException({
+					code: UserError.Misc,
+					message: "Email address is not on whitelist"
+				});
+			}
 
 			if (!incomingService) {
 				incomingService = (await detectServiceFromConfig({
