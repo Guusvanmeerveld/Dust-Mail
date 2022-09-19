@@ -128,8 +128,12 @@ export class MailController {
 		@Body("content") content: string,
 		@Body("subject") subject: string
 	): Promise<string> {
-		if (Array.isArray(from)) {
-			throw new BadRequestException("`from` property can't be an array");
+		if (!from) {
+			throw new BadRequestException("Missing message `from` param");
+		}
+
+		if (!to) {
+			throw new BadRequestException("Missing message `to` param");
 		}
 
 		if (!content)
@@ -148,9 +152,13 @@ export class MailController {
 
 		const client = req.user.outgoingClient;
 
+		await client.connect();
+
 		await client
 			.send({ from, to, cc, bcc, content, subject })
 			.catch(handleError);
+
+		await client.logout();
 
 		return "sent";
 	}

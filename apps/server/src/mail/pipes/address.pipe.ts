@@ -3,6 +3,8 @@ import { PipeTransform, Injectable, BadRequestException } from "@nestjs/common";
 @Injectable()
 export class AddressValidationPipe implements PipeTransform {
 	public transform(value: any) {
+		if (!value) return value;
+
 		if (typeof value != "object" && !Array.isArray(value)) {
 			throw new BadRequestException("Address must be an object or array");
 		}

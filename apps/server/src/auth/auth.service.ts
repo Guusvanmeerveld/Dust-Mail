@@ -66,15 +66,6 @@ export class AuthService {
 				break;
 		}
 
-		switch (config.outgoing.service) {
-			case "smtp":
-				await this.smtpService.login(config.outgoing);
-				break;
-
-			default:
-				break;
-		}
-
 		const services = {
 			incoming: config.incoming.service,
 			outgoing: config.outgoing.service
