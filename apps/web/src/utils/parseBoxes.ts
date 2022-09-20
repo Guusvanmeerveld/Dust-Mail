@@ -3,15 +3,19 @@ import { BoxResponse } from "@dust-mail/typings";
 import Box from "@interfaces/box";
 
 const parseBoxes = (boxes: BoxResponse[]): Box[] => {
+	const delemiter = ".";
+
 	let array: Box[] = boxes.map((i) => ({
 		...i,
-		children: []
+
+		children: [],
+		delemiter
 	}));
 
 	for (let i = 0; i < array.length; i++) {
 		const element = array[i];
 
-		const split = element.id.split(".");
+		const split = element.id.split(delemiter);
 
 		for (let i = 0; i < split.length - 1; i++) {
 			let currentLayer = array;
@@ -37,7 +41,7 @@ const parseBoxes = (boxes: BoxResponse[]): Box[] => {
 		}
 	}
 
-	array = array.filter((item) => item.id.indexOf(".") < 0);
+	array = array.filter((item) => item.id.indexOf(delemiter) < 0);
 
 	return array;
 };

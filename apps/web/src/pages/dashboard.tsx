@@ -1,6 +1,6 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { FC, useEffect, MouseEvent } from "react";
+import { FC, useEffect, MouseEvent, useMemo } from "react";
 import { useQuery } from "react-query";
 import { Navigate } from "react-router-dom";
 
@@ -25,6 +25,8 @@ import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
 
+const defaultMessageListWidth = 400;
+
 const Dashboard: FC = () => {
 	const theme = useTheme();
 
@@ -38,8 +40,12 @@ const Dashboard: FC = () => {
 	const logout = useLogout();
 	const login = useLogin();
 
-	const accessTokenExpired =
-		accessToken && new Date(accessToken?.expires).getTime() < Date.now();
+	const scrollBarSx = useMemo(() => scrollbarStyles(theme), [theme]);
+
+	const accessTokenExpired = useMemo(
+		() => accessToken && new Date(accessToken?.expires).getTime() < Date.now(),
+		[accessToken]
+	);
 
 	if (
 		accessTokenExpired &&
@@ -75,7 +81,7 @@ const Dashboard: FC = () => {
 	const [messageListWidth, setMessageListWidth] = useLocalStorageState<number>(
 		"messageListWidth",
 		{
-			defaultValue: 400
+			defaultValue: defaultMessageListWidth
 		}
 	);
 
@@ -86,46 +92,63 @@ const Dashboard: FC = () => {
 		}
 	);
 
-	const widthSetters = {
-		boxes: setBoxesListWidth,
-		messages: setMessageListWidth
-	};
+	const widthSetters = useMemo(
+		() => ({
+			boxes: setBoxesListWidth,
+			messages: setMessageListWidth
+		}),
+		[setBoxesListWidth, setMessageListWidth]
+	);
 
-	const appBarHeight = theme.spacing(8);
-
-	const fullpageHeight = `calc(100vh - ${appBarHeight})`;
+	const fullpageHeight = useMemo(
+		() => `calc(100vh - ${theme.spacing(8)})`,
+		[theme.spacing]
+	);
 
 	const windowWidth = useWindowWidth();
 
 	const grabberWidth = 2;
 
-	const handleDragStart = (
-		originalWidth: number,
-		dragEvent: MouseEvent,
-		component: keyof typeof widthSetters
-	): void => {
-		const pageX = dragEvent.pageX;
+	const handleDragStart = useMemo(
+		() =>
+			(
+				originalWidth: number,
+				dragEvent: MouseEvent,
+				component: keyof typeof widthSetters
+			): void => {
+				const pageX = dragEvent.pageX;
 
-		const run = (moveEvent: globalThis.MouseEvent): void => {
-			moveEvent.preventDefault();
+				const run = (moveEvent: globalThis.MouseEvent): void => {
+					moveEvent.preventDefault();
 
-			const difference = pageX - moveEvent.pageX;
+					const difference = pageX - moveEvent.pageX;
 
-			const newWidth = originalWidth - difference;
+					const newWidth = originalWidth - difference;
 
-			if (newWidth >= 200 && newWidth <= 600) widthSetters[component](newWidth);
-		};
+					if (newWidth >= 200 && newWidth <= 600)
+						widthSetters[component](newWidth);
+				};
 
-		const unsub = (): void => {
-			document.removeEventListener("mousemove", run);
-			document.removeEventListener("mouseup", unsub);
-		};
+				const unsub = (): void => {
+					document.removeEventListener("mousemove", run);
+					document.removeEventListener("mouseup", unsub);
+				};
 
-		document.addEventListener("mousemove", run);
-		document.addEventListener("mouseup", unsub);
-	};
+				document.addEventListener("mousemove", run);
+				document.addEventListener("mouseup", unsub);
+			},
+		[widthSetters]
+	);
 
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
+
+	useEffect(
+		() =>
+			isMobile
+				? setMessageListWidth(windowWidth)
+				: setMessageListWidth(defaultMessageListWidth),
+		[isMobile]
+	);
 
 	return (
 		<>
@@ -136,9 +159,8 @@ const Dashboard: FC = () => {
 						<>
 							<Box
 								sx={{
-									...scrollbarStyles(theme),
+									...scrollBarSx,
 									width: boxesListWidth,
-
 									overflowY: "scroll"
 								}}
 							>
@@ -160,7 +182,7 @@ const Dashboard: FC = () => {
 
 					<Box
 						sx={{
-							...scrollbarStyles(theme),
+							...scrollBarSx,
 							width: messageListWidth,
 							overflowX: "hidden",
 							overflowY: "scroll"
@@ -180,24 +202,26 @@ const Dashboard: FC = () => {
 						}}
 					/>
 
-					<Stack
-						direction="column"
-						spacing={1}
-						sx={{
-							width:
-								windowWidth -
-								messageListWidth -
-								(isMobile ? 0 : boxesListWidth) -
-								grabberWidth * 2,
-							transition: theme.transitions.create(["width", "transform"], {
-								duration: theme.transitions.duration.standard
-							}),
-							px: 3,
-							py: 1
-						}}
-					>
-						<MessageOverview />
-					</Stack>
+					{!isMobile && (
+						<Stack
+							direction="column"
+							spacing={1}
+							sx={{
+								width:
+									windowWidth -
+									messageListWidth -
+									(isMobile ? 0 : boxesListWidth) -
+									grabberWidth * 2,
+								transition: theme.transitions.create(["width", "transform"], {
+									duration: theme.transitions.duration.standard
+								}),
+								px: 3,
+								py: 1
+							}}
+						>
+							<MessageOverview />
+						</Stack>
+					)}
 				</Stack>
 
 				<MessageActionButton />

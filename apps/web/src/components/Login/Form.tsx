@@ -2,7 +2,7 @@ import create from "zustand";
 
 import { description } from "../../../package.json";
 
-import { useEffect, useState, FC, memo, KeyboardEvent, FormEvent } from "react";
+import { useEffect, useState, FC, memo, FormEvent, useMemo } from "react";
 
 import { ErrorResponse, UserError } from "@dust-mail/typings";
 
@@ -30,6 +30,7 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import AdvancedLogin, { SecurityType, ServerType } from "@interfaces/login";
 
 import modalStyles from "@styles/modal";
+import scrollbarStyles from "@styles/scrollbar";
 
 import { useMailLogin } from "@utils/hooks/useLogin";
 import useStore from "@utils/hooks/useStore";
@@ -58,18 +59,11 @@ const createLoginSettingsStore = create<Store>((set) => ({
 const Credentials: FC<{
 	error?: ErrorResponse;
 	required?: boolean;
+	identifier: string;
 	setError: (error?: ErrorResponse) => void;
-	handleKeyDown?: (e: KeyboardEvent) => void;
 	setPassword: (password: string) => void;
 	setUsername: (username: string) => void;
-}> = ({
-	error,
-	required,
-	setError,
-	handleKeyDown,
-	setPassword,
-	setUsername
-}) => {
+}> = ({ identifier, error, required, setError, setPassword, setUsername }) => {
 	const [showPassword, setShowPassword] = useState(false);
 
 	return (
@@ -80,7 +74,7 @@ const Credentials: FC<{
 					setError(undefined);
 					setUsername(e.currentTarget.value);
 				}}
-				id="username"
+				id={"username-" + identifier}
 				error={error && error.type == UserError.Credentials}
 				helperText={
 					error && error.type == UserError.Credentials && error.message
@@ -98,7 +92,6 @@ const Credentials: FC<{
 				<InputLabel htmlFor="password">Password</InputLabel>
 				<OutlinedInput
 					required={required}
-					onKeyDown={handleKeyDown}
 					onChange={(e) => {
 						setError(undefined);
 						setPassword(e.currentTarget.value);
@@ -117,7 +110,7 @@ const Credentials: FC<{
 							</Tooltip>
 						</InputAdornment>
 					}
-					id="password"
+					id={"password-" + identifier}
 					label="Password"
 					type={showPassword ? "text" : "password"}
 				/>
@@ -190,6 +183,7 @@ const UnMemoizedServerPropertiesColumn: FC<{
 
 				<Credentials
 					error={error}
+					identifier={type}
 					required={type == "incoming"}
 					setError={setSetting(type)("error")}
 					setPassword={setSetting(type)("password")}
@@ -204,6 +198,11 @@ const ServerPropertiesColumn = memo(UnMemoizedServerPropertiesColumn);
 
 const AdvancedLoginMenu: FC = () => {
 	const theme = useTheme();
+
+	const [modalSx, scrollBarSx] = useMemo(
+		() => [modalStyles(theme), scrollbarStyles(theme)],
+		[theme]
+	);
 
 	const [isOpen, setOpen] = useState(false);
 
@@ -239,43 +238,52 @@ const AdvancedLoginMenu: FC = () => {
 				Advanced login
 			</Button>
 			<Modal open={isOpen} onClose={() => setOpen(false)}>
-				<Box sx={modalStyles(theme)}>
-					<Typography variant="h5" textAlign="center">
-						Custom mail server settings
-					</Typography>
-					<Typography variant="subtitle1" textAlign="center">
-						Customize which mail servers that you want to connect to.
-					</Typography>
-					<br />
-					<Grid container spacing={2}>
-						{(["incoming", "outgoing"] as ServerType[]).map((type) => (
-							<ServerPropertiesColumn key={type} type={type} />
-						))}
-					</Grid>
+				<Box
+					sx={{
+						...modalSx,
+						...scrollBarSx,
+						overflowY: "scroll",
+						maxHeight: "90%"
+					}}
+				>
+					<form onSubmit={submit}>
+						<Typography variant="h5" textAlign="center">
+							Custom mail server settings
+						</Typography>
+						<Typography variant="subtitle1" textAlign="center">
+							Customize which mail servers that you want to connect to.
+						</Typography>
+						<br />
+						<Grid container spacing={2}>
+							{(["incoming", "outgoing"] as ServerType[]).map((type) => (
+								<ServerPropertiesColumn key={type} type={type} />
+							))}
+						</Grid>
 
-					<br />
+						<br />
 
-					{error &&
-						(error.type == UserError.Timeout ||
-							error.type == UserError.Misc ||
-							error.type == UserError.Network) && (
-							<>
-								<Alert sx={{ textAlign: "left" }} severity="error">
-									<AlertTitle>Error</AlertTitle>
-									{error.message}
-								</Alert>
-								<br />
-							</>
-						)}
+						{error &&
+							(error.type == UserError.Timeout ||
+								error.type == UserError.Misc ||
+								error.type == UserError.Network) && (
+								<>
+									<Alert sx={{ textAlign: "left" }} severity="error">
+										<AlertTitle>Error</AlertTitle>
+										{error.message}
+									</Alert>
+									<br />
+								</>
+							)}
 
-					<Button
-						disabled={missingFields}
-						onClick={submit}
-						fullWidth
-						variant="contained"
-					>
-						Login
-					</Button>
+						<Button
+							disabled={missingFields}
+							type="submit"
+							fullWidth
+							variant="contained"
+						>
+							Login
+						</Button>
+					</form>
 				</Box>
 			</Modal>
 		</>
@@ -318,12 +326,6 @@ const LoginForm: FC = () => {
 		await login({ incoming: { username, password } }).catch((e) => setError(e));
 	};
 
-	const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
-		if (e.key == "Enter") {
-			await onSubmit();
-		}
-	};
-
 	return (
 		<form onSubmit={onSubmit}>
 			<Stack direction="column" spacing={2}>
@@ -338,8 +340,8 @@ const LoginForm: FC = () => {
 
 				<Credentials
 					error={error}
+					identifier="default"
 					setError={setError}
-					handleKeyDown={handleKeyDown}
 					setPassword={setPassword}
 					setUsername={setUsername}
 				/>
@@ -347,7 +349,7 @@ const LoginForm: FC = () => {
 				<Button
 					fullWidth
 					disabled={fetching || missingFields}
-					onClick={onSubmit}
+					type="submit"
 					variant="contained"
 				>
 					Login

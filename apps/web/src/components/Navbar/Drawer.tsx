@@ -1,4 +1,4 @@
-import { FC, memo, KeyboardEvent, MouseEvent } from "react";
+import { FC, memo, KeyboardEvent, MouseEvent, useMemo } from "react";
 
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -22,6 +22,8 @@ const UnMemoizedDrawer: FC<{
 
 	const windowWidth = useWindowWidth();
 
+	const scrollBarSx = useMemo(() => scrollbarStyles(theme), [theme]);
+
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
 	if (!isMobile) return <></>;
@@ -29,7 +31,7 @@ const UnMemoizedDrawer: FC<{
 	return (
 		<MUIDrawer
 			anchor="left"
-			sx={{ ...scrollbarStyles(theme), p: 2 }}
+			sx={{ ...scrollBarSx, p: 2 }}
 			open={drawerState}
 			onClose={toggleDrawer(false)}
 		>
@@ -47,7 +49,7 @@ const UnMemoizedDrawer: FC<{
 				</IconButton>
 			</Box>
 			<Divider />
-			<BoxesList />
+			<BoxesList clickOnBox={toggleDrawer(false)} />
 		</MUIDrawer>
 	);
 };
