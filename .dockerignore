@@ -25,6 +25,7 @@
 !/apps/server/tsconfig.json
 
 !/apps/web/src
+!/apps/web/public
 !/apps/web/.env
 !/apps/web/index.html
 !/apps/web/splashscreen.html
