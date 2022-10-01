@@ -3,7 +3,8 @@ import {
 	LoginResponse,
 	VersionResponse,
 	PublicTokensResponse,
-	IncomingMessage
+	IncomingMessage,
+	FullIncomingMessage
 } from "@dust-mail/typings";
 
 import { LoginConfig } from "@interfaces/login";

@@ -10,7 +10,10 @@ export const getMessage = async (
 		content: {},
 		date: new Date(),
 		flags: { seen: true },
+		box: {
+			id: Buffer.from(Math.random().toString(), "utf8").toString("base64")
+		},
 		from: [],
-		id: ""
+		id: Buffer.from(Math.random().toString(), "utf8").toString("base64")
 	};
 };

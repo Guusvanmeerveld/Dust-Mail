@@ -18,7 +18,7 @@ export interface BoxResponse {
 	id: string;
 }
 
-export enum UserError {
+export enum GatewayError {
 	Credentials = 1,
 	Timeout = 2,
 	Network = 3,
@@ -30,5 +30,5 @@ export type PackageError = Error & { source: string };
 
 export interface ErrorResponse {
 	message: string;
-	type: UserError;
+	code: GatewayError;
 }

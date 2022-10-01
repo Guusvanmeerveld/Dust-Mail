@@ -18,6 +18,8 @@ export class ImapService {
 		this.clients = new Map();
 	}
 
+	private readonly authTimeout = 30 * 1000;
+
 	@Inject("CACHE")
 	private readonly cacheService: CacheService;
 
@@ -30,7 +32,7 @@ export class ImapService {
 			host: config.server,
 			port: config.port,
 			tls: config.security != "NONE",
-			authTimeout: 30 * 1000,
+			authTimeout: this.authTimeout,
 			tlsOptions: {
 				rejectUnauthorized: false
 			}
@@ -54,7 +56,7 @@ export class ImapService {
 			client = await this.login(config);
 		}
 
-		return new Client(client, this.cacheService);
+		return new Client(client, this.cacheService, identifier);
 	};
 
 	public logout = (config: Config): void => {

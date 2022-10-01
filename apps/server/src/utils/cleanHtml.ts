@@ -42,13 +42,15 @@ const cleanMainHtml = (
 		allowVulnerableTags: true
 	});
 
+	const $ = load(html);
+
 	if (darkMode) {
-		const $ = load(html);
-
 		$("head").append(`<style>${styles.toString()}</style>`);
-
-		html = $.html();
 	}
+
+	$("a").attr("target", "_blank");
+
+	html = $.html();
 
 	html = minify(html);
 

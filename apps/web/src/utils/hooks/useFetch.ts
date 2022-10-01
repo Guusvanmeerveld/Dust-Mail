@@ -2,7 +2,7 @@ import useLocalStorageState from "use-local-storage-state";
 
 import axios from "axios";
 
-import { LocalToken, VersionResponse, UserError } from "@dust-mail/typings";
+import { LocalToken, VersionResponse, GatewayError } from "@dust-mail/typings";
 
 import { messageCountForPage } from "@src/constants";
 
@@ -33,12 +33,12 @@ const useHttpClient = (): HttpClient => {
 							message: `Could not connect to remote ${
 								import.meta.env.VITE_APP_NAME
 							} server, please check your connectivity`,
-							type: UserError.Misc
+							type: GatewayError.Misc
 						};
 					} else {
 						throw {
 							message: `An unknown error occured: ${error.message}`,
-							type: UserError.Misc
+							type: GatewayError.Misc
 						};
 					}
 				});
@@ -58,7 +58,7 @@ const useHttpClient = (): HttpClient => {
 						config.outgoing?.username ?? config.incoming.username,
 					outgoing_password:
 						config.outgoing?.password ?? config.incoming.password,
-					outgoing_server: config.outgoing?.server ?? config.incoming.server,
+					outgoing_server: config.outgoing?.server,
 					outgoing_port: config.outgoing?.port,
 					outgoing_security: config.outgoing?.security
 				},

@@ -88,6 +88,7 @@ export const getBoxMessages = async (
 					)?.value,
 					from,
 					id: data.id,
+					box: { id: "" },
 					flags: {
 						seen: true
 					}

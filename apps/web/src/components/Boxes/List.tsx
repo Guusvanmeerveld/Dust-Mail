@@ -119,10 +119,20 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 			<CheckedBoxesContext.Provider value={checkedBoxesStore}>
 				{(primaryBoxes || otherBoxes) && <Divider />}
 				{primaryBoxes && (
-					<FolderTree {...folderTreeProps} boxes={primaryBoxes} />
+					<FolderTree
+						title="Primary folders"
+						{...folderTreeProps}
+						boxes={primaryBoxes}
+					/>
 				)}
 				{primaryBoxes && <Divider />}
-				{otherBoxes && <FolderTree {...folderTreeProps} boxes={otherBoxes} />}
+				{otherBoxes && (
+					<FolderTree
+						title="Other folders"
+						{...folderTreeProps}
+						boxes={otherBoxes}
+					/>
+				)}
 			</CheckedBoxesContext.Provider>
 		</>
 	);

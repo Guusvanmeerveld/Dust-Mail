@@ -1,5 +1,3 @@
-import { CacheService } from "@cache/cache.service";
-
 import IncomingGoogleClient from "./incoming";
 import Config from "./interfaces/config";
 import exchangeToken from "./utils/exchangeToken";
@@ -11,6 +9,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { jwtConstants } from "@src/constants";
+
+import { CacheService } from "@cache/cache.service";
 
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 import OutgoingClient from "@mail/interfaces/client/outgoing.interface";

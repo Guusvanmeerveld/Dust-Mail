@@ -1,11 +1,11 @@
-import { CacheService } from "@cache/cache.service";
-
 import GoogleConfig from "../interfaces/config";
 import { getBox, getBoxes, getBoxMessages } from "./box";
 import connect from "./connect";
 import { getMessage } from "./message";
 
 import { IncomingMessage } from "@dust-mail/typings";
+
+import { CacheService } from "@cache/cache.service";
 
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 

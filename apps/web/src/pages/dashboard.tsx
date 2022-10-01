@@ -44,7 +44,7 @@ const Dashboard: FC = () => {
 
 	const accessTokenExpired = useMemo(
 		() => accessToken && new Date(accessToken?.expires).getTime() < Date.now(),
-		[accessToken]
+		[accessToken, Date.now()]
 	);
 
 	if (
@@ -142,14 +142,6 @@ const Dashboard: FC = () => {
 
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
-	useEffect(
-		() =>
-			isMobile
-				? setMessageListWidth(windowWidth)
-				: setMessageListWidth(defaultMessageListWidth),
-		[isMobile]
-	);
-
 	return (
 		<>
 			{!user.isLoggedIn && <Navigate to="/" replace={true} />}
@@ -183,44 +175,44 @@ const Dashboard: FC = () => {
 					<Box
 						sx={{
 							...scrollBarSx,
-							width: messageListWidth,
-							overflowX: "hidden",
+							width: isMobile ? 1 : messageListWidth,
 							overflowY: "scroll"
 						}}
 					>
 						<MessageList />
 					</Box>
 
-					<Box
-						onMouseDown={(e: MouseEvent) =>
-							handleDragStart(messageListWidth, e, "messages")
-						}
-						sx={{
-							width: `${grabberWidth}px`,
-							bgcolor: theme.palette.divider,
-							cursor: "col-resize"
-						}}
-					/>
-
 					{!isMobile && (
-						<Stack
-							direction="column"
-							spacing={1}
-							sx={{
-								width:
-									windowWidth -
-									messageListWidth -
-									(isMobile ? 0 : boxesListWidth) -
-									grabberWidth * 2,
-								transition: theme.transitions.create(["width", "transform"], {
-									duration: theme.transitions.duration.standard
-								}),
-								px: 3,
-								py: 1
-							}}
-						>
-							<MessageOverview />
-						</Stack>
+						<>
+							<Box
+								onMouseDown={(e: MouseEvent) =>
+									handleDragStart(messageListWidth, e, "messages")
+								}
+								sx={{
+									width: `${grabberWidth}px`,
+									bgcolor: theme.palette.divider,
+									cursor: "col-resize"
+								}}
+							/>
+							<Stack
+								direction="column"
+								spacing={1}
+								sx={{
+									width:
+										windowWidth -
+										messageListWidth -
+										(isMobile ? 0 : boxesListWidth) -
+										grabberWidth * 2,
+									transition: theme.transitions.create(["width", "transform"], {
+										duration: theme.transitions.duration.standard
+									}),
+									px: 3,
+									py: 1
+								}}
+							>
+								<MessageOverview />
+							</Stack>
+						</>
 					)}
 				</Stack>
 

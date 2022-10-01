@@ -29,6 +29,7 @@ export interface IncomingMessage {
 	subject?: string;
 	date: Date;
 	from: Address[];
+	box: { id: string };
 	id: string;
 }
 

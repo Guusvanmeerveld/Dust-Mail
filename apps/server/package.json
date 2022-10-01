@@ -30,7 +30,6 @@
 		"@nestjs/serve-static": "^3.0.0",
 		"@nestjs/throttler": "^2.0.1",
 		"@redis/client": "^1.2.0",
-		"@redis/json": "^1.0.3",
 		"axios": "^0.27.2",
 		"cache-manager": "^4.0.1",
 		"cheerio": "1.0.0-rc.12",
@@ -51,7 +50,8 @@
 		"rxjs": "^7.5.5",
 		"sanitize-html": "^2.7.0",
 		"ua-parser-js": "^1.0.2",
-		"validator": "^13.7.0"
+		"validator": "^13.7.0",
+		"xoauth2": "^1.2.0"
 	},
 	"devDependencies": {
 		"@dust-mail/tsconfig": "workspace:*",

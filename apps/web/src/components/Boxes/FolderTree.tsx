@@ -19,6 +19,7 @@ import MUIListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import ListSubheader from "@mui/material/ListSubheader";
 import Typography from "@mui/material/Typography";
 
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -53,12 +54,21 @@ export interface FolderTreeProps {
 const UnMemoizedFolderTree: FC<
 	{
 		boxes: MailBox[];
+		title?: string;
 	} & FolderTreeProps
-> = ({ boxes, ...props }) => {
+> = ({ boxes, title, ...props }) => {
 	const [selectedBox] = useSelectedBox();
 
 	return (
-		<List>
+		<List
+			subheader={
+				title ? (
+					<ListSubheader component="div" id={`subheader-${title}`}>
+						{title}
+					</ListSubheader>
+				) : null
+			}
+		>
 			{boxes.map((box) => (
 				<ListItem
 					{...props}

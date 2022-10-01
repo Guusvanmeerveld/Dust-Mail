@@ -85,6 +85,6 @@ export interface FetchOptions {
 	markAsRead?: boolean;
 }
 
-export type SearchOptions = { filters: (string | string[])[] };
+export type SearchOptions = { filters: any[] };
 
 export default fetch;

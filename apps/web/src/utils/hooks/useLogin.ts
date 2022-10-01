@@ -9,7 +9,7 @@ import {
 	LocalToken,
 	LoginResponse,
 	VersionResponse,
-	UserError
+	GatewayError
 } from "@dust-mail/typings";
 
 import Box from "@interfaces/box";
@@ -69,7 +69,7 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 
 			throw {
 				message: `Server and client versions did not match, server has version ${serverVersion} (${serverVersionType}) while client has version ${appVersion.title} (${appVersion.type})`,
-				type: UserError.Misc
+				type: GatewayError.Misc
 			};
 		}
 
@@ -84,42 +84,37 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 				setFetching(false);
 
 				// Check if the request was successfull
-				if (error.response?.status == 400) {
-					// Hide the fetching animation
 
-					console.log("An error occured when requesting the JWT token");
+				// Hide the fetching animation
 
-					// Check the error type
-					switch (error.response?.data.type) {
-						case UserError.Credentials:
-							throw {
-								message: `Failed to authorize with server, please check your credentials: ${error.response?.data.message}`,
-								type: UserError.Credentials
-							};
+				console.log("An error occured when requesting the JWT token");
 
-						case UserError.Timeout:
-							throw {
-								message: "Server connection timed out",
-								type: UserError.Timeout
-							};
+				// Check the error type
 
-						case UserError.Network:
-							throw {
-								message: `Failed to connect to remote imap server, please check your configuration: ${error.response?.data.message}`,
-								type: UserError.Network
-							};
+				switch (error.response?.data.code) {
+					case GatewayError.Credentials:
+						throw {
+							message: `Failed to authorize with mail server, please check your credentials: ${error.response?.data.message}`,
+							code: GatewayError.Credentials
+						};
 
-						default:
-							throw {
-								message: `Unknown error ocurred: ${error.response?.data.message}`,
-								type: UserError.Misc
-							};
-					}
-				} else {
-					throw {
-						message: `Unknown error with status code ${error.response?.status} occured`,
-						type: UserError.Misc
-					};
+					case GatewayError.Timeout:
+						throw {
+							message: "Connection with mail server timed out",
+							code: GatewayError.Timeout
+						};
+
+					case GatewayError.Network:
+						throw {
+							message: `Failed to connect to remote mail server, please check your configuration: ${error.response?.data.message}`,
+							code: GatewayError.Network
+						};
+
+					default:
+						throw {
+							message: `Unknown error ocurred: ${error.response?.data.message}`,
+							code: GatewayError.Misc
+						};
 				}
 			});
 

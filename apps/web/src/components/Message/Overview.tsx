@@ -153,7 +153,10 @@ const UnMemoizedMessageOverview: FC = () => {
 
 	const [token] = useLocalStorageState<LocalToken>("accessToken");
 
-	const { data, isFetching } = useQuery<FullIncomingMessage | undefined>(
+	const { data, isFetching, error } = useQuery<
+		FullIncomingMessage | undefined,
+		string
+	>(
 		[
 			"message",
 			selectedMessage,
@@ -188,94 +191,103 @@ const UnMemoizedMessageOverview: FC = () => {
 						}}
 					>
 						<Stack direction="row">
-							{data && (
-								<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
-									<Box>
-										<Typography variant="h5">
-											{isFetching || !data ? (
-												<Skeleton />
-											) : (
-												data.subject ?? "(No subject)"
-											)}
-										</Typography>
-										<Typography
-											variant="subtitle1"
-											color={theme.palette.text.secondary}
-										>
-											{isFetching || !data ? (
-												<Skeleton />
-											) : (
-												`${new Date(
-													data.date
-												).toLocaleDateString()} - ${new Date(
-													data.date
-												).toLocaleTimeString()}`
-											)}
-										</Typography>
-									</Box>
-									{data?.from && data?.from.length != 0 && (
-										<AddressList data={data.from} prefixText="From:" />
-									)}
-									{data?.to && data?.to.length != 0 && (
-										<AddressList data={data.to} prefixText="To:" />
-									)}
-									{data?.cc && data?.cc.length != 0 && (
-										<AddressList data={data.cc} prefixText="CC:" />
-									)}
-									{data?.bcc && data?.bcc.length != 0 && (
-										<AddressList data={data.bcc} prefixText="BCC:" />
-									)}
-								</Stack>
-							)}
+							<>
+								{error && (
+									<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
+										{error}
+									</Stack>
+								)}
+								{data && !error && (
+									<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
+										<Box>
+											<Typography variant="h5">
+												{isFetching || !data ? (
+													<Skeleton />
+												) : (
+													data.subject ?? "(No subject)"
+												)}
+											</Typography>
+											<Typography
+												variant="subtitle1"
+												color={theme.palette.text.secondary}
+											>
+												{isFetching || !data ? (
+													<Skeleton />
+												) : (
+													`${new Date(
+														data.date
+													).toLocaleDateString()} - ${new Date(
+														data.date
+													).toLocaleTimeString()}`
+												)}
+											</Typography>
+										</Box>
+										{data?.from && data?.from.length != 0 && (
+											<AddressList data={data.from} prefixText="From:" />
+										)}
+										{data?.to && data?.to.length != 0 && (
+											<AddressList data={data.to} prefixText="To:" />
+										)}
+										{data?.cc && data?.cc.length != 0 && (
+											<AddressList data={data.cc} prefixText="CC:" />
+										)}
+										{data?.bcc && data?.bcc.length != 0 && (
+											<AddressList data={data.bcc} prefixText="BCC:" />
+										)}
+									</Stack>
+								)}
 
-							<Stack direction="column" spacing={0.5}>
-								<Tooltip title="Close current message">
-									<IconButton onClick={() => setSelectedMessage()}>
-										<CloseIcon />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Toggle dark mode for message view">
-									<IconButton onClick={() => setDarkMode(() => !darkMode)}>
-										{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Toggle images in message view">
-									<IconButton onClick={() => setShowImages((state) => !state)}>
-										{showImages ? <ImageIcon /> : <HideImageIcon />}
-									</IconButton>
-								</Tooltip>
-								<Tooltip title="Message actions">
-									<IconButton
-										onClick={(e: MouseEvent) =>
-											setMessageActionsAnchor(e.currentTarget as Element)
-										}
-									>
-										<MoreIcon />
-									</IconButton>
-								</Tooltip>
-								<Menu
-									id="message-actions-menu"
-									anchorEl={messageActionsAnchor}
-									open={messageActionsAnchorOpen}
-									onClose={() => setMessageActionsAnchor(null)}
-									MenuListProps={{
-										"aria-labelledby": "basic-button"
-									}}
-								>
-									{messageActions.map((action) => (
-										<MenuItem
-											key={action.name}
-											onClick={() => {
-												setMessageActionsAnchor(null);
-												action.handler();
-											}}
+								<Stack direction="column" spacing={0.5}>
+									<Tooltip title="Close current message">
+										<IconButton onClick={() => setSelectedMessage()}>
+											<CloseIcon />
+										</IconButton>
+									</Tooltip>
+									<Tooltip title="Toggle dark mode for message view">
+										<IconButton onClick={() => setDarkMode(() => !darkMode)}>
+											{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
+										</IconButton>
+									</Tooltip>
+									<Tooltip title="Toggle images in message view">
+										<IconButton
+											onClick={() => setShowImages((state) => !state)}
 										>
-											<ListItemIcon>{action.icon}</ListItemIcon>
-											<ListItemText>{action.name}</ListItemText>
-										</MenuItem>
-									))}
-								</Menu>
-							</Stack>
+											{showImages ? <ImageIcon /> : <HideImageIcon />}
+										</IconButton>
+									</Tooltip>
+									<Tooltip title="Message actions">
+										<IconButton
+											onClick={(e: MouseEvent) =>
+												setMessageActionsAnchor(e.currentTarget as Element)
+											}
+										>
+											<MoreIcon />
+										</IconButton>
+									</Tooltip>
+									<Menu
+										id="message-actions-menu"
+										anchorEl={messageActionsAnchor}
+										open={messageActionsAnchorOpen}
+										onClose={() => setMessageActionsAnchor(null)}
+										MenuListProps={{
+											"aria-labelledby": "basic-button"
+										}}
+									>
+										{messageActions.map((action) => (
+											<MenuItem
+												key={action.name}
+												onClick={() => {
+													setMessageActionsAnchor(null);
+													action.handler();
+												}}
+											>
+												<ListItemIcon>{action.icon}</ListItemIcon>
+												<ListItemText>{action.name}</ListItemText>
+											</MenuItem>
+										))}
+									</Menu>
+								</Stack>
+							</>
 						</Stack>
 					</Card>
 					<Card

@@ -9,7 +9,7 @@ import { StringValidationPipe } from "./pipes/string.pipe";
 import mailDiscover, { detectServiceFromConfig } from "@dust-mail/autodiscover";
 import {
 	LoginResponse,
-	UserError,
+	GatewayError,
 	IncomingServiceType,
 	OutgoingServiceType
 } from "@dust-mail/typings";
@@ -19,6 +19,7 @@ import {
 	Body,
 	Controller,
 	Get,
+	InternalServerErrorException,
 	Post,
 	Req,
 	UnauthorizedException,
@@ -76,8 +77,7 @@ export class AuthController {
 				const result = await mailDiscover(incomingUsername).catch(() => {
 					const server = incomingUsername.split("@").pop() as string;
 
-					incomingServer = "mail." + server;
-					outgoingServer = "mail." + server;
+					if (!incomingServer) incomingServer = "mail." + server;
 				});
 
 				if (result) {
@@ -99,25 +99,27 @@ export class AuthController {
 				}
 			}
 
+			if (!outgoingServer) outgoingServer = incomingServer;
+
 			if (
 				this.allowedDomains &&
 				((incomingServer && !this.allowedDomains.includes(incomingServer)) ||
 					(outgoingServer && !this.allowedDomains.includes(outgoingServer)))
 			) {
 				throw new BadRequestException({
-					code: UserError.Misc,
+					code: GatewayError.Misc,
 					message: "Mail server is not on whitelist"
 				});
 			}
 
-			if (!incomingSecurity) incomingSecurity = "NONE";
+			if (!incomingSecurity) incomingSecurity = "TLS";
 			if (!incomingPort) {
 				if (incomingSecurity == "TLS" || incomingSecurity == "STARTTLS")
 					incomingPort = 993;
 				if (incomingSecurity == "NONE") incomingPort = 143;
 			}
 
-			if (!outgoingSecurity) outgoingSecurity = "NONE";
+			if (!outgoingSecurity) outgoingSecurity = "TLS";
 			if (!outgoingPort) {
 				if (outgoingSecurity == "TLS") outgoingPort = 465;
 				if (outgoingSecurity == "STARTTLS") outgoingPort = 587;
@@ -133,7 +135,7 @@ export class AuthController {
 					!this.allowedAddresses.includes(outgoingUsername))
 			) {
 				throw new BadRequestException({
-					code: UserError.Misc,
+					code: GatewayError.Misc,
 					message: "Email address is not on whitelist"
 				});
 			}
@@ -146,13 +148,16 @@ export class AuthController {
 				}).catch(handleError)) as IncomingServiceType;
 			}
 
-			if (!outgoingService) {
+			if (!outgoingService && outgoingServer) {
 				outgoingService = (await detectServiceFromConfig({
 					security: outgoingSecurity,
 					port: outgoingPort,
 					server: outgoingServer
 				}).catch(handleError)) as OutgoingServiceType;
 			}
+
+			if (incomingService == "pop3")
+				throw new InternalServerErrorException("Pop3 is not supported yet");
 
 			return await this.authService
 				.login({
@@ -179,7 +184,7 @@ export class AuthController {
 		throw new BadRequestException("Missing fields");
 	}
 
-	private bearerPrefix = "Bearer ";
+	private readonly bearerPrefix = "Bearer ";
 
 	@Get("refresh")
 	public async refreshTokens(
@@ -202,9 +207,9 @@ export class AuthController {
 				throw new UnauthorizedException("Refresh token is invalid");
 			});
 
-		if (refreshTokenPayload.tokenType == "access")
+		if (refreshTokenPayload.tokenType != "refresh")
 			throw new UnauthorizedException(
-				"Can't use access token as refresh token"
+				"Can't use any other token as refresh token"
 			);
 
 		return await this.jwtService

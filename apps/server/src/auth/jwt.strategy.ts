@@ -2,7 +2,11 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 
 import { JwtToken, MultiConfig } from "./interfaces/jwt.interface";
 
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+	Injectable,
+	InternalServerErrorException,
+	UnauthorizedException
+} from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 
 import { jwtConstants } from "@src/constants";
@@ -29,9 +33,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	}
 
 	async validate(payload: JwtToken) {
-		if (payload.tokenType == "refresh")
+		if (payload.tokenType != "access")
 			throw new UnauthorizedException(
-				"Can't use refresh token as access token"
+				"Can't use any other token as access token"
 			);
 
 		let incomingClient: IncomingClient, outgoingClient: OutgoingClient;
@@ -44,7 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 				break;
 
 			case "pop3":
-				break;
+				throw new InternalServerErrorException("Pop3 is not supported yet");
 
 			default:
 				break;

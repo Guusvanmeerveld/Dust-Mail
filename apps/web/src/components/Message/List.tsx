@@ -54,10 +54,6 @@ const ActionBar: FC<{
 
 	const [search, setSearch] = useState<string>("");
 
-	const [messageListWidth] = useLocalStorageState<number>("messageListWidth", {
-		defaultValue: 400
-	});
-
 	const handleSubmit = (e: FormEvent): void => {
 		e.preventDefault();
 
@@ -76,7 +72,7 @@ const ActionBar: FC<{
 				sx={{
 					backgroundColor: theme.palette.background.default,
 					borderBottom: `${theme.palette.divider} 1px solid`,
-					width: `${messageListWidth}px`,
+					width: 1,
 					p: 2
 				}}
 				direction="row"

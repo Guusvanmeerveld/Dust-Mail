@@ -1,22 +1,16 @@
-body,
-tbody,
-div,
-span,
-p,
-table,
-td,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-center {
+* {
 	background-color: #000 !important;
 	color: #fff !important;
+	border-color: #2a2a2a !important;
 }
 
 a,
 a * {
+	background-color: #000 !important;
 	color: #8ab4f8 !important;
+}
+
+a:hover,
+a *:hover {
+	color: #76a9fb !important;
 }

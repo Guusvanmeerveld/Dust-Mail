@@ -2,6 +2,7 @@ import Imap from "imap";
 
 import { getBox, closeBox, getBoxes } from "./box";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
+import Message from "./interfaces/message.interface";
 
 import {
 	IncomingMessage,
@@ -9,19 +10,31 @@ import {
 	FullIncomingMessage
 } from "@dust-mail/typings";
 
-import { CacheService } from "@src/cache/cache.service";
+import { InternalServerErrorException } from "@nestjs/common";
+
 import parseMessage, { createAddress } from "@src/imap/utils/parseMessage";
 
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 import uniqueBy from "@utils/uniqueBy";
 
+import { CacheService } from "@cache/cache.service";
+import { getCacheTimeout } from "@cache/constants";
+
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
+
+type IncomingMessageWithInternalID = IncomingMessage & { internalID: number };
 
 export default class Client implements IncomingClient {
 	constructor(
 		private readonly _client: Imap,
-		private readonly cacheService: CacheService
-	) {}
+		private readonly cacheService: CacheService,
+		private readonly identifier: string
+	) {
+		this.cacheTimeout = getCacheTimeout();
+	}
+
+	private readonly cacheTimeout: number;
+	private readonly headerBody = "HEADER.FIELDS (FROM SUBJECT MESSAGE-ID)";
 
 	public getBoxes = () => getBoxes(this._client);
 
@@ -44,19 +57,66 @@ export default class Client implements IncomingClient {
 
 	private search = (options: SearchOptions) => search(this._client, options);
 
+	private parseImapMessage = (
+		fetched: Message,
+		boxID: string,
+		body: string
+	): IncomingMessage => {
+		const message = fetched.bodies.find(
+			(message) => message.which == body
+		).body;
+
+		return {
+			...parseMessage(message),
+			flags: { seen: !!fetched.flags.find((flag) => flag.match(/Seen/)) },
+			date: fetched.date,
+			box: { id: boxID }
+		};
+	};
+
+	private checkForNewMessages = async (
+		existingMessages: IncomingMessageWithInternalID[],
+		boxID: string
+	): Promise<IncomingMessageWithInternalID[]> => {
+		const possibleNewMessages = await this.search({
+			filters: [["SENTSINCE", new Date(Date.now() - this.cacheTimeout)]]
+		});
+
+		const possibleNewMessageIDs = possibleNewMessages.filter(
+			(message) =>
+				!existingMessages.find(
+					(existingMessage) => existingMessage.internalID == message
+				)
+		);
+
+		if (possibleNewMessageIDs.length != 0) {
+			const newMessages: IncomingMessageWithInternalID[] = await this.fetch({
+				id: possibleNewMessageIDs,
+				bodies: this.headerBody
+			}).then((results) =>
+				results.map((message, i) => ({
+					...this.parseImapMessage(message, boxID, this.headerBody),
+					internalID: possibleNewMessageIDs[i]
+				}))
+			);
+
+			return newMessages;
+		}
+
+		return [];
+	};
+
 	public getBoxMessages = async (
-		boxName: string,
+		boxID: string,
 		{ filter, start, end }: { filter: string; start: number; end: number }
 	): Promise<IncomingMessage[]> => {
-		const box = await this.getBox(boxName);
+		const box = await this.getBox(boxID);
 
 		const totalMessages = box.totalMessages;
 
 		if (totalMessages <= start) return [];
 
-		const headerBody = "HEADER.FIELDS (FROM SUBJECT MESSAGE-ID)";
-
-		let fetchOptions: FetchOptions = { bodies: headerBody };
+		let fetchOptions: FetchOptions = { bodies: this.headerBody };
 
 		if (filter.length != 0)
 			fetchOptions.id = await this.search({
@@ -74,21 +134,78 @@ export default class Client implements IncomingClient {
 			else fetchOptions.id = fetchOptions.id.slice(0, end - start + 1);
 		}
 
-		let results = await this.fetch(fetchOptions).then((results) =>
-			results.map((message) => {
-				const parsed = {
-					...parseMessage(
-						message.bodies.find((body) => body.which == headerBody).body
-					),
-					flags: { seen: !!message.flags.find((flag) => flag.match(/Seen/)) },
-					date: message.date
-				};
+		const cachePath = [this.identifier, "messages", boxID];
 
-				return parsed;
-			})
+		const cached =
+			(await this.cacheService.get<IncomingMessageWithInternalID[]>(
+				cachePath
+			)) ?? [];
+
+		if (cached.length != 0) {
+			let results: IncomingMessageWithInternalID[] = [];
+
+			if (fetchOptions.id) {
+				results = cached.filter(
+					(item) => fetchOptions.id.indexOf(item.internalID) != -1
+				);
+			} else {
+				results = cached.filter(
+					(item) =>
+						fetchOptions.start >= item.internalID &&
+						fetchOptions.end <= item.internalID
+				);
+			}
+
+			if (results.length != 0) {
+				// Check if there are new messages
+				if (start == 0) {
+					const newMessages = await this.checkForNewMessages(results, boxID);
+
+					if (newMessages.length != 0) {
+						results = [...newMessages, ...results];
+
+						await this.cacheService.set<IncomingMessageWithInternalID[]>(
+							cachePath,
+							results
+						);
+					}
+				}
+
+				console.log("cached");
+
+				return results;
+			}
+		}
+
+		console.log("not cached");
+
+		let results: IncomingMessage[] = await this.fetch(fetchOptions).then(
+			(results) =>
+				results.map((message) =>
+					this.parseImapMessage(message, boxID, this.headerBody)
+				)
 		);
 
 		results = uniqueBy(results, (key) => key.id);
+
+		let newCache: IncomingMessageWithInternalID[];
+
+		if (fetchOptions.id) {
+			newCache = results.map((item, i) => ({
+				...item,
+				internalID: fetchOptions.id[i]
+			}));
+		} else {
+			newCache = results.map((item, i) => ({
+				...item,
+				internalID: fetchOptions.start - i
+			}));
+		}
+
+		await this.cacheService.set<IncomingMessageWithInternalID[]>(cachePath, [
+			...cached,
+			...newCache
+		]);
 
 		// await this.closeBox();
 
@@ -110,7 +227,8 @@ export default class Client implements IncomingClient {
 			filters: [["HEADER", "Message-ID", id]]
 		});
 
-		if (ids.length == 0) return;
+		if (ids.length == 0)
+			throw new InternalServerErrorException("Message not found");
 
 		const messages = await this.fetch({
 			id: ids,
@@ -148,7 +266,8 @@ export default class Client implements IncomingClient {
 					? result.body.to
 							.map((address) => address.value.map(createAddress))
 							.flat()
-					: result.body.to?.value.map(createAddress)
+					: result.body.to?.value.map(createAddress),
+				box: { id: boxName }
 			}));
 
 		return {

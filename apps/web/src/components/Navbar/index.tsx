@@ -28,8 +28,8 @@ const UnMemoizedNavbar: FC = () => {
 
 	const [selectedBox, setSelectedBox] = useSelectedBox();
 
-	const toggleDrawer =
-		(open: boolean) => (event: KeyboardEvent | MouseEvent) => {
+	const toggleDrawer = useMemo(
+		() => (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
 			if (
 				event.type === "keydown" &&
 				((event as KeyboardEvent).key === "Tab" ||
@@ -39,7 +39,9 @@ const UnMemoizedNavbar: FC = () => {
 			}
 
 			setDrawerState(open);
-		};
+		},
+		[]
+	);
 
 	const secondaryColor = useMemo(
 		() =>
@@ -105,15 +107,23 @@ const UnMemoizedNavbar: FC = () => {
 								<MenuIcon />
 							</IconButton>
 
-							<img
-								src="/android-chrome-192x192.png"
-								style={{ width: theme.spacing(5) }}
-								alt="Logo"
-							/>
-
-							<Typography variant="h6">
-								{import.meta.env.VITE_APP_NAME}
-							</Typography>
+							<Stack
+								sx={{
+									display: { md: "flex", xs: "none" }
+								}}
+								alignItems="center"
+								direction="row"
+								spacing={3}
+							>
+								<img
+									src="/android-chrome-192x192.png"
+									style={{ width: theme.spacing(5) }}
+									alt="Logo"
+								/>
+								<Typography variant="h6">
+									{import.meta.env.VITE_APP_NAME}
+								</Typography>
+							</Stack>
 
 							{breadcrumbs && (
 								<Breadcrumbs

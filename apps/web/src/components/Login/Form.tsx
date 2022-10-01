@@ -2,9 +2,17 @@ import create from "zustand";
 
 import { description } from "../../../package.json";
 
-import { useEffect, useState, FC, memo, FormEvent, useMemo } from "react";
+import {
+	useEffect,
+	useState,
+	FC,
+	memo,
+	FormEvent,
+	useMemo,
+	FormEventHandler
+} from "react";
 
-import { ErrorResponse, UserError } from "@dust-mail/typings";
+import { ErrorResponse, GatewayError } from "@dust-mail/typings";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -47,8 +55,12 @@ type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
 };
 
 const createLoginSettingsStore = create<Store>((set) => ({
-	incoming: {},
-	outgoing: {},
+	incoming: {
+		security: "TLS"
+	},
+	outgoing: {
+		security: "TLS"
+	},
 	setProperty: (type) => (property) => (newValue) =>
 		set((state) => ({ [type]: { ...state[type], [property]: newValue } }))
 }));
@@ -75,9 +87,9 @@ const Credentials: FC<{
 					setUsername(e.currentTarget.value);
 				}}
 				id={"username-" + identifier}
-				error={error && error.type == UserError.Credentials}
+				error={error && error.code == GatewayError.Credentials}
 				helperText={
-					error && error.type == UserError.Credentials && error.message
+					error && error.code == GatewayError.Credentials && error.message
 				}
 				label="Username"
 				variant="outlined"
@@ -85,7 +97,7 @@ const Credentials: FC<{
 			/>
 
 			<FormControl
-				error={error && error.type == UserError.Credentials}
+				error={error && error.code == GatewayError.Credentials}
 				required={required}
 				variant="outlined"
 			>
@@ -150,7 +162,7 @@ const UnMemoizedServerPropertiesColumn: FC<{
 						labelId={`${type}-server-security-label`}
 						id={`${type}-server-security`}
 						label="Security"
-						value={security ?? "NONE"}
+						value={security}
 						// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						onChange={(e: any) => setSetting(type)("security")(e.target?.value)}
 					>
@@ -210,18 +222,29 @@ const AdvancedLoginMenu: FC = () => {
 
 	const setProperty = createLoginSettingsStore((state) => state.setProperty);
 
+	const fetching = useStore((state) => state.fetching);
+
 	const error = createLoginSettingsStore((state) => state.incoming.error);
 
 	const incoming = createLoginSettingsStore((state) => state.incoming);
 	const outgoing = createLoginSettingsStore((state) => state.outgoing);
 
-	const missingFields = !incoming.username || !incoming.password;
+	const missingFields = useMemo(() => {
+		return !incoming.username || !incoming.password;
+	}, [incoming.username, incoming.password]);
 
-	const submit = async (): Promise<void> => {
+	const serverTypes = useMemo(
+		() => ["incoming", "outgoing"] as ServerType[],
+		[]
+	);
+
+	const onSubmit: FormEventHandler = async (e): Promise<void> => {
+		e.preventDefault();
+
 		if (missingFields) {
 			setProperty("incoming")("error")({
 				message: "Missing required fields",
-				type: UserError.Misc
+				code: GatewayError.Misc
 			});
 
 			return;
@@ -246,7 +269,7 @@ const AdvancedLoginMenu: FC = () => {
 						maxHeight: "90%"
 					}}
 				>
-					<form onSubmit={submit}>
+					<form onSubmit={onSubmit}>
 						<Typography variant="h5" textAlign="center">
 							Custom mail server settings
 						</Typography>
@@ -255,7 +278,7 @@ const AdvancedLoginMenu: FC = () => {
 						</Typography>
 						<br />
 						<Grid container spacing={2}>
-							{(["incoming", "outgoing"] as ServerType[]).map((type) => (
+							{serverTypes.map((type) => (
 								<ServerPropertiesColumn key={type} type={type} />
 							))}
 						</Grid>
@@ -263,9 +286,9 @@ const AdvancedLoginMenu: FC = () => {
 						<br />
 
 						{error &&
-							(error.type == UserError.Timeout ||
-								error.type == UserError.Misc ||
-								error.type == UserError.Network) && (
+							(error.code == GatewayError.Timeout ||
+								error.code == GatewayError.Misc ||
+								error.code == GatewayError.Network) && (
 								<>
 									<Alert sx={{ textAlign: "left" }} severity="error">
 										<AlertTitle>Error</AlertTitle>
@@ -276,9 +299,9 @@ const AdvancedLoginMenu: FC = () => {
 							)}
 
 						<Button
-							disabled={missingFields}
-							type="submit"
+							disabled={missingFields || fetching}
 							fullWidth
+							type="submit"
 							variant="contained"
 						>
 							Login
@@ -316,7 +339,7 @@ const LoginForm: FC = () => {
 
 		// Reject the form if there any fields empty
 		if (missingFields) {
-			setError({ message: "Missing required fields", type: UserError.Misc });
+			setError({ message: "Missing required fields", code: GatewayError.Misc });
 			return;
 		}
 
@@ -327,49 +350,50 @@ const LoginForm: FC = () => {
 	};
 
 	return (
-		<form onSubmit={onSubmit}>
-			<Stack direction="column" spacing={2}>
-				<img
-					style={{ width: theme.spacing(15), margin: "auto" }}
-					src="/android-chrome-512x512.png"
-					alt="logo"
-				/>
+		<Stack direction="column" spacing={2}>
+			<form onSubmit={onSubmit}>
+				<Stack direction="column" spacing={2}>
+					<img
+						style={{ width: theme.spacing(15), margin: "auto" }}
+						src="/android-chrome-512x512.png"
+						alt="logo"
+					/>
 
-				<Typography variant="h2">{import.meta.env.VITE_APP_NAME}</Typography>
-				<Typography variant="h5">{description}</Typography>
+					<Typography variant="h2">{import.meta.env.VITE_APP_NAME}</Typography>
+					<Typography variant="h5">{description}</Typography>
 
-				<Credentials
-					error={error}
-					identifier="default"
-					setError={setError}
-					setPassword={setPassword}
-					setUsername={setUsername}
-				/>
+					<Credentials
+						error={error}
+						identifier="default"
+						setError={setError}
+						setPassword={setPassword}
+						setUsername={setUsername}
+					/>
 
-				<Button
-					fullWidth
-					disabled={fetching || missingFields}
-					type="submit"
-					variant="contained"
-				>
-					Login
-				</Button>
+					<Button
+						fullWidth
+						disabled={fetching || missingFields}
+						type="submit"
+						variant="contained"
+					>
+						Login
+					</Button>
 
-				{error &&
-					(error.type == UserError.Timeout ||
-						error.type == UserError.Misc ||
-						error.type == UserError.Network) && (
-						<Alert sx={{ textAlign: "left" }} severity="error">
-							<AlertTitle>Error</AlertTitle>
-							{error.message}
-						</Alert>
-					)}
+					{error &&
+						(error.code == GatewayError.Timeout ||
+							error.code == GatewayError.Misc ||
+							error.code == GatewayError.Network) && (
+							<Alert sx={{ textAlign: "left" }} severity="error">
+								<AlertTitle>Error</AlertTitle>
+								{error.message}
+							</Alert>
+						)}
 
-				<OtherLogins />
-
-				<AdvancedLoginMenu />
-			</Stack>
-		</form>
+					<OtherLogins />
+				</Stack>
+			</form>
+			<AdvancedLoginMenu />
+		</Stack>
 	);
 };
 

@@ -5,6 +5,8 @@ import ServerConfig from "./interfaces/serverConfig";
 
 import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
 
+const connectionTimeout = 20 * 1000;
+
 /**
  * Will take a config to connect with an email related server and detect what kind of email service is running on that server
  */
@@ -52,14 +54,20 @@ const connectToServerAndSendCommand = (
 			config.security == "TLS"
 				? tls.connect({
 						port: config.port,
-						host: config.server
+						host: config.server,
+						timeout: connectionTimeout
 				  })
 				: net.connect({
 						port: config.port,
-						host: config.server
+						host: config.server,
+						timeout: connectionTimeout
 				  });
 
 		connection.on("close", reject);
+
+		connection.on("timeout", () =>
+			reject({ message: "Connection timed out", source: "timeout" })
+		);
 
 		connection.on("error", reject);
 

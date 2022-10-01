@@ -5,17 +5,16 @@ import { FC, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import FormControl from "@mui/material/FormControl";
-import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Modal from "@mui/material/Modal";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
-import CheckBoxOutlineBlank from "@mui/icons-material/CheckBoxOutlineBlank";
+import SelectAllIcon from "@mui/icons-material/CheckBox";
+import DeselectAllIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
 import MailBox from "@interfaces/box";
 
@@ -36,10 +35,18 @@ type FolderType = "unified" | "normal" | "none";
 const AddBox: FC = () => {
 	const theme = useTheme();
 
-	const [boxes] = useLocalStorageState<MailBox[]>("boxes");
+	const [boxes, setBoxes] = useLocalStorageState<MailBox[]>("boxes");
 
 	const setShowAddBox = useStore((state) => state.setShowAddBox);
 	const showAddBox = useStore((state) => state.showAddBox);
+
+	const unifiedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
+	const addUnifiedBox = checkedBoxesStore((state) => state.setChecked);
+
+	const checkedBoxes = useMemo(
+		() => Object.entries(unifiedBoxes).filter(([, checked]) => checked),
+		[unifiedBoxes]
+	);
 
 	const [folderType, setFolderType] = useState<FolderType>("none");
 
@@ -54,9 +61,33 @@ const AddBox: FC = () => {
 		else return [];
 	}, boxes);
 
+	const [modalSx, scrollbarSx] = useMemo(
+		() => [modalStyles(theme), scrollbarStyles(theme)],
+		[theme]
+	);
+
+	const checkAllBoxes = (checked: boolean): void => {
+		const ids = boxIDs.map((box) => box.id);
+
+		ids.forEach((id) => addUnifiedBox(id, checked));
+	};
+
+	const createBox = (box: MailBox): void => {
+		if (boxes) setBoxes([...boxes, box]);
+	};
+
 	return (
 		<Modal open={showAddBox} onClose={handleClose}>
-			<Stack spacing={2} direction="column" sx={modalStyles(theme)}>
+			<Stack
+				spacing={2}
+				direction="column"
+				sx={{
+					...modalSx,
+					...scrollbarSx,
+					maxHeight: "90%",
+					overflowY: "scroll"
+				}}
+			>
 				<Typography gutterBottom variant="h3">
 					Create a new folder
 				</Typography>
@@ -134,20 +165,32 @@ const AddBox: FC = () => {
 
 				{folderType == "unified" && boxes && (
 					<>
-						<Stack direction="row" alignItems="center" spacing={1}>
+						<Stack direction="column" justifyContent="left" spacing={2}>
 							<Typography variant="h5">
-								Select the boxes you want to be unified
+								Select the folders you want to be unified
 							</Typography>
 
-							<Tooltip title="Select all boxes">
-								<IconButton>
-									<CheckBoxOutlineBlank />
-								</IconButton>
-							</Tooltip>
+							<Stack direction="row" alignItems="center" spacing={2}>
+								<Button
+									onClick={() => checkAllBoxes(true)}
+									variant="outlined"
+									startIcon={<SelectAllIcon />}
+								>
+									Select all folders
+								</Button>
+
+								<Button
+									onClick={() => checkAllBoxes(false)}
+									variant="outlined"
+									startIcon={<DeselectAllIcon />}
+								>
+									Deselect all folders
+								</Button>
+							</Stack>
 						</Stack>
 						<Box
 							sx={{
-								...scrollbarStyles(theme),
+								...scrollbarSx,
 								maxHeight: "15rem",
 								overflowY: "scroll"
 							}}
@@ -161,10 +204,23 @@ const AddBox: FC = () => {
 
 				<Button
 					disabled={
-						folderType == "none" || folderName == "" || parentFolder == "none"
-						// (folderType == "unified" && unifiedBoxes.length == 0)
+						folderType == "none" ||
+						folderName == "" ||
+						parentFolder == "none" ||
+						(folderType == "unified" && checkedBoxes.length == 0)
 					}
-					onClick={() => console.log("yeet")}
+					onClick={() =>
+						createBox({
+							name: folderName,
+							id: folderName,
+							unifies:
+								folderType == "unified"
+									? boxIDs.length == checkedBoxes.length
+										? "all"
+										: checkedBoxes.map((box) => box[0])
+									: undefined
+						})
+					}
 					variant="contained"
 				>
 					Create
