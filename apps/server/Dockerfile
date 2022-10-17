@@ -31,7 +31,7 @@ WORKDIR /app
 
 COPY apps/server/public public
 
-RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main/ nodejs=16.16.0-r0
+RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.16/main/ nodejs=16.17.1-r0
 
 ENV NODE_ENV "production"
 
