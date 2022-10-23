@@ -1,5 +1,7 @@
 import Imap from "imap";
 
+import { BoxResponse } from "@dust-mail/typings";
+
 import { Box } from "@mail/interfaces/client/incoming.interface";
 
 export const getBox = async (
@@ -24,27 +26,39 @@ export const closeBox = async (_client: Imap): Promise<void> => {
 	});
 };
 
-export const getBoxes = async (
-	_client: Imap
-): Promise<{ name: string; id: string }[]> => {
+export const getBoxes = async (_client: Imap): Promise<BoxResponse[]> => {
 	return new Promise((resolve, reject) => {
 		_client.getBoxes((err, boxes) => {
 			if (err) reject(err);
 			else
 				resolve(
-					getRecursiveBoxNames(boxes).map((box) => ({ name: box, id: box }))
+					getRecursiveBoxNames(boxes).map(({ id, delimiter }) => ({
+						name: id,
+						id,
+						delimiter
+					}))
 				);
 		});
 	});
 };
 
-const getRecursiveBoxNames = (boxes: Imap.MailBoxes): string[] =>
+export const createBox = async (_client: Imap, boxID: string): Promise<void> =>
+	await new Promise<void>((resolve, reject) =>
+		_client.addBox(boxID, (error) => {
+			if (error) reject(error);
+			else resolve();
+		})
+	);
+
+const getRecursiveBoxNames = (
+	boxes: Imap.MailBoxes
+): { id: string; delimiter: string }[] =>
 	Object.keys(boxes).reduce((list, box) => {
-		list.push(box);
+		list.push({ id: box, delimiter: boxes[box].delimiter });
 
 		if (boxes[box].children) {
 			const childBoxes = getRecursiveBoxNames(boxes[box].children).map(
-				(name) => `${box}${boxes[box].delimiter}${name}`
+				({ id, delimiter }) => ({ id: `${box}${delimiter}${id}`, delimiter })
 			);
 			list.push(...childBoxes);
 		}

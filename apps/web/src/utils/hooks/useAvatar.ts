@@ -1,5 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
-
 import { useQuery } from "react-query";
 
 // import { AxiosError } from "axios";
@@ -15,9 +13,11 @@ export default function useAvatar(
 ): { data?: string; isLoading: boolean } | void {
 	const fetcher = useFetch();
 
-	const [noAvatar, setNoAvatar] = useLocalStorageState<number>(
-		["noAvatar", email].join("-")
-	);
+	const id = ["noAvatar", email].join("-");
+
+	const noAvatar = parseInt(sessionStorage.getItem(id) ?? "");
+	const setNoAvatar = (date: number): void =>
+		sessionStorage.setItem(id, date.toString());
 
 	const blacklisted = !!noAvatar;
 

@@ -16,12 +16,13 @@ import Box from "@interfaces/box";
 import { LoginConfig } from "@interfaces/login";
 
 import createGravatarUrl from "@utils/createGravatarUrl";
+import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useFetch from "@utils/hooks/useFetch";
 import useStore from "@utils/hooks/useStore";
-import parseBoxes from "@utils/parseBoxes";
+import nestBoxes from "@utils/nestBoxes";
 
 /**
- * Request the users inboxes and puts them in local storage
+ * A hook that request the users inboxes and puts them in local storage
  */
 const useFetchBoxes = (): ((token: string) => Promise<void>) => {
 	const fetcher = useFetch();
@@ -33,7 +34,20 @@ const useFetchBoxes = (): ((token: string) => Promise<void>) => {
 
 		const boxes = await fetcher.getBoxes(token);
 
-		setBoxes(parseBoxes(boxes));
+		setBoxes(
+			nestBoxes(
+				boxes.map((box) => {
+					const foundBox = findBoxInPrimaryBoxesList(box.id);
+
+					if (!foundBox) return box;
+
+					return {
+						...box,
+						name: foundBox?.name ?? box.name
+					};
+				})
+			)
+		);
 	};
 };
 

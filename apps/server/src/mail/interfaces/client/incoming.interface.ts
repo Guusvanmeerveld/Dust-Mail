@@ -23,4 +23,5 @@ export default interface IncomingClient {
 		noImages: boolean,
 		darkMode: boolean
 	) => Promise<FullIncomingMessage | void>;
+	createBox: (boxID: string) => Promise<void>;
 }

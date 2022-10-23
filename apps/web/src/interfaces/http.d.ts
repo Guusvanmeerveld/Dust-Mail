@@ -21,6 +21,7 @@ export default interface HttpClient {
 		pageParam: number,
 		filter: string
 	) => Promise<IncomingMessage[]>;
+	createBox: (id: string) => Promise<void>;
 	getMessage: (
 		noImages: boolean,
 		darkMode: boolean,

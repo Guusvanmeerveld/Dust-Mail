@@ -16,6 +16,7 @@ export interface VersionResponse {
 export interface BoxResponse {
 	name: string;
 	id: string;
+	delimiter: string;
 }
 
 export enum GatewayError {

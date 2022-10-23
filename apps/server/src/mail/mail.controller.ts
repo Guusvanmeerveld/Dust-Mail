@@ -13,6 +13,7 @@ import {
 	Body,
 	Controller,
 	Get,
+	Put,
 	ParseBoolPipe,
 	ParseIntPipe,
 	Post,
@@ -68,13 +69,15 @@ export class MailController {
 			filter = "";
 		}
 
+		const boxes = box.split(",");
+
 		const client = req.user.incomingClient;
 
 		const start = page * limit;
 		const end = page * limit + limit - 1;
 
 		return await client
-			.getBoxMessages(box, {
+			.getBoxMessages(boxes.shift(), {
 				filter,
 				start,
 				end
@@ -84,10 +87,15 @@ export class MailController {
 					.filter((msg) => msg.id != undefined)
 					.map((message) => ({
 						...message,
+						date: new Date(message.date),
 						id: Buffer.from(message.id, "utf-8").toString("base64")
 					}))
-			)
-			.catch(handleError);
+			);
+
+		// return allMessages
+		// 	.flat()
+		// 	.sort((a, b) => b.date.getTime() - a.date.getTime())
+		// 	.slice(start, end);
 	}
 
 	@Get("message")
@@ -114,6 +122,23 @@ export class MailController {
 		const client = req.user.incomingClient;
 
 		return await client.getMessage(id, box, markAsRead, noImages, darkMode);
+	}
+
+	@Put("folder/create")
+	@UseGuards(AccessTokenAuthGuard)
+	async createBox(
+		@Req() req: Request,
+		@Body("id", StringValidationPipe) boxID: string
+	) {
+		if (boxID == undefined) {
+			throw new BadRequestException("Missing folder `name` param");
+		}
+
+		const client = req.user.incomingClient;
+
+		await client.createBox(boxID).catch(handleError);
+
+		return "created new folder";
 	}
 
 	@Post("send")
@@ -152,13 +177,11 @@ export class MailController {
 
 		const client = req.user.outgoingClient;
 
-		await client.connect();
-
 		await client
 			.send({ from, to, cc, bcc, content, subject })
 			.catch(handleError);
 
-		await client.logout();
+		await client.disconnect();
 
 		return "sent";
 	}

@@ -38,7 +38,7 @@ export class ImapService {
 			}
 		});
 
-		return await connect(client).then((_client) => {
+		return await connect(client).then(async (_client) => {
 			const identifier = createIdentifier(config);
 
 			if (!this.clients.get(identifier)) this.clients.set(identifier, _client);
@@ -47,7 +47,7 @@ export class ImapService {
 		});
 	};
 
-	public getClient = async (config: Config): Promise<IncomingClient> => {
+	public get = async (config: Config): Promise<IncomingClient> => {
 		const identifier = createIdentifier(config);
 
 		let client = this.clients.get(identifier);
@@ -59,7 +59,7 @@ export class ImapService {
 		return new Client(client, this.cacheService, identifier);
 	};
 
-	public logout = (config: Config): void => {
+	public logout = async (config: Config): Promise<void> => {
 		const identifier = createIdentifier(config);
 
 		const client = this.clients.get(identifier);

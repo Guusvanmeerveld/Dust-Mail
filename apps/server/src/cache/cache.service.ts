@@ -79,9 +79,7 @@ export class CacheService implements Cache {
 		} else {
 			const data = await fs.readJSON(this.cacheFile);
 
-			const value = data[key];
-
-			return value;
+			await fs.writeJSON(this.cacheFile, { ...data, [key]: value });
 		}
 	};
 }

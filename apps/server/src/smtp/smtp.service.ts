@@ -13,6 +13,6 @@ export class SmtpService {
 	@Inject("CACHE")
 	private readonly cacheService: CacheService;
 
-	public getClient = async (config: Config): Promise<OutgoingClient> =>
+	public get = async (config: Config): Promise<OutgoingClient> =>
 		new Client(this.cacheService, config);
 }

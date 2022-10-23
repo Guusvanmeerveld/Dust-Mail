@@ -104,7 +104,7 @@ const UnMemoizedListItem: FC<
 	const indent = useMemo(
 		() =>
 			theme.spacing(
-				(showCheckBox ? 0 : 2) + box.id.split(box.delimiter ?? ".").length
+				(showCheckBox ? 0 : 2) + box.id.split(box.delimiter).length
 			),
 		[theme.spacing, box.id, showCheckBox]
 	);

@@ -29,6 +29,10 @@ export default class IncomingGoogleClient implements IncomingClient {
 
 	public getBox = (boxName: string) => getBox(this.authorization, boxName);
 
+	public createBox = async (boxID: string): Promise<void> => {
+		return;
+	};
+
 	public getBoxMessages = async (
 		boxName: string,
 		options: { start: number; end: number }

@@ -105,6 +105,9 @@ const useHttpClient = (): HttpClient => {
 
 			return data;
 		},
+		async createBox(id: string) {
+			await instance.put("/mail/folder/create", { id });
+		},
 		async getMessage(noImages, darkMode, messageID, boxID) {
 			const { data } = await instance.get("/mail/message", {
 				params: {

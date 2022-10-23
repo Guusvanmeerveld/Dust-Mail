@@ -1,80 +1,31 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { FC, useEffect, MouseEvent, useMemo } from "react";
-import { useQuery } from "react-query";
+import { FC, MouseEvent, useMemo } from "react";
 import { Navigate } from "react-router-dom";
-
-import { LocalToken, LoginResponse } from "@dust-mail/typings";
 
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 
 import scrollbarStyles from "@styles/scrollbar";
 
-import useFetch from "@utils/hooks/useFetch";
-import useLogin from "@utils/hooks/useLogin";
-import useLogout from "@utils/hooks/useLogout";
-import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 import useUser from "@utils/hooks/useUser";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
 import BoxesList from "@components/Boxes/List";
 import Layout from "@components/Layout";
+import LoginStateHandler from "@components/LoginStateHandler";
 import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
+import Snackbar from "@components/Snackbar";
 
 const defaultMessageListWidth = 400;
 
 const Dashboard: FC = () => {
 	const theme = useTheme();
 
-	const [accessToken] = useLocalStorageState<LocalToken>("accessToken");
-	const [refreshToken] = useLocalStorageState<LocalToken>("refreshToken");
-
-	const setFetching = useStore((state) => state.setFetching);
-
-	const fetcher = useFetch();
-
-	const logout = useLogout();
-	const login = useLogin();
-
 	const scrollBarSx = useMemo(() => scrollbarStyles(theme), [theme]);
-
-	const accessTokenExpired = useMemo(
-		() => accessToken && new Date(accessToken?.expires).getTime() < Date.now(),
-		[accessToken, Date.now()]
-	);
-
-	if (
-		accessTokenExpired &&
-		refreshToken &&
-		new Date(refreshToken?.expires).getTime() < Date.now()
-	) {
-		logout();
-	}
-
-	const {
-		data: tokens,
-		error: tokensError,
-		isFetching: isFetchingTokens
-	} = useQuery<LoginResponse>(
-		"refreshTokens",
-		() => fetcher.refresh(refreshToken?.body),
-		{
-			enabled: !!(accessTokenExpired && refreshToken)
-		}
-	);
-
-	useEffect(() => {
-		if (tokensError) setFetching(false);
-		else setFetching(isFetchingTokens);
-	}, [isFetchingTokens, tokensError]);
-
-	useEffect(() => {
-		if (tokens) login(tokens);
-	}, [tokens]);
 
 	const user = useUser();
 
@@ -145,6 +96,8 @@ const Dashboard: FC = () => {
 	return (
 		<>
 			{!user.isLoggedIn && <Navigate to="/" replace={true} />}
+			<LoginStateHandler />
+			<Snackbar />
 			<Layout withNavbar>
 				<Stack direction="row" sx={{ height: fullpageHeight }}>
 					{!isMobile && (

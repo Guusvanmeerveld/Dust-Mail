@@ -11,19 +11,21 @@ import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 import Config from "@auth/interfaces/config.interface";
 
 export default class Client implements OutgoingClient {
-	private _client: Transporter;
-
 	constructor(
 		private readonly cacheService: CacheService,
 		private readonly config: Config
 	) {}
+
+	private _client: Transporter;
+
+	private readonly authTimeout = 30 * 1000;
 
 	public connect = async (): Promise<void> => {
 		this._client = nodemailer.createTransport({
 			host: this.config.server,
 			port: this.config.port,
 			secure: this.config.security == "TLS",
-			connectionTimeout: 10 * 1000,
+			connectionTimeout: this.authTimeout,
 			auth: {
 				user: this.config.username,
 				pass: this.config.password
@@ -31,7 +33,7 @@ export default class Client implements OutgoingClient {
 		});
 	};
 
-	public logout = async (): Promise<void> => {
+	public disconnect = async (): Promise<void> => {
 		this._client.close();
 	};
 

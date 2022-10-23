@@ -2,6 +2,16 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Server + web client",
+			"type": "node-terminal",
+			"request": "launch",
+			"env": {
+				"VITE_DEFAULT_SERVER": "http://localhost:4000"
+			},
+			"command": "pnpm run dev",
+			"cwd": "${workspaceFolder}"
+		},
+		{
 			"name": "Web Client: start server",
 			"type": "node-terminal",
 			"request": "launch",

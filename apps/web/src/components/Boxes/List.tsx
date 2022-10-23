@@ -28,7 +28,7 @@ import FolderTree, {
 const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	clickOnBox
 }) => {
-	const [boxes] = useLocalStorageState<{ name: string; id: string }[]>("boxes");
+	const [boxes] = useLocalStorageState<MailBox[]>("boxes");
 
 	const [selectedBox, setSelectedBox] = useSelectedBox();
 
@@ -51,7 +51,7 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 		(): FolderTreeProps => ({
 			showCheckBox: showSelector,
 			onClick: (box, e) => {
-				setSelectedBox(box);
+				setSelectedBox(box.id);
 				if (clickOnBox) clickOnBox(e);
 			}
 		}),

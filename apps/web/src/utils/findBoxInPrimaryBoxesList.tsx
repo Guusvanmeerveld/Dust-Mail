@@ -38,7 +38,9 @@ const DEFAULT_PRIMARY_BOXES: {
 	{ name: "Updates", id: "CATEGORY_UPDATES", icon: <Updates /> }
 ];
 
-const findBoxInPrimaryBoxesList = (id: string): Box | undefined => {
+const findBoxInPrimaryBoxesList = (
+	id: string
+): Omit<Box, "delimiter"> | undefined => {
 	const foundBox = DEFAULT_PRIMARY_BOXES.find((box) => {
 		if (Array.isArray(box.id)) {
 			const found = box.id.find(

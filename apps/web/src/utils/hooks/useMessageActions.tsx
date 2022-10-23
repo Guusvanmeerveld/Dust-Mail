@@ -1,3 +1,5 @@
+import useSnackbar from "./useSnackbar";
+
 import DeleteIcon from "@mui/icons-material/Delete";
 import FolderMoveIcon from "@mui/icons-material/DriveFileMove";
 import ForwardIcon from "@mui/icons-material/Forward";
@@ -7,6 +9,7 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import MessageAction from "@interfaces/messageAction";
 
 const useMessageActions = (messageID?: string): MessageAction[] => {
+	const showSnackbar = useSnackbar();
 	if (!messageID) return [];
 
 	const actions: MessageAction[] = [
@@ -18,7 +21,7 @@ const useMessageActions = (messageID?: string): MessageAction[] => {
 		{
 			name: "Forward message",
 			icon: <ForwardIcon />,
-			handler: () => null
+			handler: () => showSnackbar("yeet")
 		},
 		{
 			name: "Reply",

@@ -2,27 +2,30 @@ import { BoxResponse } from "@dust-mail/typings";
 
 import Box from "@interfaces/box";
 
-const parseBoxes = (boxes: BoxResponse[]): Box[] => {
-	const delemiter = ".";
-
+/**
+ * The opposite of `flattenBoxes.ts`
+ *
+ * Takes an array of flattened boxes with all of the items at the top level and nests all of the boxes into their corresponding parents.
+ * @param boxes
+ * @returns
+ */
+const nestBoxes = (boxes: BoxResponse[]): Box[] => {
 	let array: Box[] = boxes.map((i) => ({
 		...i,
-
-		children: [],
-		delemiter
+		children: []
 	}));
 
 	for (let i = 0; i < array.length; i++) {
 		const element = array[i];
 
-		const split = element.id.split(delemiter);
+		const split = element.id.split(element.delimiter);
 
 		for (let i = 0; i < split.length - 1; i++) {
 			let currentLayer = array;
 
 			for (let i = 0; i < split.length - 1; i++) {
 				const found = currentLayer.find(
-					(item) => item.name == split[i]
+					(item) => item.id == split[i]
 				)?.children;
 
 				if (found) currentLayer = found;
@@ -41,9 +44,9 @@ const parseBoxes = (boxes: BoxResponse[]): Box[] => {
 		}
 	}
 
-	array = array.filter((item) => item.id.indexOf(delemiter) < 0);
+	array = array.filter((item) => item.id.indexOf(item.delimiter) < 0);
 
 	return array;
 };
 
-export default parseBoxes;
+export default nestBoxes;

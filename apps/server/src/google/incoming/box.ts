@@ -2,13 +2,13 @@ import GoogleBox from "../interfaces/box";
 
 import axios from "axios";
 
-import { IncomingMessage } from "@dust-mail/typings";
+import { BoxResponse, IncomingMessage } from "@dust-mail/typings";
 
 import { Box } from "@mail/interfaces/client/incoming.interface";
 
 export const getBoxes = async (
 	authorization: string
-): Promise<{ name: string; id: string }[]> => {
+): Promise<BoxResponse[]> => {
 	const { data } = await axios.get<{ labels: GoogleBox[] }>(
 		"https://gmail.googleapis.com/gmail/v1/users/me/labels",
 		{
@@ -18,7 +18,11 @@ export const getBoxes = async (
 		}
 	);
 
-	return data.labels.map((box) => ({ name: box.name, id: box.id }));
+	return data.labels.map((box) => ({
+		name: box.name,
+		id: box.id,
+		delimiter: "."
+	}));
 };
 
 export const getBox = async (

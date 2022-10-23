@@ -42,7 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 		switch (payload.services.incoming) {
 			case "imap":
-				incomingClient = await this.imapService.getClient(
+				incomingClient = await this.imapService.get(
 					(payload.body as MultiConfig).incoming
 				);
 				break;
@@ -56,7 +56,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 		switch (payload.services.outgoing) {
 			case "smtp":
-				outgoingClient = await this.smtpService.getClient(
+				outgoingClient = await this.smtpService.get(
 					(payload.body as MultiConfig).outgoing
 				);
 				break;

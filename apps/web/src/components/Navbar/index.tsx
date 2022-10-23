@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import MenuIcon from "@mui/icons-material/Menu";
 import NavigateNext from "@mui/icons-material/NavigateNext";
 
+import useBoxes from "@utils/hooks/useBoxes";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -27,6 +28,8 @@ const UnMemoizedNavbar: FC = () => {
 	const [drawerState, setDrawerState] = useState(false);
 
 	const [selectedBox, setSelectedBox] = useSelectedBox();
+
+	const [flattenedBoxes] = useBoxes();
 
 	const toggleDrawer = useMemo(
 		() => (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
@@ -60,29 +63,32 @@ const UnMemoizedNavbar: FC = () => {
 	);
 
 	const breadcrumbs = useMemo(() => {
-		const boxNameSplit = selectedBox?.name.split(".");
+		const boxIDSplit = selectedBox?.id.split(selectedBox.delimiter);
 
-		return boxNameSplit?.map((crumb, i) => {
-			const boxName = boxNameSplit.slice(0, i + 1).join(".");
+		return boxIDSplit?.map((crumb, i) => {
+			const boxID = boxIDSplit.slice(0, i + 1).join(".");
+			const boxName = flattenedBoxes?.find((box) => box.id == boxID)?.name;
+
+			const isSelectedBox = boxID == selectedBox?.id;
 
 			return (
 				<Typography
 					sx={{
-						color: boxName == selectedBox?.name ? primaryColor : secondaryColor,
-						cursor: boxName == selectedBox?.name ? "inherit" : "pointer"
+						color: isSelectedBox ? primaryColor : secondaryColor,
+						cursor: isSelectedBox ? "inherit" : "pointer"
 					}}
-					key={boxName}
+					key={boxID}
 					onClick={() => {
-						if (boxName == selectedBox?.name) return;
+						if (isSelectedBox) return;
 
-						setSelectedBox({ id: boxName, name: boxName });
+						setSelectedBox(boxID);
 					}}
 				>
-					{crumb}
+					{boxName ?? "Unknown box"}
 				</Typography>
 			);
 		});
-	}, [selectedBox?.name, primaryColor, secondaryColor]);
+	}, [selectedBox, primaryColor, secondaryColor]);
 
 	return (
 		<>
