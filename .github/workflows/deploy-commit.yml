@@ -108,6 +108,9 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
+      - name: Setup Fly.io utility
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1.6.0
 
@@ -140,3 +143,8 @@ jobs:
 
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        with:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
