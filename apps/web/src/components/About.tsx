@@ -45,12 +45,12 @@ const Contributor: FC<{
 		<ListItemText primary={name} />
 		<Stack direction="row" spacing={1}>
 			<Tooltip title="Website">
-				<IconButton href={url}>
+				<IconButton target="_blank" href={url}>
 					<GlobeIcon />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Email">
-				<IconButton href={`mailto:${email}`}>
+				<IconButton target="_blank" href={`mailto:${email}`}>
 					<EmailIcon />
 				</IconButton>
 			</Tooltip>
@@ -86,12 +86,12 @@ const About: FC = () => {
 						</Typography>
 					</Box>
 					<Tooltip title="Repository">
-						<IconButton href={repository.url}>
+						<IconButton target="_blank" href={repository.url}>
 							<CodeIcon />
 						</IconButton>
 					</Tooltip>
 					<Tooltip title="Website">
-						<IconButton href={homepage}>
+						<IconButton target="_blank" href={homepage}>
 							<GlobeIcon />
 						</IconButton>
 					</Tooltip>

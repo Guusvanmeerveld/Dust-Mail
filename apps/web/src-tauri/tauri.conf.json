@@ -17,6 +17,9 @@
 			"window": {
 				"close": true,
 				"create": true
+			},
+			"shell": {
+				"open": true
 			}
 		},
 		"systemTray": {

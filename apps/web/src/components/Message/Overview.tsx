@@ -100,7 +100,9 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 
 	useEffect(() => {
-		const document = iframeRef.current?.contentDocument;
+		const document =
+			iframeRef.current?.contentDocument ||
+			iframeRef.current?.contentWindow?.document;
 
 		document?.open();
 
