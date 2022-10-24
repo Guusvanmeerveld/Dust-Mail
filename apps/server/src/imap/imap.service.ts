@@ -54,6 +54,8 @@ export class ImapService {
 
 		if (!client) {
 			client = await this.login(config);
+		} else {
+			if (client.state != "authenticated") client.connect();
 		}
 
 		return new Client(client, this.cacheService, identifier);

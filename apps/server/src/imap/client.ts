@@ -1,6 +1,6 @@
 import Imap from "imap";
 
-import { getBox, closeBox, getBoxes, createBox } from "./box";
+import { getBox, closeBox, getBoxes, createBox, deleteBox } from "./box";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
 import Message from "./interfaces/message.interface";
 
@@ -109,6 +109,12 @@ export default class Client implements IncomingClient {
 	public createBox = async (boxID: string): Promise<void> =>
 		createBox(this._client, boxID);
 
+	public deleteBox = async (boxIDs: string[]): Promise<void> => {
+		await Promise.all(
+			boxIDs.map(async (boxID) => await deleteBox(this._client, boxID))
+		);
+	};
+
 	public getBoxMessages = async (
 		boxID: string,
 		{ filter, start, end }: { filter: string; start: number; end: number }
@@ -174,13 +180,9 @@ export default class Client implements IncomingClient {
 					}
 				}
 
-				console.log("cached");
-
 				return results;
 			}
 		}
-
-		console.log("not cached");
 
 		let results: IncomingMessage[] = await this.fetch(fetchOptions).then(
 			(results) =>

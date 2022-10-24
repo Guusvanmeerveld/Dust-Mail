@@ -1,9 +1,9 @@
-import type { Request as ExpressRequest } from "express";
-
 import { AuthService } from "./auth.service";
 import { allowedAddresses, allowedDomains } from "./constants";
 import type { SecurityType } from "./interfaces/config.interface";
 import { JwtToken } from "./interfaces/jwt.interface";
+import { Request } from "./interfaces/request.interface";
+// import { AccessTokenAuthGuard } from "./jwt-auth.guard";
 import { StringValidationPipe } from "./pipes/string.pipe";
 
 import mailDiscover, { detectServiceFromConfig } from "@dust-mail/autodiscover";
@@ -184,12 +184,18 @@ export class AuthController {
 		throw new BadRequestException("Missing fields");
 	}
 
+	// @Get("logout")
+	// @UseGuards(AccessTokenAuthGuard)
+	// public async logout(@Req() req: Request) {
+	// 	req.user.incomingClient
+	// }
+
 	private readonly bearerPrefix = "Bearer ";
 
 	@Get("refresh")
 	public async refreshTokens(
 		@Req()
-		req: ExpressRequest
+		req: Request
 	) {
 		const authHeader = req.headers.authorization;
 

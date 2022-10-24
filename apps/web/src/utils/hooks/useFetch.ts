@@ -108,6 +108,11 @@ const useHttpClient = (): HttpClient => {
 		async createBox(id: string) {
 			await instance.put("/mail/folder/create", { id });
 		},
+		async deleteBox(ids: string[]) {
+			await instance.delete("/mail/folder/delete", {
+				params: { id: ids.join(",") }
+			});
+		},
 		async getMessage(noImages, darkMode, messageID, boxID) {
 			const { data } = await instance.get("/mail/message", {
 				params: {

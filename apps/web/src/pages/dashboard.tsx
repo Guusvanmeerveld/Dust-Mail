@@ -12,6 +12,7 @@ import useTheme from "@utils/hooks/useTheme";
 import useUser from "@utils/hooks/useUser";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
+import DeleteBox from "@components/Boxes/Delete";
 import BoxesList from "@components/Boxes/List";
 import Layout from "@components/Layout";
 import LoginStateHandler from "@components/LoginStateHandler";
@@ -132,6 +133,7 @@ const Dashboard: FC = () => {
 							overflowY: "scroll"
 						}}
 					>
+						<DeleteBox />
 						<MessageList />
 					</Box>
 

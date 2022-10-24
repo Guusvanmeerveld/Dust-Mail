@@ -10,7 +10,7 @@ import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
  * @returns An array of boxes with all of the items at the top level
  */
 const flattenBoxes = (boxes: Box[]): Box[] =>
-	boxes.reduce<any[]>((list, { name, id, delimiter }) => {
+	boxes.reduce<Box[]>((list, { name, id, delimiter }) => {
 		list.push({ name, id, delimiter, ...findBoxInPrimaryBoxesList(id) });
 
 		const currentBox = boxes.find((box) => box.name == name)?.children;

@@ -1,4 +1,4 @@
-import create, { StoreApi, UseBoundStore, useStore } from "zustand";
+import { StoreApi, UseBoundStore, useStore } from "zustand";
 
 import {
 	FC,
@@ -35,12 +35,6 @@ export interface CheckedBoxesStore {
 	checkedBoxes: Record<string, boolean>;
 	setChecked: (id: string, checked: boolean) => void;
 }
-
-export const checkedBoxesStore = create<CheckedBoxesStore>((set) => ({
-	checkedBoxes: {},
-	setChecked: (id, checked) =>
-		set((state) => ({ checkedBoxes: { ...state.checkedBoxes, [id]: checked } }))
-}));
 
 export const CheckedBoxesContext = createContext<UseBoundStore<
 	StoreApi<CheckedBoxesStore>
@@ -91,7 +85,7 @@ const UnMemoizedListItem: FC<
 > = ({ box, isSelectedBox, showCheckBox, onClick }) => {
 	const store = useContext(CheckedBoxesContext);
 
-	if (!store) throw new Error("no context provided");
+	if (!store) throw new Error("No context provided");
 
 	const checked =
 		useStore(store, (state) => state.checkedBoxes[box.id]) ?? false;

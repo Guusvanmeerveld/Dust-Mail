@@ -50,6 +50,14 @@ export const createBox = async (_client: Imap, boxID: string): Promise<void> =>
 		})
 	);
 
+export const deleteBox = async (_client: Imap, boxID: string): Promise<void> =>
+	await new Promise<void>((resolve, reject) =>
+		_client.delBox(boxID, (error) => {
+			if (error) reject(error);
+			else resolve();
+		})
+	);
+
 const getRecursiveBoxNames = (
 	boxes: Imap.MailBoxes
 ): { id: string; delimiter: string }[] =>

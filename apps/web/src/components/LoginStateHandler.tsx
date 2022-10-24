@@ -28,6 +28,7 @@ const UnMemoizedLoginStateHandler: FC = () => {
 			new Date(accessToken.expires).getTime() < Date.now(),
 		[fetching, accessToken]
 	);
+
 	if (
 		accessTokenExpired &&
 		refreshToken &&
@@ -40,9 +41,13 @@ const UnMemoizedLoginStateHandler: FC = () => {
 		data: tokens,
 		error: tokensError,
 		isFetching: isFetchingTokens
-	} = useQuery<LoginResponse>(
+	} = useQuery<LoginResponse | undefined>(
 		"refreshTokens",
-		() => fetcher.refresh(refreshToken?.body),
+		() => {
+			if (!refreshToken) return undefined;
+
+			return fetcher.refresh(refreshToken.body);
+		},
 		{
 			enabled: !!(accessTokenExpired && refreshToken)
 		}

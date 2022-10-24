@@ -1,4 +1,5 @@
 import useLocalStorageState from "use-local-storage-state";
+import create from "zustand";
 
 import { FC, useEffect, useMemo, useState } from "react";
 
@@ -32,11 +33,17 @@ import useTheme from "@utils/hooks/useTheme";
 import nestBoxes from "@utils/nestBoxes";
 
 import FolderTree, {
-	checkedBoxesStore,
-	CheckedBoxesContext
+	CheckedBoxesContext,
+	CheckedBoxesStore
 } from "@components/Boxes/FolderTree";
 
 type FolderType = "unified" | "normal" | "none";
+
+export const checkedBoxesStore = create<CheckedBoxesStore>((set) => ({
+	checkedBoxes: {},
+	setChecked: (id, checked) =>
+		set((state) => ({ checkedBoxes: { ...state.checkedBoxes, [id]: checked } }))
+}));
 
 const AddBox: FC = () => {
 	const theme = useTheme();

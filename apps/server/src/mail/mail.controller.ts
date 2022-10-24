@@ -19,7 +19,8 @@ import {
 	Post,
 	Query,
 	Req,
-	UseGuards
+	UseGuards,
+	Delete
 } from "@nestjs/common";
 
 import handleError from "@utils/handleError";
@@ -90,7 +91,8 @@ export class MailController {
 						date: new Date(message.date),
 						id: Buffer.from(message.id, "utf-8").toString("base64")
 					}))
-			);
+			)
+			.catch(handleError);
 
 		// return allMessages
 		// 	.flat()
@@ -131,7 +133,7 @@ export class MailController {
 		@Body("id", StringValidationPipe) boxID: string
 	) {
 		if (boxID == undefined) {
-			throw new BadRequestException("Missing folder `name` param");
+			throw new BadRequestException("Missing folder `id` param");
 		}
 
 		const client = req.user.incomingClient;
@@ -139,6 +141,23 @@ export class MailController {
 		await client.createBox(boxID).catch(handleError);
 
 		return "created new folder";
+	}
+
+	@Delete("folder/delete")
+	@UseGuards(AccessTokenAuthGuard)
+	async deleteBox(
+		@Req() req: Request,
+		@Query("id", StringValidationPipe) boxIDs: string
+	) {
+		if (boxIDs == undefined) {
+			throw new BadRequestException("Missing folder `id` param");
+		}
+
+		const client = req.user.incomingClient;
+
+		await client.deleteBox(boxIDs.split(",")).catch(handleError);
+
+		return "deleted folder";
 	}
 
 	@Post("send")

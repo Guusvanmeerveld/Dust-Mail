@@ -15,11 +15,18 @@ export default function useAvatar(
 
 	const id = ["noAvatar", email].join("-");
 
-	const noAvatar = parseInt(sessionStorage.getItem(id) ?? "");
-	const setNoAvatar = (date: number): void =>
-		sessionStorage.setItem(id, date.toString());
+	let noAvatar: number | undefined;
+	let setNoAvatar: ((date: number) => void) | undefined;
+	if (
+		"sessionStorage" in window &&
+		"getItem" in sessionStorage &&
+		"setItem" in sessionStorage
+	) {
+		noAvatar = parseInt(sessionStorage.getItem(id) ?? "");
+		setNoAvatar = (date) => sessionStorage.setItem(id, date.toString());
+	}
 
-	const blacklisted = !!noAvatar;
+	const blacklisted = noAvatar != undefined;
 
 	const { data, isLoading, error } = useQuery<string>(
 		["avatar", email],
@@ -38,7 +45,13 @@ export default function useAvatar(
 
 	if (email == undefined) return;
 
-	if (error && !data && !isLoading && (!noAvatar || noAvatar < Date.now())) {
+	if (
+		error &&
+		!data &&
+		!isLoading &&
+		(!noAvatar || noAvatar < Date.now()) &&
+		setNoAvatar
+	) {
 		setNoAvatar(Date.now() + REFRESH_INBOX_AVATARS * 1000);
 	}
 

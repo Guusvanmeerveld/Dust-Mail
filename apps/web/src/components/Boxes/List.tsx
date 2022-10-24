@@ -1,4 +1,5 @@
 import useLocalStorageState from "use-local-storage-state";
+import create from "zustand";
 
 import { useEffect, useMemo, memo, FC, useState, MouseEvent } from "react";
 
@@ -11,6 +12,7 @@ import Tooltip from "@mui/material/Tooltip";
 import AddIcon from "@mui/icons-material/Add";
 import CheckBoxIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 import MailBox from "@interfaces/box";
 
@@ -22,8 +24,14 @@ import AddBox from "@components/Boxes/Add";
 import FolderTree, {
 	FolderTreeProps,
 	CheckedBoxesContext,
-	checkedBoxesStore
+	CheckedBoxesStore
 } from "@components/Boxes/FolderTree";
+
+export const checkedBoxesStore = create<CheckedBoxesStore>((set) => ({
+	checkedBoxes: {},
+	setChecked: (id, checked) =>
+		set((state) => ({ checkedBoxes: { ...state.checkedBoxes, [id]: checked } }))
+}));
 
 const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	clickOnBox
@@ -34,6 +42,19 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 
 	const showAddBox = useStore((state) => state.showAddBox);
 	const setShowAddBox = useStore((state) => state.setShowAddBox);
+	const setShowDeleteItemsDialog = useStore(
+		(state) => state.setShowDeleteItemsDialog
+	);
+
+	const checkedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
+
+	const selectedBoxesArray = useMemo(
+		() =>
+			Object.entries(checkedBoxes)
+				.filter(([, checked]) => checked)
+				.map(([id]) => id),
+		[checkedBoxes]
+	);
 
 	const [showSelector, setShowSelector] = useState(false);
 
@@ -55,7 +76,7 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 				if (clickOnBox) clickOnBox(e);
 			}
 		}),
-		[showSelector, setSelectedBox]
+		[showSelector]
 	);
 
 	// Find all of the primary boxes and sort them alphabetically
@@ -108,6 +129,16 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 				)}
 				{showSelector && (
 					<>
+						<IconButton
+							onClick={() => {
+								if (selectedBoxesArray.length > 0)
+									setShowDeleteItemsDialog(true);
+							}}
+						>
+							<Tooltip title="Delete selected items">
+								<DeleteIcon />
+							</Tooltip>
+						</IconButton>
 						<IconButton onClick={() => setShowSelector(false)}>
 							<Tooltip title="Stop selecting folders">
 								<CloseIcon />

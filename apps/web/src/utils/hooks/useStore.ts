@@ -9,6 +9,8 @@ interface Store {
 	setShowAddBox: (show: boolean) => void;
 	showAbout: boolean;
 	setShowAbout: (show: boolean) => void;
+	showDeleteItemsDialog: boolean;
+	setShowDeleteItemsDialog: (show: boolean) => void;
 	showSettings: boolean;
 	setShowSettings: (show: boolean) => void;
 	toggleShowSettings: () => void;
@@ -26,6 +28,9 @@ const createStore = create<Store>((set) => ({
 			showAbout,
 			showSettings: showAbout === true ? false : state.showSettings
 		})),
+	showDeleteItemsDialog: false,
+	setShowDeleteItemsDialog: (showDeleteItemsDialog) =>
+		set({ showDeleteItemsDialog }),
 	showAddBox: false,
 	setShowAddBox: (showAddBox) => set({ showAddBox }),
 	showSettings: false,

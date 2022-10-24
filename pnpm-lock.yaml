@@ -201,7 +201,7 @@ importers:
       slate: ^0.81.1
       slate-react: ^0.81.0
       typescript: ^4.5.4
-      use-local-storage-state: ^17.0.1
+      use-local-storage-state: ^17.2.0
       vite: ^3.0.3
       vite-plugin-pwa: ^0.12.2
       vite-tsconfig-paths: ^3.4.1
@@ -253,7 +253,7 @@ importers:
       size-limit: 7.0.8
       typescript: 4.7.4
       vite: 3.0.4
-      vite-plugin-pwa: 0.12.3_vite@3.0.4
+      vite-plugin-pwa: 0.12.3_6x7hwu2tvelmeqj2f3gkeezd4u
       vite-tsconfig-paths: 3.5.0_vite@3.0.4
       vitest: 0.20.3_c8@7.12.0
       workbox-window: 6.5.4
@@ -10861,10 +10861,11 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  /vite-plugin-pwa/0.12.3_vite@3.0.4:
+  /vite-plugin-pwa/0.12.3_6x7hwu2tvelmeqj2f3gkeezd4u:
     resolution: {integrity: sha512-gmYdIVXpmBuNjzbJFPZFzxWYrX4lHqwMAlOtjmXBbxApiHjx9QPXKQPJjSpeTeosLKvVbNcKSAAhfxMda0QVNQ==}
     peerDependencies:
       vite: ^2.0.0 || ^3.0.0-0
+      workbox-window: ^6.4.0
     dependencies:
       debug: 4.3.4
       fast-glob: 3.2.11

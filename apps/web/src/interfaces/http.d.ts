@@ -12,7 +12,7 @@ import { LoginConfig } from "@interfaces/login";
 export default interface HttpClient {
 	getVersion: () => Promise<VersionResponse>;
 	login: (config: LoginConfig) => Promise<LoginResponse>;
-	refresh: (refreshToken?: string) => Promise<LoginResponse>;
+	refresh: (refreshToken: string) => Promise<LoginResponse>;
 	getBoxes: (token?: string) => Promise<BoxResponse[]>;
 	getPublicOAuthTokens: () => Promise<PublicTokensResponse>;
 	getAvatar: (address?: string) => Promise<string>;
@@ -22,6 +22,7 @@ export default interface HttpClient {
 		filter: string
 	) => Promise<IncomingMessage[]>;
 	createBox: (id: string) => Promise<void>;
+	deleteBox: (ids: string[]) => Promise<void>;
 	getMessage: (
 		noImages: boolean,
 		darkMode: boolean,

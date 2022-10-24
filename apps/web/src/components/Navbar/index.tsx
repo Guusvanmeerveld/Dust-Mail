@@ -66,7 +66,7 @@ const UnMemoizedNavbar: FC = () => {
 		const boxIDSplit = selectedBox?.id.split(selectedBox.delimiter);
 
 		return boxIDSplit?.map((crumb, i) => {
-			const boxID = boxIDSplit.slice(0, i + 1).join(".");
+			const boxID = boxIDSplit.slice(0, i + 1).join(selectedBox?.delimiter);
 			const boxName = flattenedBoxes?.find((box) => box.id == boxID)?.name;
 
 			const isSelectedBox = boxID == selectedBox?.id;

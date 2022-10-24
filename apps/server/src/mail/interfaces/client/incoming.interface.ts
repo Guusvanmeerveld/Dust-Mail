@@ -16,6 +16,8 @@ export default interface IncomingClient {
 		boxName: string,
 		options: { filter: string; start: number; end: number }
 	) => Promise<IncomingMessage[]>;
+	createBox: (boxID: string) => Promise<void>;
+	deleteBox: (boxIDs: string[]) => Promise<void>;
 	getMessage: (
 		id: string,
 		boxName: string,
@@ -23,5 +25,4 @@ export default interface IncomingClient {
 		noImages: boolean,
 		darkMode: boolean
 	) => Promise<FullIncomingMessage | void>;
-	createBox: (boxID: string) => Promise<void>;
 }
