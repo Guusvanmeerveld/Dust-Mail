@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - .github/workflows/deploy-commit.yml
+      - fly.toml
       - Dockerfile
       - entrypoint.sh
       - pnpm-lock.yaml

@@ -12,8 +12,10 @@ import useTheme from "@utils/hooks/useTheme";
 import useUser from "@utils/hooks/useUser";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
 
+import AddBox from "@components/Boxes/Add";
 import DeleteBox from "@components/Boxes/Delete";
 import BoxesList from "@components/Boxes/List";
+import RenameBox from "@components/Boxes/Rename";
 import Layout from "@components/Layout";
 import LoginStateHandler from "@components/LoginStateHandler";
 import MessageActionButton from "@components/Message/ActionButton";
@@ -101,6 +103,9 @@ const Dashboard: FC = () => {
 			<Snackbar />
 			<Layout withNavbar>
 				<Stack direction="row" sx={{ height: fullpageHeight }}>
+					<AddBox />
+					<DeleteBox />
+					<RenameBox />
 					{!isMobile && (
 						<>
 							<Box
@@ -133,7 +138,6 @@ const Dashboard: FC = () => {
 							overflowY: "scroll"
 						}}
 					>
-						<DeleteBox />
 						<MessageList />
 					</Box>
 

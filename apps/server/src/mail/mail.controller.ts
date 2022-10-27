@@ -33,7 +33,7 @@ import { StringValidationPipe } from "@auth/pipes/string.pipe";
 
 @Controller("mail")
 export class MailController {
-	@Get("boxes")
+	@Get("folders")
 	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
 	async fetchBoxes(@Req() req: Request): Promise<BoxResponse[]> {
@@ -42,7 +42,7 @@ export class MailController {
 		return await client.getBoxes().catch(handleError);
 	}
 
-	@Get("box")
+	@Get("folder")
 	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
 	async fetchBox(
@@ -50,7 +50,7 @@ export class MailController {
 		@Query("limit", ParseIntPipe) limit: number,
 		@Query("cursor", ParseIntPipe) page: number,
 		@Query("filter", StringValidationPipe) filter: string,
-		@Query("box", StringValidationPipe) box: string
+		@Query("folder", StringValidationPipe) box: string
 	): Promise<IncomingMessage[]> {
 		if (!limit) limit = mailDefaultLimit;
 
@@ -100,32 +100,6 @@ export class MailController {
 		// 	.slice(start, end);
 	}
 
-	@Get("message")
-	// @UseGuards(ThrottlerBehindProxyGuard)
-	@UseGuards(AccessTokenAuthGuard)
-	async fetchMessage(
-		@Req() req: Request,
-		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
-		@Query("noImages", ParseBoolPipe) noImages: boolean,
-		@Query("darkMode", ParseBoolPipe) darkMode: boolean,
-		@Query("id") id?: string,
-		@Query("box") box?: string
-	): Promise<FullIncomingMessage | void> {
-		if (!id) throw new BadRequestException("Missing message `id` param");
-
-		if (!box) throw new BadRequestException("Missing message `box` param");
-
-		if (typeof id != "string" || typeof box != "string") {
-			throw new BadRequestException("`id` or `box` property must be a string");
-		}
-
-		id = Buffer.from(id, "base64").toString("utf-8");
-
-		const client = req.user.incomingClient;
-
-		return await client.getMessage(id, box, markAsRead, noImages, darkMode);
-	}
-
 	@Put("folder/create")
 	@UseGuards(AccessTokenAuthGuard)
 	async createBox(
@@ -158,6 +132,54 @@ export class MailController {
 		await client.deleteBox(boxIDs.split(",")).catch(handleError);
 
 		return "deleted folder";
+	}
+
+	@Put("folder/rename")
+	@UseGuards(AccessTokenAuthGuard)
+	async renameBox(
+		@Req() req: Request,
+		@Body("oldID", StringValidationPipe) oldBoxID: string,
+		@Body("newID", StringValidationPipe) newBoxID: string
+	) {
+		if (oldBoxID == undefined) {
+			throw new BadRequestException("Missing `oldID` param");
+		}
+
+		if (newBoxID == undefined) {
+			throw new BadRequestException("Missing `newID` param");
+		}
+
+		const client = req.user.incomingClient;
+
+		await client.renameBox(oldBoxID, newBoxID).catch(handleError);
+
+		return `renamed folder from ${oldBoxID} to ${newBoxID}`;
+	}
+
+	@Get("message")
+	// @UseGuards(ThrottlerBehindProxyGuard)
+	@UseGuards(AccessTokenAuthGuard)
+	async fetchMessage(
+		@Req() req: Request,
+		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
+		@Query("noImages", ParseBoolPipe) noImages: boolean,
+		@Query("darkMode", ParseBoolPipe) darkMode: boolean,
+		@Query("id") id?: string,
+		@Query("box") box?: string
+	): Promise<FullIncomingMessage | void> {
+		if (!id) throw new BadRequestException("Missing message `id` param");
+
+		if (!box) throw new BadRequestException("Missing message `box` param");
+
+		if (typeof id != "string" || typeof box != "string") {
+			throw new BadRequestException("`id` or `box` property must be a string");
+		}
+
+		id = Buffer.from(id, "base64").toString("utf-8");
+
+		const client = req.user.incomingClient;
+
+		return await client.getMessage(id, box, markAsRead, noImages, darkMode);
 	}
 
 	@Post("send")

@@ -23,6 +23,7 @@ export default interface HttpClient {
 	) => Promise<IncomingMessage[]>;
 	createBox: (id: string) => Promise<void>;
 	deleteBox: (ids: string[]) => Promise<void>;
+	renameBox: (oldBoxID: string, newBoxID: string) => Promise<void>;
 	getMessage: (
 		noImages: boolean,
 		darkMode: boolean,

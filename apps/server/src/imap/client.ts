@@ -1,6 +1,13 @@
 import Imap from "imap";
 
-import { getBox, closeBox, getBoxes, createBox, deleteBox } from "./box";
+import {
+	getBox,
+	closeBox,
+	getBoxes,
+	createBox,
+	deleteBox,
+	renameBox
+} from "./box";
 import fetch, { FetchOptions, search, SearchOptions } from "./fetch";
 import Message from "./interfaces/message.interface";
 
@@ -115,6 +122,11 @@ export default class Client implements IncomingClient {
 		);
 	};
 
+	public renameBox = async (
+		oldBoxID: string,
+		newBoxID: string
+	): Promise<void> => renameBox(this._client, oldBoxID, newBoxID);
+
 	public getBoxMessages = async (
 		boxID: string,
 		{ filter, start, end }: { filter: string; start: number; end: number }
@@ -193,24 +205,19 @@ export default class Client implements IncomingClient {
 
 		results = uniqueBy(results, (key) => key.id);
 
-		let newCache: IncomingMessageWithInternalID[];
+		if (!fetchOptions.id) {
+			const newCache: IncomingMessageWithInternalID[] = results.map(
+				(item, i) => ({
+					...item,
+					internalID: fetchOptions.start - i
+				})
+			);
 
-		if (fetchOptions.id) {
-			newCache = results.map((item, i) => ({
-				...item,
-				internalID: fetchOptions.id[i]
-			}));
-		} else {
-			newCache = results.map((item, i) => ({
-				...item,
-				internalID: fetchOptions.start - i
-			}));
+			await this.cacheService.set<IncomingMessageWithInternalID[]>(cachePath, [
+				...cached,
+				...newCache
+			]);
 		}
-
-		await this.cacheService.set<IncomingMessageWithInternalID[]>(cachePath, [
-			...cached,
-			...newCache
-		]);
 
 		// await this.closeBox();
 

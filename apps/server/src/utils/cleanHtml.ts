@@ -4,7 +4,7 @@ import { minify } from "html-minifier";
 import { join } from "path";
 import sanitizeHtml from "sanitize-html";
 
-const styles = readFileSync(join(process.cwd(), "public", "dark.css"));
+const darkModeStyles = readFileSync(join(process.cwd(), "public", "dark.css"));
 
 const cleanMainHtml = (
 	dirty: string,
@@ -45,7 +45,7 @@ const cleanMainHtml = (
 	const $ = load(html);
 
 	if (darkMode) {
-		$("head").append(`<style>${styles.toString()}</style>`);
+		$("head").append(`<style>${darkModeStyles.toString()}</style>`);
 	}
 
 	$("a").attr("target", "_blank");

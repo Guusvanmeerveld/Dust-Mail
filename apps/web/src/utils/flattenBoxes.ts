@@ -1,6 +1,6 @@
 import Box from "@interfaces/box";
 
-import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
+// import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 
 /**
  * The opposite of `nestBoxes.ts`
@@ -11,7 +11,7 @@ import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
  */
 const flattenBoxes = (boxes: Box[]): Box[] =>
 	boxes.reduce<Box[]>((list, { name, id, delimiter }) => {
-		list.push({ name, id, delimiter, ...findBoxInPrimaryBoxesList(id) });
+		list.push({ name, id, delimiter });
 
 		const currentBox = boxes.find((box) => box.name == name)?.children;
 

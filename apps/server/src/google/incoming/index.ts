@@ -37,6 +37,13 @@ export default class IncomingGoogleClient implements IncomingClient {
 		return;
 	};
 
+	public renameBox = async (
+		oldBoxID: string,
+		newBoxID: string
+	): Promise<void> => {
+		return;
+	};
+
 	public getBoxMessages = async (
 		boxName: string,
 		options: { start: number; end: number }

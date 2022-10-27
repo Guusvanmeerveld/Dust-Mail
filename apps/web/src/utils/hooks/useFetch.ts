@@ -76,7 +76,7 @@ const useHttpClient = (): HttpClient => {
 		},
 		async getBoxes(token) {
 			const { data } = await instance.get(
-				"/mail/boxes",
+				"/mail/folders",
 				token
 					? {
 							headers: { Authorization: `Bearer ${token}` }
@@ -93,12 +93,11 @@ const useHttpClient = (): HttpClient => {
 		},
 		async getBox(boxID, pageParam, filter) {
 			// The amount of messages to load per request
-
-			const { data } = await instance.get("/mail/box", {
+			const { data } = await instance.get("/mail/folder", {
 				params: {
 					cursor: pageParam,
 					limit: messageCountForPage,
-					box: boxID,
+					folder: boxID,
 					filter
 				}
 			});
@@ -111,6 +110,12 @@ const useHttpClient = (): HttpClient => {
 		async deleteBox(ids: string[]) {
 			await instance.delete("/mail/folder/delete", {
 				params: { id: ids.join(",") }
+			});
+		},
+		async renameBox(oldBoxID: string, newBoxID: string) {
+			await instance.put("/mail/folder/rename", {
+				oldID: oldBoxID,
+				newID: newBoxID
 			});
 		},
 		async getMessage(noImages, darkMode, messageID, boxID) {

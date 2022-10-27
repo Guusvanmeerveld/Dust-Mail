@@ -18,6 +18,7 @@ export default interface IncomingClient {
 	) => Promise<IncomingMessage[]>;
 	createBox: (boxID: string) => Promise<void>;
 	deleteBox: (boxIDs: string[]) => Promise<void>;
+	renameBox: (oldBoxID: string, newBoxID: string) => Promise<void>;
 	getMessage: (
 		id: string,
 		boxName: string,

@@ -104,11 +104,19 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 			iframeRef.current?.contentDocument ||
 			iframeRef.current?.contentWindow?.document;
 
+		iframeRef.current?.contentWindow?.addEventListener("message", console.log);
+
 		document?.open();
 
 		document?.write(content);
 
 		document?.close();
+
+		return () =>
+			iframeRef.current?.contentWindow?.removeEventListener(
+				"message",
+				console.log
+			);
 	}, [content]);
 
 	return (

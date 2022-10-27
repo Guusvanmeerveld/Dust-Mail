@@ -1,7 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
 import create from "zustand";
 
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, memo, useEffect, useMemo, useState } from "react";
 
 import { AxiosError } from "axios";
 
@@ -37,15 +37,33 @@ import FolderTree, {
 	CheckedBoxesStore
 } from "@components/Boxes/FolderTree";
 
-type FolderType = "unified" | "normal" | "none";
-
 export const checkedBoxesStore = create<CheckedBoxesStore>((set) => ({
 	checkedBoxes: {},
 	setChecked: (id, checked) =>
 		set((state) => ({ checkedBoxes: { ...state.checkedBoxes, [id]: checked } }))
 }));
 
-const AddBox: FC = () => {
+export type FolderType = "unified" | "normal" | "none";
+
+interface AddBoxStore {
+	folderType: FolderType;
+	setFolderType: (folderType: FolderType) => void;
+	parentFolder: MailBox | undefined;
+	setParentFolder: (parentFolder: MailBox | undefined) => void;
+	folderName: string;
+	setFolderName: (folderName: string) => void;
+}
+
+export const addBoxStore = create<AddBoxStore>((set) => ({
+	folderType: "none",
+	setFolderType: (folderType) => set(() => ({ folderType })),
+	parentFolder: undefined,
+	setParentFolder: (parentFolder) => set(() => ({ parentFolder })),
+	folderName: "",
+	setFolderName: (folderName) => set(() => ({ folderName }))
+}));
+
+const UnMemoizedAddBox: FC = () => {
 	const theme = useTheme();
 
 	const [boxes, setBoxes] = useLocalStorageState<MailBox[]>("boxes");
@@ -63,19 +81,36 @@ const AddBox: FC = () => {
 	const [error, setError] = useState<string>();
 
 	const checkedBoxes = useMemo(
-		() => Object.entries(unifiedBoxes).filter(([, checked]) => checked),
+		() =>
+			Object.entries(unifiedBoxes)
+				.filter(([, checked]) => checked)
+				.map(([id]) => id),
 		[unifiedBoxes]
 	);
 
-	const [folderType, setFolderType] = useState<FolderType>("none");
+	const folderType = addBoxStore((state) => state.folderType);
+	const setFolderType = addBoxStore((state) => state.setFolderType);
 
-	const [parentFolder, setParentFolder] = useState<MailBox>();
+	const parentFolder = addBoxStore((state) => state.parentFolder);
+	const setParentFolder = addBoxStore((state) => state.setParentFolder);
 
-	const [folderName, setFolderName] = useState<string>("");
+	const folderName = addBoxStore((state) => state.folderName);
+	const setFolderName = addBoxStore((state) => state.setFolderName);
 
 	const handleClose = (): void => setShowAddBox(false);
 
-	useEffect(() => setError(undefined), [folderType, parentFolder, folderName]);
+	useEffect(
+		() => setError(undefined),
+		[folderType, parentFolder, folderName, showAddBox]
+	);
+
+	useEffect(() => {
+		if (!showAddBox) {
+			setFolderType("none");
+			setParentFolder(undefined);
+			setFolderName("");
+		}
+	}, [showAddBox]);
 
 	const flattenedBoxes = useMemo(() => {
 		if (boxes) return flattenBoxes(boxes);
@@ -278,5 +313,7 @@ const AddBox: FC = () => {
 		</>
 	);
 };
+
+const AddBox = memo(UnMemoizedAddBox);
 
 export default AddBox;

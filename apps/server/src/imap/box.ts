@@ -58,6 +58,19 @@ export const deleteBox = async (_client: Imap, boxID: string): Promise<void> =>
 		})
 	);
 
+export const renameBox = async (
+	_client: Imap,
+	oldBoxID: string,
+	newBoxID: string
+): Promise<void> => {
+	await new Promise((resolve, reject) =>
+		_client.renameBox(oldBoxID, newBoxID, (error, box) => {
+			if (error) reject(error);
+			else resolve(box);
+		})
+	);
+};
+
 const getRecursiveBoxNames = (
 	boxes: Imap.MailBoxes
 ): { id: string; delimiter: string }[] =>

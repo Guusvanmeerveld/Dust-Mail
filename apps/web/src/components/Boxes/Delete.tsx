@@ -1,8 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
+import create from "zustand";
 
-import { checkedBoxesStore } from "./List";
-
-import { FC, memo, useMemo, useState } from "react";
+import { FC, memo, useState } from "react";
 
 import { AxiosError } from "axios";
 
@@ -24,6 +23,16 @@ import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 import nestBoxes from "@utils/nestBoxes";
 
+interface DeleteBoxStore {
+	boxesToDelete: string[];
+	setBoxesToDelete: (boxesToDelete: string[]) => void;
+}
+
+export const deleteBoxStore = create<DeleteBoxStore>((set) => ({
+	boxesToDelete: [],
+	setBoxesToDelete: (boxesToDelete) => set({ boxesToDelete })
+}));
+
 const UnMemoizedDeleteBox: FC = () => {
 	let [flattenedBoxes] = useBoxes();
 	const [, setBoxes] = useLocalStorageState<Box[]>("boxes");
@@ -39,47 +48,41 @@ const UnMemoizedDeleteBox: FC = () => {
 		(state) => state.setShowDeleteItemsDialog
 	);
 
-	const checkedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
-	const setChecked = checkedBoxesStore((state) => state.setChecked);
+	const boxesToDelete = deleteBoxStore((state) => state.boxesToDelete);
+	const setBoxesToDelete = deleteBoxStore((state) => state.setBoxesToDelete);
 
-	const [deleteItemsError, setDeleteItemsError] = useState<string>();
-
-	const selectedBoxesArray = useMemo(
-		() =>
-			Object.entries(checkedBoxes)
-				.filter(([, checked]) => checked)
-				.map(([id]) => id),
-		[checkedBoxes]
-	);
+	const [error, setError] = useState<string>();
 
 	const deleteItemsDialogOnClose = (): void => {
 		setShowDeleteItemsDialog(false);
-		setDeleteItemsError(undefined);
+		setError(undefined);
+		setBoxesToDelete([]);
 	};
 
 	const deleteSelectedItems = async (): Promise<void> => {
 		await fetcher
-			.deleteBox(selectedBoxesArray)
+			.deleteBox(boxesToDelete)
 			.then(() => {
-				openSnackbar(`Folder(s) '${selectedBoxesArray.join(", ")}' deleted`);
+				openSnackbar(`Folder(s) '${boxesToDelete.join("', '")}' deleted`);
 
 				if (flattenedBoxes) {
 					flattenedBoxes = flattenedBoxes.filter(
-						(box) => !selectedBoxesArray.includes(box.id)
+						(box) => !boxesToDelete.includes(box.id)
 					);
 
 					setBoxes(nestBoxes(flattenedBoxes));
 				}
 
 				deleteItemsDialogOnClose();
-				selectedBoxesArray.forEach((deleted) => setChecked(deleted, false));
+				setBoxesToDelete([]);
 			})
 			.catch((error: AxiosError<ErrorResponse>) => {
 				const errorMessage = error.response?.data.message;
 
-				if (errorMessage) setDeleteItemsError(errorMessage);
+				if (errorMessage) setError(errorMessage);
 			});
 	};
+
 	return (
 		<Dialog
 			open={showDeleteItemsDialog}
@@ -88,16 +91,14 @@ const UnMemoizedDeleteBox: FC = () => {
 			aria-describedby="Are you sure you wish to delete these items?"
 		>
 			<DialogTitle id="delete-items-dialog-title">
-				Are you sure you wish to delete &apos;{selectedBoxesArray.join(", ")}
+				Are you sure you wish to delete &apos;{boxesToDelete.join("', '")}
 				&apos;?
 			</DialogTitle>
 			<DialogContent>
 				<DialogContentText sx={{ mb: 2 }} id="alert-dialog-description">
 					Every email in the selected folders will be deleted!
 				</DialogContentText>
-				{deleteItemsError && (
-					<Alert severity="error">Error: {deleteItemsError}</Alert>
-				)}
+				{error && <Alert severity="error">Error: {error}</Alert>}
 			</DialogContent>
 			<DialogActions>
 				<Button onClick={deleteItemsDialogOnClose}>Cancel</Button>

@@ -11,6 +11,8 @@ interface Store {
 	setShowAbout: (show: boolean) => void;
 	showDeleteItemsDialog: boolean;
 	setShowDeleteItemsDialog: (show: boolean) => void;
+	showRenameBoxDialog: boolean;
+	setShowRenameBoxDialog: (showRenameBoxDialog: boolean) => void;
 	showSettings: boolean;
 	setShowSettings: (show: boolean) => void;
 	toggleShowSettings: () => void;
@@ -33,6 +35,8 @@ const createStore = create<Store>((set) => ({
 		set({ showDeleteItemsDialog }),
 	showAddBox: false,
 	setShowAddBox: (showAddBox) => set({ showAddBox }),
+	showRenameBoxDialog: false,
+	setShowRenameBoxDialog: (showRenameBoxDialog) => set({ showRenameBoxDialog }),
 	showSettings: false,
 	setShowSettings: (showSettings) => set({ showSettings }),
 	toggleShowSettings: () =>

@@ -42,6 +42,7 @@ export const CheckedBoxesContext = createContext<UseBoundStore<
 
 export interface FolderTreeProps {
 	onClick?: (box: MailBox, e: MouseEvent) => void;
+	onContextMenu?: (box: MailBox, e: MouseEvent<HTMLElement>) => void;
 	showCheckBox: boolean;
 }
 
@@ -82,7 +83,7 @@ const UnMemoizedListItem: FC<
 		box: MailBox;
 		isSelectedBox: boolean;
 	} & FolderTreeProps
-> = ({ box, isSelectedBox, showCheckBox, onClick }) => {
+> = ({ box, isSelectedBox, showCheckBox, onClick, onContextMenu }) => {
 	const store = useContext(CheckedBoxesContext);
 
 	if (!store) throw new Error("No context provided");
@@ -110,11 +111,19 @@ const UnMemoizedListItem: FC<
 			  }
 			: () => setChecked(box.id, !checked);
 
+	const handleContextMenu = (e: MouseEvent<HTMLElement>): void => {
+		if (onContextMenu && !showCheckBox) onContextMenu(box, e);
+	};
+
 	return (
 		<>
 			{box.children && box.children.length != 0 && (
 				<>
-					<ListItemButton onClick={handleClick} selected={isSelectedBox}>
+					<ListItemButton
+						onClick={handleClick}
+						onContextMenu={handleContextMenu}
+						selected={isSelectedBox}
+					>
 						<Box sx={{ mr: indent }}>
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
@@ -133,6 +142,7 @@ const UnMemoizedListItem: FC<
 							{...{
 								boxes: box.children,
 								showCheckBox,
+								onContextMenu,
 								onClick
 							}}
 						/>
@@ -141,7 +151,10 @@ const UnMemoizedListItem: FC<
 			)}
 			{(!box.children || (box.children && box.children.length == 0)) && (
 				<MUIListItem selected={isSelectedBox} disablePadding>
-					<ListItemButton onClick={handleClick}>
+					<ListItemButton
+						onClick={handleClick}
+						onContextMenu={handleContextMenu}
+					>
 						<Box sx={{ mr: indent }}>
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
