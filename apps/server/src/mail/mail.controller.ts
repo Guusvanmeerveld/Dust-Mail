@@ -179,7 +179,18 @@ export class MailController {
 
 		const client = req.user.incomingClient;
 
-		return await client.getMessage(id, box, markAsRead, noImages, darkMode);
+		const message = await client
+			.getMessage(id, box, markAsRead, noImages, darkMode)
+			.then((message) => {
+				if (message)
+					return {
+						...message,
+						date: new Date(message.date),
+						id: Buffer.from(message.id, "utf-8").toString("base64")
+					};
+			});
+
+		return message;
 	}
 
 	@Post("send")

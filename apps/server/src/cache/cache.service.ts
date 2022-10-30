@@ -8,17 +8,28 @@ import { createClient, RedisClientType } from "redis";
 
 import { Injectable } from "@nestjs/common";
 
-const getCacheFile = () => join(getJsonCacheDir(), "cache.json");
+import { createHash } from "@src/utils/createHash";
+import createIdentifierFromEnvironment from "@src/utils/createIdentifierFromEnvironment";
+
+const getCacheFile = (identifier: string) =>
+	join(getJsonCacheDir(), identifier + ".json");
+
+interface CacheItem {
+	expires: number;
+	data: any;
+}
 
 @Injectable()
 export class CacheService implements Cache {
-	private readonly cacheFile: string;
+	private cacheFile = "";
 
 	private readonly redisClient: RedisClientType;
 
 	private readonly isRedisCache: boolean;
 
 	private readonly cacheTimeout: number;
+
+	private data: Record<string, CacheItem> = {};
 
 	constructor() {
 		this.cacheTimeout = getCacheTimeout();
@@ -27,25 +38,35 @@ export class CacheService implements Cache {
 
 		if (this.isRedisCache)
 			this.redisClient = createClient({ url: getRedisUri() });
-		else this.cacheFile = getCacheFile();
 	}
 
-	private createKey = (path: string[]) =>
-		Buffer.from(path.join("."), "utf-8").toString("base64");
+	private createKey = (path: string[]) => createHash(path.join("."), "sha256");
 
 	public init: initter = async () => {
+		const identifier = await createIdentifierFromEnvironment();
+
 		if (this.isRedisCache) {
 			await this.redisClient.connect();
+
+			const response = (await this.redisClient.json.get(identifier, {
+				path: "$"
+			})) as Array<any>;
+
+			this.data = response.shift();
 		} else {
+			this.cacheFile = getCacheFile(identifier);
+
 			await fs.ensureFile(this.cacheFile);
 
 			if (
 				await fs
 					.readJSON(this.cacheFile)
-					.then(() => {
+					.then((data) => {
+						this.data = data;
 						return false;
 					})
 					.catch(() => {
+						this.data = {};
 						return true;
 					})
 			)
@@ -56,30 +77,44 @@ export class CacheService implements Cache {
 	public get: getter = async <T>(path: string[]): Promise<T | undefined> => {
 		const key = this.createKey(path);
 
-		if (this.isRedisCache) {
-			const data = await this.redisClient.get(key);
+		const item = this.data[key];
 
-			if (data) return JSON.parse(data) as T;
-		} else {
-			const data = await fs.readJSON(this.cacheFile);
-
-			const value = data[key];
-
-			return value;
+		if (item?.expires) {
+			if (item.expires > Date.now()) return item.data;
+			else this.cleanUp();
 		}
+	};
+
+	private cleanUp = () => {
+		const expired = Object.entries(this.data).filter(([, item]) => {
+			return item.expires < Date.now();
+		});
+
+		expired.forEach(([id]) => {
+			delete this.data[id];
+		});
 	};
 
 	public set: setter = async <T>(path: string[], value: T): Promise<void> => {
 		const key = this.createKey(path);
 
+		this.data = {
+			...this.data,
+			[key]: { data: value, expires: Date.now() + this.cacheTimeout }
+		};
+
+		await this.write();
+	};
+
+	private write = async (): Promise<void> => {
 		if (this.isRedisCache) {
-			await this.redisClient.set(key, JSON.stringify(value));
+			const identifier = await createIdentifierFromEnvironment();
 
-			await this.redisClient.expire(key, this.cacheTimeout / 1000);
-		} else {
-			const data = await fs.readJSON(this.cacheFile);
-
-			await fs.writeJSON(this.cacheFile, { ...data, [key]: value });
-		}
+			await this.redisClient.json.set(
+				identifier,
+				"$",
+				this.data as Record<string, any>
+			);
+		} else await fs.writeJSON(this.cacheFile, this.data);
 	};
 }

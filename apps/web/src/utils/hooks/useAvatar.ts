@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "react-query";
 
 // import { AxiosError } from "axios";
@@ -17,6 +18,7 @@ export default function useAvatar(
 
 	let noAvatar: number | undefined;
 	let setNoAvatar: ((date: number) => void) | undefined;
+
 	if (
 		"sessionStorage" in window &&
 		"getItem" in sessionStorage &&
@@ -43,8 +45,6 @@ export default function useAvatar(
 		}
 	);
 
-	if (email == undefined) return;
-
 	if (
 		error &&
 		!data &&
@@ -55,5 +55,5 @@ export default function useAvatar(
 		setNoAvatar(Date.now() + REFRESH_INBOX_AVATARS * 1000);
 	}
 
-	return { data, isLoading };
+	return useMemo(() => ({ data, isLoading }), [data, isLoading]);
 }

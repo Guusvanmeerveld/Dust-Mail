@@ -8,10 +8,9 @@ import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 
 const MessageActionButton: FC = () => {
-	const [selectedMessage] = useSelectedMessage();
+	const { selectedMessage } = useSelectedMessage();
 
-	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-	const actions = useMessageActions(selectedMessage!);
+	const actions = useMessageActions();
 
 	if (selectedMessage)
 		return (
@@ -22,7 +21,7 @@ const MessageActionButton: FC = () => {
 			>
 				{actions.reverse().map((action) => (
 					<SpeedDialAction
-						onClick={action.handler}
+						onClick={() => action.handler(selectedMessage)}
 						key={action.name}
 						icon={action.icon}
 						tooltipTitle={action.name}

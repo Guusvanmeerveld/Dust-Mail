@@ -25,10 +25,8 @@ const LoginSettingsMenu: FC = () => {
 
 	const [isOpen, setOpen] = useState(false);
 
-	const [customServerUrl, setCustomServerUrl] = useLocalStorageState(
-		"customServerUrl",
-		{ defaultValue: import.meta.env.VITE_DEFAULT_SERVER }
-	);
+	const [customServerUrl, setCustomServerUrl] =
+		useLocalStorageState("customServerUrl");
 
 	return (
 		<>

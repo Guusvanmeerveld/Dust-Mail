@@ -74,8 +74,6 @@ const About: FC = () => {
 		}
 	}, []);
 
-	if (!isOpen) return <></>;
-
 	return (
 		<Modal open={isOpen} onClose={() => setOpen(false)}>
 			<Box sx={modalStyles(theme)}>

@@ -5,6 +5,8 @@ import generateRandomPassword from "@utils/createPassword";
 
 export const getPort = () => parseInt(process.env.PORT) || 3000;
 
+export const getUnixSocketPath = () => process.env.UNIX_SOCKET_PATH;
+
 export const getBasePath = () => process.env.BASE_PATH;
 
 const getJwtSecretLocation = () =>
@@ -24,7 +26,7 @@ export const jwtConstants = {
 
 		if (contents) return contents;
 		else {
-			const password = generateRandomPassword();
+			const password = await generateRandomPassword();
 
 			await writeFile(jwtSecretLocation, password);
 

@@ -1,5 +1,7 @@
+import { IncomingMessage } from "@dust-mail/typings";
+
 export default interface MessageAction {
 	name: string;
 	icon: JSX.Element;
-	handler: () => void;
+	handler: (message: IncomingMessage) => void;
 }

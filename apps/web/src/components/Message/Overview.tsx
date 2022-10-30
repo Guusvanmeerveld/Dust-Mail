@@ -1,9 +1,8 @@
 import useLocalStorageState from "use-local-storage-state";
 
 import { useEffect, useRef, useState, memo, FC, MouseEvent } from "react";
-import { useQuery } from "react-query";
 
-import { Address, FullIncomingMessage, LocalToken } from "@dust-mail/typings";
+import { Address } from "@dust-mail/typings";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -24,15 +23,14 @@ import CloseIcon from "@mui/icons-material/Close";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import HideImageIcon from "@mui/icons-material/HideImage";
 import ImageIcon from "@mui/icons-material/Image";
+import BrowserIcon from "@mui/icons-material/Language";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
 
 import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
-import useFetch from "@utils/hooks/useFetch";
 import useMessageActions from "@utils/hooks/useMessageActions";
-import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -136,63 +134,33 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 const UnMemoizedMessageOverview: FC = () => {
 	const theme = useTheme();
 
-	const fetcher = useFetch();
+	const {
+		selectedMessage: data,
+		selectedMessageError: error,
+		setSelectedMessage
+	} = useSelectedMessage();
 
-	const [selectedMessage, setSelectedMessage] = useSelectedMessage();
-	const [selectedBox] = useSelectedBox();
-
-	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-	const messageActions = useMessageActions(selectedMessage!);
-
-	const setFetching = useStore((state) => state.setFetching);
+	const messageActions = useMessageActions();
 
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
 	// );
 
-	const [darkMode, setDarkMode] = useLocalStorageState<boolean>(
-		"messageDarkMode",
-		{ defaultValue: false }
-	);
+	const isFetching = useStore((state) => state.fetching);
 
-	const [showImages, setShowImages] = useState(false);
+	const [darkMode, setDarkMode] =
+		useLocalStorageState<boolean>("messageDarkMode");
+
+	const [showImages, setShowImages] =
+		useLocalStorageState<boolean>("showImages");
 
 	const [messageActionsAnchor, setMessageActionsAnchor] =
 		useState<null | Element>(null);
 	const messageActionsAnchorOpen = Boolean(messageActionsAnchor);
 
-	const [token] = useLocalStorageState<LocalToken>("accessToken");
-
-	const { data, isFetching, error } = useQuery<
-		FullIncomingMessage | undefined,
-		string
-	>(
-		[
-			"message",
-			selectedMessage,
-			selectedBox?.id,
-			showImages,
-			darkMode,
-			token?.body
-		],
-		() => {
-			if (!token?.body) return undefined;
-			else
-				return fetcher.getMessage(
-					!showImages,
-					darkMode,
-					selectedMessage,
-					selectedBox?.id
-				);
-		},
-		{ enabled: selectedMessage != undefined }
-	);
-
-	useEffect(() => setFetching(isFetching), [isFetching]);
-
 	return (
 		<>
-			{selectedMessage && (
+			{data && (
 				<>
 					<Card
 						sx={{
@@ -283,12 +251,29 @@ const UnMemoizedMessageOverview: FC = () => {
 											"aria-labelledby": "basic-button"
 										}}
 									>
+										<MenuItem
+											onClick={() => {
+												setMessageActionsAnchor(null);
+												const webview = window.open(
+													"",
+													data.subject,
+													"height=200,width=150"
+												);
+
+												webview?.document.write(data.content.html ?? "");
+											}}
+										>
+											<ListItemIcon>
+												<BrowserIcon />
+											</ListItemIcon>
+											<ListItemText>Open in new window</ListItemText>
+										</MenuItem>
 										{messageActions.map((action) => (
 											<MenuItem
 												key={action.name}
 												onClick={() => {
 													setMessageActionsAnchor(null);
-													action.handler();
+													action.handler(data);
 												}}
 											>
 												<ListItemIcon>{action.icon}</ListItemIcon>
@@ -332,7 +317,7 @@ const UnMemoizedMessageOverview: FC = () => {
 					</Card>
 				</>
 			)}
-			{!selectedMessage && (
+			{!data && (
 				<Box>
 					<Typography variant="h6">No message selected.</Typography>
 					<Typography>

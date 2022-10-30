@@ -143,7 +143,7 @@ const UnMemoizedMessageList: FC = () => {
 	const [filter, setFilter] = useState("");
 
 	const [selectedBox] = useSelectedBox();
-	const [selectedMessage] = useSelectedMessage();
+	const { selectedMessage } = useSelectedMessage();
 
 	const [token] = useLocalStorageState<LocalToken>("accessToken");
 
@@ -191,7 +191,7 @@ const UnMemoizedMessageList: FC = () => {
 		id?: string;
 	}>({ x: 0, y: 0 });
 
-	const messageActions = useMessageActions(rightClickMenuAnchor?.id);
+	const messageActions = useMessageActions();
 
 	const rightClickMenuOpen = useMemo(
 		() => rightClickMenuAnchor.x != 0 || rightClickMenuAnchor.y != 0,
@@ -217,7 +217,8 @@ const UnMemoizedMessageList: FC = () => {
 							key={action.name}
 							onClick={() => {
 								handleMenuClose();
-								action.handler();
+								if (!selectedMessage) return;
+								action.handler(selectedMessage);
 							}}
 						>
 							<ListItemIcon>{action.icon}</ListItemIcon>
@@ -251,7 +252,7 @@ const UnMemoizedMessageList: FC = () => {
 				data.pages &&
 				data.pages.map((messages) =>
 					messages.map((message) => {
-						const selected = selectedMessage == message.id;
+						const selected = selectedMessage?.id == message.id;
 
 						return (
 							<MessageListItem

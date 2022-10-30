@@ -2,7 +2,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import { AppModule } from "./app.module";
-import { getBasePath, getPort } from "./constants";
+import { getBasePath, getPort, getUnixSocketPath } from "./constants";
 import { AppLogger } from "./utils/logger";
 
 import { NestFactory } from "@nestjs/core";
@@ -22,9 +22,9 @@ async function bootstrap() {
 
 	app.use(cookieParser());
 
-	const port = getPort();
+	const listenOn = getUnixSocketPath() ?? getPort();
 
-	await app.listen(port);
+	await app.listen(listenOn);
 }
 
 bootstrap();

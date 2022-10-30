@@ -8,15 +8,14 @@ import ReplyIcon from "@mui/icons-material/Reply";
 
 import MessageAction from "@interfaces/messageAction";
 
-const useMessageActions = (messageID?: string): MessageAction[] => {
+const useMessageActions = (): MessageAction[] => {
 	const showSnackbar = useSnackbar();
-	if (!messageID) return [];
 
 	const actions: MessageAction[] = [
 		{
 			name: "Move message",
 			icon: <FolderMoveIcon />,
-			handler: () => console.log(messageID)
+			handler: (message) => console.log(message?.id)
 		},
 		{
 			name: "Forward message",

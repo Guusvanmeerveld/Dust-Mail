@@ -20,6 +20,9 @@
 			},
 			"shell": {
 				"open": true
+			},
+			"http": {
+				"request": true
 			}
 		},
 		"systemTray": {
@@ -29,7 +32,7 @@
 		"bundle": {
 			"active": true,
 			"category": "Productivity",
-			"copyright": "",
+			"copyright": "Guus van Meerveld",
 			"deb": {
 				"depends": []
 			},

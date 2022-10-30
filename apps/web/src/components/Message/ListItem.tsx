@@ -1,4 +1,4 @@
-import { FC, memo, MouseEvent, useState } from "react";
+import { FC, memo, MouseEvent, useMemo, useState } from "react";
 
 import { IncomingMessage } from "@dust-mail/typings";
 
@@ -8,7 +8,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
 
 import useAvatar from "@utils/hooks/useAvatar";
-import useSelectedMessage from "@utils/hooks/useSelectedMessage";
+import { useSetSelectedMessage } from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 
 const UnMemoizedMessageListItem: FC<{
@@ -24,7 +24,7 @@ const UnMemoizedMessageListItem: FC<{
 
 	const [unSeen, setUnSeen] = useState(!message.flags.seen);
 
-	const [, setSelectedMessage] = useSelectedMessage();
+	const setSelectedMessage = useSetSelectedMessage();
 
 	const from = message.from
 		.map((from) => from.displayName || from.email)
@@ -34,20 +34,27 @@ const UnMemoizedMessageListItem: FC<{
 		from.length != 0 ? message.from[0].email : undefined
 	);
 
-	const handleClick = (): void => {
-		if (!message.id) return;
+	const handleClick = useMemo(
+		() => (): void => {
+			if (!message.id) return;
 
-		setUnSeen(false);
+			setUnSeen(false);
 
-		if (selectedMessage) setSelectedMessage();
-		else setSelectedMessage(message.id);
-	};
+			if (selectedMessage) setSelectedMessage();
+			else setSelectedMessage(message.id);
+		},
+		[message.id, selectedMessage]
+	);
 
-	const handleContextMenu = (e: MouseEvent): void => {
-		e.preventDefault();
+	const handleContextMenu = useMemo(
+		() =>
+			(e: MouseEvent): void => {
+				e.preventDefault();
 
-		setRightClickMenuAnchor({ x: e.pageX, y: e.pageY, id: message.id });
-	};
+				setRightClickMenuAnchor({ x: e.pageX, y: e.pageY, id: message.id });
+			},
+		[setRightClickMenuAnchor]
+	);
 
 	return (
 		<>

@@ -8,10 +8,18 @@ import { messageCountForPage } from "@src/constants";
 
 import HttpClient from "@interfaces/http";
 
+const UNIX_PREFIX = "unix://";
+
 const useHttpClient = (): HttpClient => {
-	const [backendServer] = useLocalStorageState<string>("customServerUrl", {
+	let [backendServer] = useLocalStorageState<string>("customServerUrl", {
 		defaultValue: import.meta.env.VITE_DEFAULT_SERVER
 	});
+
+	const isUnixSocket = backendServer.startsWith(UNIX_PREFIX);
+
+	if (isUnixSocket) {
+		backendServer = backendServer.replace(UNIX_PREFIX, "");
+	}
 
 	const [token] = useLocalStorageState<LocalToken>("accessToken");
 
