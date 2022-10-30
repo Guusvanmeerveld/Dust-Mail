@@ -3,6 +3,7 @@ import useLocalStorageState from "use-local-storage-state";
 import { FC, memo, useState, MouseEvent } from "react";
 
 import MUIAvatar from "@mui/material/Avatar";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -13,6 +14,7 @@ import DarkModeIcon from "@mui/icons-material/DarkMode";
 // import ComposeIcon from "@mui/icons-material/Edit";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import LogoutIcon from "@mui/icons-material/Logout";
+import AddAccountIcon from "@mui/icons-material/PersonAdd";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import useLogout from "@utils/hooks/useLogout";
@@ -91,6 +93,13 @@ const UnMemoizedAvatar: FC = () => {
 				open={open}
 				onClose={() => setMenuAnchor(null)}
 			>
+				<MenuItem onClick={() => null}>
+					<ListItemIcon>
+						<AddAccountIcon />
+					</ListItemIcon>
+					<ListItemText>Add account</ListItemText>
+				</MenuItem>
+				<Divider />
 				<DarkModeListItem />
 				{menuItems.map((item) => (
 					<MenuItem

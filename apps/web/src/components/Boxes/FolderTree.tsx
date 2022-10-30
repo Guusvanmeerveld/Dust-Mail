@@ -59,7 +59,16 @@ const UnMemoizedFolderTree: FC<
 		<List
 			subheader={
 				title ? (
-					<ListSubheader component="div" id={`subheader-${title}`}>
+					<ListSubheader
+						sx={{
+							backgroundImage: {
+								xs: "linear-gradient(rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15))",
+								md: "none"
+							}
+						}}
+						component="div"
+						id={`subheader-${title}`}
+					>
 						{title}
 					</ListSubheader>
 				) : null

@@ -25,7 +25,7 @@ export const useSetSelectedMessage = (): ((id?: string) => void) => {
 		() =>
 			(id?: string): void =>
 				navigate(`/dashboard/${selectedBox?.id}${id ? `/${id}` : ""}`),
-		[]
+		[selectedBox]
 	);
 
 	return setSelectedMessage;

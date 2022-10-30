@@ -47,7 +47,7 @@ const AddressListItem: FC<{ email: string; displayName: string }> = ({
 
 	return (
 		<Chip
-			sx={{ mr: 1, mb: 1 }}
+			sx={{ mr: 1, mb: 1, maxWidth: theme.spacing(35) }}
 			avatar={
 				<Avatar
 					sx={{

@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 
 import scrollbarStyles from "@styles/scrollbar";
 
+import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 import useUser from "@utils/hooks/useUser";
 import useWindowWidth from "@utils/hooks/useWindowWidth";
@@ -96,6 +97,8 @@ const Dashboard: FC = () => {
 
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
+	const { selectedMessage } = useSelectedMessage();
+
 	return (
 		<>
 			{!user.isLoggedIn && <Navigate to="/" replace={true} />}
@@ -130,19 +133,19 @@ const Dashboard: FC = () => {
 							/>
 						</>
 					)}
-
 					<Box
 						sx={{
 							...scrollBarSx,
 							width: isMobile ? 1 : messageListWidth,
-							overflowY: "scroll"
+							overflowY: "scroll",
+							display: !isMobile || !selectedMessage ? "block" : "none"
 						}}
 					>
 						<MessageList />
 					</Box>
 
-					{!isMobile && (
-						<>
+					<>
+						{!isMobile && (
 							<Box
 								onMouseDown={(e: MouseEvent) =>
 									handleDragStart(messageListWidth, e, "messages")
@@ -153,26 +156,31 @@ const Dashboard: FC = () => {
 									cursor: "col-resize"
 								}}
 							/>
-							<Stack
-								direction="column"
-								spacing={1}
-								sx={{
-									width:
-										windowWidth -
-										messageListWidth -
-										(isMobile ? 0 : boxesListWidth) -
-										grabberWidth * 2,
-									transition: theme.transitions.create(["width", "transform"], {
-										duration: theme.transitions.duration.standard
-									}),
-									px: 3,
-									py: 1
-								}}
-							>
-								<MessageOverview />
-							</Stack>
-						</>
-					)}
+						)}
+
+						<Stack
+							direction="column"
+							spacing={1}
+							sx={{
+								width:
+									isMobile && selectedMessage
+										? 1
+										: windowWidth -
+										  messageListWidth -
+										  (isMobile ? 0 : boxesListWidth) -
+										  grabberWidth * 2,
+								transition: theme.transitions.create(["width", "transform"], {
+									duration: theme.transitions.duration.standard
+								}),
+								display:
+									!isMobile || (isMobile && selectedMessage) ? "flex" : "none",
+								px: isMobile && selectedMessage ? 1 : 3,
+								py: 1
+							}}
+						>
+							<MessageOverview />
+						</Stack>
+					</>
 				</Stack>
 
 				<MessageActionButton />
