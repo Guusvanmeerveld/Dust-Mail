@@ -100,6 +100,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
       - name: Setup Fly.io utility
         uses: superfly/flyctl-actions/setup-flyctl@master
 
