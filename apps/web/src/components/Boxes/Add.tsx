@@ -303,6 +303,7 @@ const UnMemoizedAddBox: FC = () => {
 								name: folderName,
 								id: parentFolder.id + parentFolder.delimiter + folderName,
 								delimiter: parentFolder.delimiter,
+								unreadCount: 0,
 								unifies:
 									folderType == "unified"
 										? checkedBoxes.map((box) => box[0])

@@ -10,8 +10,8 @@ import Box from "@interfaces/box";
  * @returns An array of boxes with all of the items at the top level
  */
 const flattenBoxes = (boxes: Box[]): Box[] =>
-	boxes.reduce<Box[]>((list, { name, id, delimiter }) => {
-		list.push({ name, id, delimiter });
+	boxes.reduce<Box[]>((list, { name, ...box }) => {
+		list.push({ name, ...box });
 
 		const currentBox = boxes.find((box) => box.name == name)?.children;
 
