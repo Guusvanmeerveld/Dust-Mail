@@ -1,4 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
 import create from "zustand";
 
 import { useEffect, useMemo, memo, FC, useState, MouseEvent } from "react";
@@ -23,6 +22,7 @@ import MailBox from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useAddBox from "@utils/hooks/useAddBox";
+import useBoxes from "@utils/hooks/useBoxes";
 import useDeleteBox from "@utils/hooks/useDeleteBox";
 import useRenameBox from "@utils/hooks/useRenameBox";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
@@ -43,7 +43,7 @@ export const checkedBoxesStore = create<CheckedBoxesStore>((set) => ({
 const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	clickOnBox
 }) => {
-	const [boxes] = useLocalStorageState<MailBox[]>("boxes");
+	const [, boxes] = useBoxes();
 
 	const showAddBox = useAddBox();
 	const showDeleteBox = useDeleteBox();
@@ -98,6 +98,7 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	const folderTreeProps = useMemo(
 		(): FolderTreeProps => ({
 			showCheckBox: showSelector,
+
 			onClick: (box, e) => {
 				setSelectedBox(box.id);
 				if (clickOnBox) clickOnBox(e);

@@ -10,6 +10,7 @@ import {
 	MouseEvent
 } from "react";
 
+import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Collapse from "@mui/material/Collapse";
@@ -115,6 +116,8 @@ const UnMemoizedListItem: FC<
 		if (onContextMenu && !showCheckBox) onContextMenu(box, e);
 	};
 
+	const badge = box.unreadCount == 0 ? undefined : box.unreadCount;
+
 	return (
 		<>
 			{box.children && box.children.length != 0 && (
@@ -127,7 +130,9 @@ const UnMemoizedListItem: FC<
 						<Box sx={{ mr: indent }}>
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
-						<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
+						<ListItemIcon>
+							<Icon icon={box.icon} badge={badge} />
+						</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
 								{box.name}
@@ -141,6 +146,7 @@ const UnMemoizedListItem: FC<
 						<FolderTree
 							{...{
 								boxes: box.children,
+
 								showCheckBox,
 								onContextMenu,
 								onClick
@@ -158,7 +164,9 @@ const UnMemoizedListItem: FC<
 						<Box sx={{ mr: indent }}>
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
-						<ListItemIcon>{box.icon ?? <FolderIcon />}</ListItemIcon>
+						<ListItemIcon>
+							<Icon icon={box.icon} badge={badge} />
+						</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
 								{box.name}
@@ -169,6 +177,20 @@ const UnMemoizedListItem: FC<
 			)}
 		</>
 	);
+};
+
+const Icon: FC<{ icon?: JSX.Element; badge?: number | string }> = ({
+	icon,
+	badge
+}) => {
+	if (badge)
+		return (
+			<Badge badgeContent={badge} color="primary">
+				{icon ?? <FolderIcon />}
+			</Badge>
+		);
+
+	return icon ?? <FolderIcon />;
 };
 
 const ListItem = memo(UnMemoizedListItem);

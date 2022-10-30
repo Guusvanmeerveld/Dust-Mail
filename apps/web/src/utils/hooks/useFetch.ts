@@ -126,6 +126,17 @@ const useHttpClient = (): HttpClient => {
 				newID: newBoxID
 			});
 		},
+		async getMessageCount(boxes, flag, token) {
+			const { data } = await instance.get("/mail/message/count", {
+				headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+				params: {
+					boxes: boxes.join(","),
+					flag
+				}
+			});
+
+			return data;
+		},
 		async getMessage(noImages, darkMode, messageID, boxID) {
 			const { data } = await instance.get("/mail/message", {
 				params: {

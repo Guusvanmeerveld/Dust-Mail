@@ -11,7 +11,7 @@ export const getBox = async (
 ): Promise<Box> => {
 	return new Promise((resolve, reject) =>
 		_client.openBox(name, readOnly ?? true, (err, box) => {
-			if (box) resolve({ totalMessages: box.messages.total, name: box.name });
+			if (box) resolve({ messages: box.messages, name: box.name });
 			if (err) reject(err);
 		})
 	);

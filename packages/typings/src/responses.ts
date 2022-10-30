@@ -19,6 +19,8 @@ export interface BoxResponse {
 	delimiter: string;
 }
 
+export type MessageCountResponse = Record<string, number>;
+
 export enum GatewayError {
 	Credentials = 1,
 	Timeout = 2,

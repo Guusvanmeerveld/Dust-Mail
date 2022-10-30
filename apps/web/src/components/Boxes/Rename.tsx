@@ -39,6 +39,8 @@ const UnMemoizedRenameBox: FC = () => {
 		(state) => state.setShowRenameBoxDialog
 	);
 
+	const setFetching = useStore((state) => state.setFetching);
+
 	const boxToRename = renameBoxStore((state) => state.boxToRename);
 
 	const fetcher = useHttpClient();
@@ -70,6 +72,8 @@ const UnMemoizedRenameBox: FC = () => {
 
 		const newBoxID = prefix.join(boxToRename.delimiter);
 
+		setFetching(true);
+
 		await fetcher
 			.renameBox(boxToRename.id, newBoxID)
 			.then(() => {
@@ -94,6 +98,8 @@ const UnMemoizedRenameBox: FC = () => {
 
 				if (errorMessage) setError(errorMessage);
 			});
+
+		setFetching(false);
 	};
 
 	return (

@@ -48,6 +48,8 @@ const UnMemoizedDeleteBox: FC = () => {
 		(state) => state.setShowDeleteItemsDialog
 	);
 
+	const setFetching = useStore((state) => state.setFetching);
+
 	const boxesToDelete = deleteBoxStore((state) => state.boxesToDelete);
 	const setBoxesToDelete = deleteBoxStore((state) => state.setBoxesToDelete);
 
@@ -60,6 +62,8 @@ const UnMemoizedDeleteBox: FC = () => {
 	};
 
 	const deleteSelectedItems = async (): Promise<void> => {
+		setFetching(true);
+
 		await fetcher
 			.deleteBox(boxesToDelete)
 			.then(() => {
@@ -81,6 +85,8 @@ const UnMemoizedDeleteBox: FC = () => {
 
 				if (errorMessage) setError(errorMessage);
 			});
+
+		setFetching(false);
 	};
 
 	return (

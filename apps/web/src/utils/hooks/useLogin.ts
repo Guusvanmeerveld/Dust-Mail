@@ -34,15 +34,18 @@ const useFetchBoxes = (): ((token: string) => Promise<void>) => {
 
 		const boxes = await fetcher.getBoxes(token);
 
+		const boxIDs = boxes.map((box) => box.id);
+
+		const unreadCount = await fetcher.getMessageCount(boxIDs, "unread", token);
+
 		setBoxes(
 			nestBoxes(
 				boxes.map((box) => {
 					const foundBox = findBoxInPrimaryBoxesList(box.id);
 
-					if (!foundBox) return box;
-
 					return {
 						...box,
+						unreadCount: unreadCount[box.id],
 						name: foundBox?.name ?? box.name
 					};
 				})

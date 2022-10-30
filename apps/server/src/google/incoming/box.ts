@@ -38,7 +38,10 @@ export const getBox = async (
 		}
 	);
 
-	return { name: data.name, totalMessages: data.messagesTotal };
+	return {
+		name: data.name,
+		messages: { total: data.messagesTotal, new: 0, unseen: 0 }
+	};
 };
 
 export const getBoxMessages = async (

@@ -4,7 +4,8 @@ import {
 	VersionResponse,
 	PublicTokensResponse,
 	IncomingMessage,
-	FullIncomingMessage
+	FullIncomingMessage,
+	MessageCountResponse
 } from "@dust-mail/typings";
 
 import { LoginConfig } from "@interfaces/login";
@@ -24,6 +25,11 @@ export default interface HttpClient {
 	createBox: (id: string) => Promise<void>;
 	deleteBox: (ids: string[]) => Promise<void>;
 	renameBox: (oldBoxID: string, newBoxID: string) => Promise<void>;
+	getMessageCount: (
+		boxes: string[],
+		flag: string,
+		token?: string
+	) => Promise<MessageCountResponse>;
 	getMessage: (
 		noImages: boolean,
 		darkMode: boolean,

@@ -1,11 +1,14 @@
+import Flags from "../flags";
+
 import {
 	IncomingMessage,
 	FullIncomingMessage,
-	BoxResponse
+	BoxResponse,
+	MessageCountResponse
 } from "@dust-mail/typings";
 
 export interface Box {
-	totalMessages: number;
+	messages: { total: number; new: number; unseen: number };
 	name: string;
 }
 
@@ -19,6 +22,10 @@ export default interface IncomingClient {
 	createBox: (boxID: string) => Promise<void>;
 	deleteBox: (boxIDs: string[]) => Promise<void>;
 	renameBox: (oldBoxID: string, newBoxID: string) => Promise<void>;
+	getMessageCount: (
+		boxes: string[],
+		flag: Flags
+	) => Promise<MessageCountResponse>;
 	getMessage: (
 		id: string,
 		boxName: string,

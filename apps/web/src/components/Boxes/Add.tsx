@@ -73,6 +73,8 @@ const UnMemoizedAddBox: FC = () => {
 	const setShowAddBox = useStore((state) => state.setShowAddBox);
 	const showAddBox = useStore((state) => state.showAddBox);
 
+	const setFetching = useStore((state) => state.setFetching);
+
 	const unifiedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
 	const addUnifiedBox = checkedBoxesStore((state) => state.setChecked);
 
@@ -135,7 +137,9 @@ const UnMemoizedAddBox: FC = () => {
 			setBoxes(nestBoxes(flattenedBoxes));
 		}
 
-		if (!box.unifies)
+		if (!box.unifies) {
+			setFetching(true);
+
 			await fetcher
 				.createBox(box.id)
 				.then(() => {
@@ -147,6 +151,9 @@ const UnMemoizedAddBox: FC = () => {
 
 					if (message) setError(message);
 				});
+
+			setFetching(false);
+		}
 	};
 
 	return (

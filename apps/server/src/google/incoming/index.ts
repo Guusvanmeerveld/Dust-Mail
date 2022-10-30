@@ -8,6 +8,7 @@ import { IncomingMessage } from "@dust-mail/typings";
 import { CacheService } from "@cache/cache.service";
 
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import Flags from "@mail/interfaces/flags";
 
 export default class IncomingGoogleClient implements IncomingClient {
 	private messages: Map<string, IncomingMessage[]> = new Map();
@@ -42,6 +43,15 @@ export default class IncomingGoogleClient implements IncomingClient {
 		newBoxID: string
 	): Promise<void> => {
 		return;
+	};
+
+	public getMessageCount = (
+		boxes: string[],
+		flag: Flags
+	): Promise<Record<string, number>> => {
+		return new Promise((resolve) => {
+			resolve(Object.fromEntries(boxes.map((box) => [box, 0])));
+		});
 	};
 
 	public getBoxMessages = async (

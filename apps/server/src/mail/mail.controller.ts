@@ -1,11 +1,13 @@
 import { mailDefaultLimit, mailFetchLimit } from "./constants";
+import Flags from "./interfaces/flags";
 import { AddressValidationPipe } from "./pipes/address.pipe";
 
 import type {
 	Address,
 	BoxResponse,
 	FullIncomingMessage,
-	IncomingMessage
+	IncomingMessage,
+	MessageCountResponse
 } from "@dust-mail/typings";
 
 import {
@@ -191,6 +193,24 @@ export class MailController {
 			});
 
 		return message;
+	}
+
+	@Get("message/count")
+	@UseGuards(AccessTokenAuthGuard)
+	async getMessageCount(
+		@Req() req: Request,
+		@Query("boxes", StringValidationPipe) boxList: string,
+		@Query("flag", StringValidationPipe) flag: Flags
+	): Promise<MessageCountResponse> {
+		if (!boxList) throw new BadRequestException("Missing `boxes` param");
+
+		if (!flag) throw new BadRequestException("Missing `flag` param");
+
+		const boxes = boxList.split(",");
+
+		const client = req.user.incomingClient;
+
+		return await client.getMessageCount(boxes, flag).catch(handleError);
 	}
 
 	@Post("send")

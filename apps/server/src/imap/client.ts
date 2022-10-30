@@ -14,12 +14,17 @@ import Message from "./interfaces/message.interface";
 import {
 	IncomingMessage,
 	ContentType,
-	FullIncomingMessage
+	FullIncomingMessage,
+	MessageCountResponse
 } from "@dust-mail/typings";
 
-import { InternalServerErrorException } from "@nestjs/common";
+import {
+	BadRequestException,
+	InternalServerErrorException
+} from "@nestjs/common";
 
 import parseMessage, { createAddress } from "@src/imap/utils/parseMessage";
+import Flags from "@src/mail/interfaces/flags";
 
 import cleanMainHtml, { cleanTextHtml } from "@utils/cleanHtml";
 import uniqueBy from "@utils/uniqueBy";
@@ -133,7 +138,7 @@ export default class Client implements IncomingClient {
 	): Promise<IncomingMessage[]> => {
 		const box = await this.getBox(boxID);
 
-		const totalMessages = box.totalMessages;
+		const totalMessages = box.messages.total;
 
 		if (totalMessages <= start) return [];
 
@@ -223,6 +228,28 @@ export default class Client implements IncomingClient {
 
 		return results;
 	};
+
+	public getMessageCount = async (
+		boxes: string[],
+		flag: Flags
+	): Promise<MessageCountResponse> =>
+		Object.fromEntries(
+			await Promise.all(
+				boxes.map(async (boxName) => {
+					const box = await this.getBox(boxName);
+
+					let count = 0;
+
+					if (flag == "unread")
+						count = box.messages.unseen ?? box.messages.new ?? 0;
+					else if (flag == "new") count = box.messages.new;
+					else if (flag == "total") count = box.messages.total;
+					else throw new BadRequestException("`flag` parameter is not valid");
+
+					return [boxName, count];
+				})
+			)
+		);
 
 	public getMessage = async (
 		id: string,

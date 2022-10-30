@@ -1,5 +1,3 @@
-import { BoxResponse } from "@dust-mail/typings";
-
 import Box from "@interfaces/box";
 
 /**
@@ -9,7 +7,7 @@ import Box from "@interfaces/box";
  * @param boxes
  * @returns
  */
-const nestBoxes = (boxes: BoxResponse[]): Box[] => {
+const nestBoxes = (boxes: Box[]): Box[] => {
 	let array: Box[] = boxes.map((i) => ({
 		...i,
 		children: []
