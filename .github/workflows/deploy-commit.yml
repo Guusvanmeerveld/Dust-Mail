@@ -2,8 +2,7 @@ name: Test and deploy all apps
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - .github/workflows/deploy-commit.yml
       - fly.toml
