@@ -31,8 +31,9 @@ import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useMessageActions from "@utils/hooks/useMessageActions";
-import useSelectedMessage from "@utils/hooks/useSelectedMessage";
-import useStore from "@utils/hooks/useStore";
+import useSelectedMessage, {
+	useSetSelectedMessage
+} from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 
 const AddressListItem: FC<{ email: string; displayName: string }> = ({
@@ -102,7 +103,7 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 			iframeRef.current?.contentDocument ||
 			iframeRef.current?.contentWindow?.document;
 
-		iframeRef.current?.contentWindow?.addEventListener("message", console.log);
+		// iframeRef.current?.contentWindow?.addEventListener("message", console.log);
 
 		document?.open();
 
@@ -110,11 +111,11 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 
 		document?.close();
 
-		return () =>
-			iframeRef.current?.contentWindow?.removeEventListener(
-				"message",
-				console.log
-			);
+		// return () =>
+		// 	iframeRef.current?.contentWindow?.removeEventListener(
+		// 		"message",
+		// 		console.log
+		// 	);
 	}, [content]);
 
 	return (
@@ -131,13 +132,23 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 	);
 };
 
+const CloseButton: FC = () => {
+	const setSelectedMessage = useSetSelectedMessage();
+
+	return (
+		<IconButton onClick={() => setSelectedMessage()}>
+			<CloseIcon />
+		</IconButton>
+	);
+};
+
 const UnMemoizedMessageOverview: FC = () => {
 	const theme = useTheme();
 
 	const {
 		selectedMessage: data,
 		selectedMessageError: error,
-		setSelectedMessage
+		selectedMessageFetching: isFetching
 	} = useSelectedMessage();
 
 	const messageActions = useMessageActions();
@@ -145,8 +156,6 @@ const UnMemoizedMessageOverview: FC = () => {
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
 	// );
-
-	const isFetching = useStore((state) => state.fetching);
 
 	const [darkMode, setDarkMode] =
 		useLocalStorageState<boolean>("messageDarkMode");
@@ -172,7 +181,7 @@ const UnMemoizedMessageOverview: FC = () => {
 							<>
 								{error && (
 									<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
-										{error}
+										{error.response?.data.message ?? "Unknown error"}
 									</Stack>
 								)}
 								{data && !error && (
@@ -217,9 +226,7 @@ const UnMemoizedMessageOverview: FC = () => {
 
 								<Stack direction="column" spacing={0.5}>
 									<Tooltip title="Close current message">
-										<IconButton onClick={() => setSelectedMessage()}>
-											<CloseIcon />
-										</IconButton>
+										<CloseButton />
 									</Tooltip>
 									<Tooltip title="Toggle dark mode for message view">
 										<IconButton onClick={() => setDarkMode(() => !darkMode)}>
@@ -317,13 +324,11 @@ const UnMemoizedMessageOverview: FC = () => {
 					</Card>
 				</>
 			)}
-			{!data && (
-				<Box>
-					<Typography variant="h6">No message selected.</Typography>
-					<Typography>
-						Get started by selecting a message on the left.
-					</Typography>
-					{/* <Typography>
+
+			<Box sx={{ display: !data ? "block" : "none" }}>
+				<Typography variant="h6">No message selected.</Typography>
+				<Typography>Get started by selecting a message on the left.</Typography>
+				{/* <Typography>
 						Or start by{" "}
 						<Link
 							sx={{ cursor: "pointer" }}
@@ -333,8 +338,7 @@ const UnMemoizedMessageOverview: FC = () => {
 						</Link>
 						.
 					</Typography> */}
-				</Box>
-			)}
+			</Box>
 		</>
 	);
 };

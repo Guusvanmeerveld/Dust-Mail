@@ -1,8 +1,6 @@
 import create from "zustand";
 
-import { description } from "../../../package.json";
-
-import {
+import React, {
 	useEffect,
 	useState,
 	FC,
@@ -313,9 +311,10 @@ const AdvancedLoginMenu: FC = () => {
 	);
 };
 
-const LoginForm: FC = () => {
-	const theme = useTheme();
-
+const LoginForm: FC<{
+	children: React.ReactNode;
+	trailing?: React.ReactNode;
+}> = ({ children, trailing }) => {
 	const fetching = useStore((state) => state.fetching);
 
 	const [username, setUsername] = useState("");
@@ -353,19 +352,13 @@ const LoginForm: FC = () => {
 		<Stack direction="column" spacing={2}>
 			<form onSubmit={onSubmit}>
 				<Stack direction="column" spacing={2}>
-					<img
-						style={{ width: theme.spacing(15), margin: "auto" }}
-						src="/android-chrome-512x512.png"
-						alt="logo"
-					/>
-
-					<Typography variant="h2">{import.meta.env.VITE_APP_NAME}</Typography>
-					<Typography variant="h5">{description}</Typography>
+					{children}
 
 					<Credentials
 						error={error}
 						identifier="default"
 						setError={setError}
+						required
 						setPassword={setPassword}
 						setUsername={setUsername}
 					/>
@@ -388,11 +381,11 @@ const LoginForm: FC = () => {
 								{error.message}
 							</Alert>
 						)}
-
-					<OtherLogins />
 				</Stack>
 			</form>
+			<OtherLogins />
 			<AdvancedLoginMenu />
+			{trailing}
 		</Stack>
 	);
 };

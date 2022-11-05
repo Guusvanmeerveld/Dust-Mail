@@ -48,7 +48,7 @@ export class GoogleController {
 
 		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
 
-		const [accessToken, refreshToken] = await this.googleService
+		const [accessToken, refreshToken, username] = await this.googleService
 			.login(code, redirect_uri)
 			.catch(handleError);
 
@@ -58,6 +58,8 @@ export class GoogleController {
 		];
 
 		res.cookie("tokens", tokens);
+
+		res.cookie("username", username);
 
 		res.sendFile(this.pathToOAuthPage);
 	}

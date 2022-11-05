@@ -2,7 +2,7 @@ import { FC, memo, useMemo, useState, MouseEvent, KeyboardEvent } from "react";
 
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Breadcrumbs from "@mui/material/Breadcrumbs";
+import MUIBreadCrumbs from "@mui/material/Breadcrumbs";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Stack from "@mui/material/Stack";
@@ -12,39 +12,18 @@ import Typography from "@mui/material/Typography";
 import MenuIcon from "@mui/icons-material/Menu";
 import NavigateNext from "@mui/icons-material/NavigateNext";
 
-import useBoxes from "@utils/hooks/useBoxes";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
+import useUser from "@utils/hooks/useUser";
 
 import Avatar from "@components/Navbar/Avatar";
 import Drawer from "@components/Navbar/Drawer";
 
-const UnMemoizedNavbar: FC = () => {
+const UnMemoizedBreadCrumbs: FC = () => {
 	const theme = useTheme();
 
-	const fetching = useStore((state) => state.fetching);
-
-	const [drawerState, setDrawerState] = useState(false);
-
 	const [selectedBox, setSelectedBox] = useSelectedBox();
-
-	const [flattenedBoxes] = useBoxes();
-
-	const toggleDrawer = useMemo(
-		() => (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
-			if (
-				event.type === "keydown" &&
-				((event as KeyboardEvent).key === "Tab" ||
-					(event as KeyboardEvent).key === "Shift")
-			) {
-				return;
-			}
-
-			setDrawerState(open);
-		},
-		[]
-	);
 
 	const secondaryColor = useMemo(
 		() =>
@@ -62,12 +41,16 @@ const UnMemoizedNavbar: FC = () => {
 		[theme.palette]
 	);
 
+	const { user } = useUser();
+
 	const breadcrumbs = useMemo(() => {
 		const boxIDSplit = selectedBox?.id.split(selectedBox.delimiter);
 
 		return boxIDSplit?.map((crumb, i) => {
 			const boxID = boxIDSplit.slice(0, i + 1).join(selectedBox?.delimiter);
-			const boxName = flattenedBoxes?.find((box) => box.id == boxID)?.name;
+			const boxName = user?.boxes.flattened?.find(
+				(box) => box.id == boxID
+			)?.name;
 
 			const isSelectedBox = boxID == selectedBox?.id;
 
@@ -79,9 +62,7 @@ const UnMemoizedNavbar: FC = () => {
 					}}
 					key={boxID}
 					onClick={() => {
-						if (isSelectedBox) return;
-
-						setSelectedBox(boxID);
+						if (!isSelectedBox) setSelectedBox(boxID);
 					}}
 				>
 					{boxName ?? "Unknown box"}
@@ -89,6 +70,60 @@ const UnMemoizedNavbar: FC = () => {
 			);
 		});
 	}, [selectedBox, primaryColor, secondaryColor]);
+
+	return (
+		<MUIBreadCrumbs
+			sx={{
+				display: breadcrumbs ? "flex" : "none",
+				color: secondaryColor
+			}}
+			separator={<NavigateNext fontSize="small" />}
+			aria-label="breadcrumb"
+		>
+			{breadcrumbs}
+		</MUIBreadCrumbs>
+	);
+};
+
+const BreadCrumbs = memo(UnMemoizedBreadCrumbs);
+
+const FetchBar: FC = () => {
+	const fetching = useStore((state) => state.fetching);
+
+	return (
+		<Box
+			sx={{
+				display: fetching ? "block" : "none",
+				position: "absolute",
+				bottom: 0,
+				width: 1,
+				height: 2
+			}}
+		>
+			<LinearProgress color="secondary" />
+		</Box>
+	);
+};
+
+const UnMemoizedNavbar: FC = () => {
+	const theme = useTheme();
+
+	const [drawerState, setDrawerState] = useState(false);
+
+	const toggleDrawer = useMemo(
+		() => (open: boolean) => (event: KeyboardEvent | MouseEvent) => {
+			if (
+				event.type === "keydown" &&
+				((event as KeyboardEvent).key === "Tab" ||
+					(event as KeyboardEvent).key === "Shift")
+			) {
+				return;
+			}
+
+			setDrawerState(open);
+		},
+		[]
+	);
 
 	return (
 		<>
@@ -131,26 +166,12 @@ const UnMemoizedNavbar: FC = () => {
 								</Typography>
 							</Stack>
 
-							{breadcrumbs && (
-								<Breadcrumbs
-									sx={{
-										color: secondaryColor
-									}}
-									separator={<NavigateNext fontSize="small" />}
-									aria-label="breadcrumb"
-								>
-									{breadcrumbs}
-								</Breadcrumbs>
-							)}
+							<BreadCrumbs />
 						</Stack>
 
 						<Avatar />
 					</Toolbar>
-					{fetching && (
-						<Box sx={{ position: "absolute", bottom: 0, width: 1, height: 2 }}>
-							<LinearProgress color="secondary" />
-						</Box>
-					)}
+					<FetchBar />
 				</>
 			</AppBar>
 

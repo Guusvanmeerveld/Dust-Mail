@@ -1,7 +1,7 @@
 import IncomingGoogleClient from "./incoming";
 import Config from "./interfaces/config";
 import exchangeToken from "./utils/exchangeToken";
-import getUserID from "./utils/getUserID";
+import getUser from "./utils/getUser";
 
 import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
 
@@ -31,17 +31,17 @@ export class GoogleService {
 	public login = async (
 		code: string,
 		redirectUri: string
-	): Promise<[accessToken: string, refreshToken: string]> => {
+	): Promise<[accessToken: string, refreshToken: string, username: string]> => {
 		const configWithoutUserID = await exchangeToken(code, redirectUri);
 
-		const userID = await getUserID(
+		const user = await getUser(
 			configWithoutUserID.tokenType,
 			configWithoutUserID.accessToken
 		);
 
-		const config = { ...configWithoutUserID, userID };
+		const config = { ...configWithoutUserID, userID: user.id };
 
-		this.clients.set(userID, config);
+		this.clients.set(user.id, config);
 
 		const services: {
 			incoming: IncomingServiceType;
@@ -70,7 +70,7 @@ export class GoogleService {
 
 		const refreshToken = this.jwtService.sign(refreshTokenPayload);
 
-		return [accessToken, refreshToken];
+		return [accessToken, refreshToken, user.email];
 	};
 
 	public getClients = (config: Config): [incoming: IncomingClient] => {

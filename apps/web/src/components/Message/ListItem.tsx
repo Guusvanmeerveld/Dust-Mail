@@ -5,6 +5,7 @@ import { IncomingMessage } from "@dust-mail/typings";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import useAvatar from "@utils/hooks/useAvatar";
@@ -26,9 +27,13 @@ const UnMemoizedMessageListItem: FC<{
 
 	const setSelectedMessage = useSetSelectedMessage();
 
-	const from = message.from
-		.map((from) => from.displayName || from.email)
-		.join(", ");
+	const [from, fromAddresses] = useMemo(
+		() => [
+			message.from.map((from) => from.displayName || from.email).join(", "),
+			message.from.map((from) => from.email).join(", ")
+		],
+		[message]
+	);
 
 	const avatar = useAvatar(
 		from.length != 0 ? message.from[0].email : undefined
@@ -106,8 +111,12 @@ const UnMemoizedMessageListItem: FC<{
 					</Box>
 					<Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
 						<Typography noWrap textOverflow="ellipsis" variant="body2">
-							{from || "(Unknown sender)"} •{" "}
-							{new Date(message.date).toLocaleDateString()}
+							<Tooltip title={fromAddresses}>
+								<Typography sx={{ display: "inline" }} variant="body2">
+									{from || "(Unknown sender)"}
+								</Typography>
+							</Tooltip>{" "}
+							• {new Date(message.date).toLocaleDateString()}
 						</Typography>
 						<Typography
 							noWrap

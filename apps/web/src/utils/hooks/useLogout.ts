@@ -1,21 +1,32 @@
-import useLocalStorageState from "use-local-storage-state";
+import { useCurrentUser, useRemoveUser, useUsers } from "./useUser";
 
-import { LocalToken } from "@dust-mail/typings";
+import { useMemo } from "react";
 
 import useStore from "@utils/hooks/useStore";
 
 const useLogout = (): (() => void) => {
-	const [, setAccessToken] = useLocalStorageState<LocalToken>("accessToken");
-	const [, setRefreshToken] = useLocalStorageState<LocalToken>("refreshToken");
+	const removeUser = useRemoveUser();
+	const [users] = useUsers();
+	const [currentUser, setCurrentUser] = useCurrentUser();
 
 	const setFetching = useStore((state) => state.setFetching);
 
-	return () => {
-		setFetching(false);
+	const logout = useMemo(
+		() => (): void => {
+			setFetching(false);
 
-		setAccessToken(undefined);
-		setRefreshToken(undefined);
-	};
+			if (!currentUser || !users) return;
+
+			removeUser(currentUser?.username);
+
+			const newCurrentUser = users?.shift();
+
+			setCurrentUser(newCurrentUser?.username);
+		},
+		[users, currentUser, setFetching]
+	);
+
+	return logout;
 };
 
 export default useLogout;

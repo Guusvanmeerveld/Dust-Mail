@@ -1,8 +1,10 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import useUser from "./useUser";
+
 import axios from "axios";
 
-import { LocalToken, VersionResponse, GatewayError } from "@dust-mail/typings";
+import { VersionResponse, GatewayError } from "@dust-mail/typings";
 
 import { messageCountForPage } from "@src/constants";
 
@@ -15,18 +17,18 @@ const useHttpClient = (): HttpClient => {
 		defaultValue: import.meta.env.VITE_DEFAULT_SERVER
 	});
 
+	const { user } = useUser();
+
 	const isUnixSocket = backendServer.startsWith(UNIX_PREFIX);
 
 	if (isUnixSocket) {
 		backendServer = backendServer.replace(UNIX_PREFIX, "");
 	}
 
-	const [token] = useLocalStorageState<LocalToken>("accessToken");
-
 	const instance = axios.create({
 		baseURL: backendServer,
 		headers: {
-			Authorization: `Bearer ${token?.body}`
+			Authorization: `Bearer ${user?.accessToken?.body}`
 		}
 	});
 

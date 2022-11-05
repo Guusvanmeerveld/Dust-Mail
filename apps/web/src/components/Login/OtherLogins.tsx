@@ -22,6 +22,11 @@ import useTheme from "@utils/hooks/useTheme";
 
 const oauthWindowLabel = "oauth2-login";
 
+interface OAuthLoginResponse {
+	tokens: LoginResponse;
+	username: string;
+}
+
 const useWebOAuth = (): ((oauthLink: string) => void) => {
 	const [webWindow, setWebWindow] = useState<Window>();
 
@@ -36,7 +41,16 @@ const useWebOAuth = (): ((oauthLink: string) => void) => {
 
 		setWebWindow(undefined);
 
-		await login(JSON.parse(e.data), { redirectToDashboard: true });
+		console.log();
+
+		const { username, tokens: config }: OAuthLoginResponse = JSON.parse(e.data);
+
+		console.log(config, username);
+
+		await login(config, {
+			redirectToDashboard: true,
+			username
+		});
 	};
 
 	useEffect(() => {
@@ -59,7 +73,7 @@ const useWebOAuth = (): ((oauthLink: string) => void) => {
 };
 
 const useTauriOAuth = (): ((oauthLink: string) => void) => {
-	const [token, setToken] = useState<LoginResponse>();
+	const [token, setToken] = useState<OAuthLoginResponse>();
 
 	const login = useLogin();
 
@@ -71,7 +85,7 @@ const useTauriOAuth = (): ((oauthLink: string) => void) => {
 			minHeight: 300
 		});
 
-		const unlisten = await webview.listen<LoginResponse>(
+		const unlisten = await webview.listen<OAuthLoginResponse>(
 			"oauth_login_token",
 			(e) => {
 				setToken(e.payload);
@@ -82,7 +96,14 @@ const useTauriOAuth = (): ((oauthLink: string) => void) => {
 
 		// await webview.close();
 
-		if (token) login(token);
+		if (token) {
+			const { username, tokens: config } = token;
+
+			await login(config, {
+				redirectToDashboard: true,
+				username
+			});
+		}
 	};
 };
 
@@ -117,7 +138,8 @@ const OtherLogins: FC = () => {
 			approval_prompt: "force",
 			scope: [
 				"https://mail.google.com/",
-				"https://www.googleapis.com/auth/userinfo.profile"
+				"https://www.googleapis.com/auth/userinfo.profile",
+				"https://www.googleapis.com/auth/userinfo.email"
 			].join(" "),
 			client_id: oauthTokens.google,
 			redirect_uri: `${backendServer}/google/login`

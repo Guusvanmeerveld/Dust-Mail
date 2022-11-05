@@ -1,4 +1,4 @@
-import useLocalStorageState from "use-local-storage-state";
+import { description } from "../../package.json";
 
 import { FC } from "react";
 import { Navigate } from "react-router-dom";
@@ -12,8 +12,6 @@ import Typography from "@mui/material/Typography";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import InfoIcon from "@mui/icons-material/Info";
 import LightModeIcon from "@mui/icons-material/LightMode";
-
-import MailBox from "@interfaces/box";
 
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -34,8 +32,6 @@ const Login: FC = () => {
 
 	const user = useUser();
 
-	const [defaultBox] = useLocalStorageState<MailBox>("defaultBox");
-
 	return (
 		<>
 			{fetching && (
@@ -43,9 +39,7 @@ const Login: FC = () => {
 					<LinearProgress color="secondary" />
 				</Box>
 			)}
-			{user.isLoggedIn && defaultBox?.id && (
-				<Navigate to={`/dashboard/${defaultBox?.id}`} replace={true} />
-			)}
+			{user.isLoggedIn && <Navigate to={`/dashboard`} replace={true} />}
 			<Layout>
 				<Box
 					sx={{
@@ -73,7 +67,18 @@ const Login: FC = () => {
 						m: "auto"
 					}}
 				>
-					<LoginForm />
+					<LoginForm>
+						<img
+							style={{ width: theme.spacing(15), margin: "auto" }}
+							src="/android-chrome-512x512.png"
+							alt="logo"
+						/>
+
+						<Typography variant="h2">
+							{import.meta.env.VITE_APP_NAME}
+						</Typography>
+						<Typography variant="h5">{description}</Typography>
+					</LoginForm>
 				</Box>
 				<Box
 					sx={{

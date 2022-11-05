@@ -1,18 +1,18 @@
-import useLocalStorageState from "use-local-storage-state";
-
 import { FC, memo, useEffect, useMemo } from "react";
 import { useQuery } from "react-query";
 
-import { LocalToken, LoginResponse } from "@dust-mail/typings";
+import { LoginResponse } from "@dust-mail/typings";
 
 import useFetch from "@utils/hooks/useFetch";
 import useLogin from "@utils/hooks/useLogin";
 import useLogout from "@utils/hooks/useLogout";
 import useStore from "@utils/hooks/useStore";
+import useUser from "@utils/hooks/useUser";
 
 const UnMemoizedLoginStateHandler: FC = () => {
-	const [accessToken] = useLocalStorageState<LocalToken>("accessToken");
-	const [refreshToken] = useLocalStorageState<LocalToken>("refreshToken");
+	const { user } = useUser();
+
+	useEffect(() => console.log("login state"), [user]);
 
 	const setFetching = useStore((state) => state.setFetching);
 	const fetching = useStore((state) => state.fetching);
@@ -24,15 +24,15 @@ const UnMemoizedLoginStateHandler: FC = () => {
 
 	const accessTokenExpired = useMemo(
 		() =>
-			accessToken != undefined &&
-			new Date(accessToken.expires).getTime() < Date.now(),
-		[fetching, accessToken]
+			user?.accessToken != undefined &&
+			new Date(user?.accessToken.expires).getTime() < Date.now(),
+		[fetching, user?.accessToken]
 	);
 
 	if (
 		accessTokenExpired &&
-		refreshToken &&
-		new Date(refreshToken?.expires).getTime() < Date.now()
+		user?.refreshToken &&
+		new Date(user?.refreshToken?.expires).getTime() < Date.now()
 	) {
 		logout();
 	}
@@ -44,12 +44,12 @@ const UnMemoizedLoginStateHandler: FC = () => {
 	} = useQuery<LoginResponse | undefined>(
 		"refreshTokens",
 		() => {
-			if (!refreshToken) return undefined;
+			if (!user?.refreshToken) return undefined;
 
-			return fetcher.refresh(refreshToken.body);
+			return fetcher.refresh(user.refreshToken.body);
 		},
 		{
-			enabled: !!(accessTokenExpired && refreshToken)
+			enabled: !!(accessTokenExpired && user?.refreshToken)
 		}
 	);
 

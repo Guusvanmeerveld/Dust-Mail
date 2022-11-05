@@ -1,4 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
 import create from "zustand";
 
 import { FC, memo, useState } from "react";
@@ -15,13 +14,10 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
-import Box from "@interfaces/box";
-
-import useBoxes from "@utils/hooks/useBoxes";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
-import nestBoxes from "@utils/nestBoxes";
+import { useRemoveBox } from "@utils/hooks/useUser";
 
 interface DeleteBoxStore {
 	boxesToDelete: string[];
@@ -34,8 +30,7 @@ export const deleteBoxStore = create<DeleteBoxStore>((set) => ({
 }));
 
 const UnMemoizedDeleteBox: FC = () => {
-	let [flattenedBoxes] = useBoxes();
-	const [, setBoxes] = useLocalStorageState<Box[]>("boxes");
+	const removeBox = useRemoveBox();
 
 	const fetcher = useHttpClient();
 
@@ -69,13 +64,7 @@ const UnMemoizedDeleteBox: FC = () => {
 			.then(() => {
 				openSnackbar(`Folder(s) '${boxesToDelete.join("', '")}' deleted`);
 
-				if (flattenedBoxes) {
-					flattenedBoxes = flattenedBoxes.filter(
-						(box) => !boxesToDelete.includes(box.id)
-					);
-
-					setBoxes(nestBoxes(flattenedBoxes));
-				}
+				removeBox(boxesToDelete);
 
 				deleteItemsDialogOnClose();
 				setBoxesToDelete([]);

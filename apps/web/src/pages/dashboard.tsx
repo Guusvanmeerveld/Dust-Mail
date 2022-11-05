@@ -31,7 +31,7 @@ const Dashboard: FC = () => {
 
 	const scrollBarSx = useMemo(() => scrollbarStyles(theme), [theme]);
 
-	const user = useUser();
+	const { isLoggedIn } = useUser();
 
 	const [messageListWidth, setMessageListWidth] = useLocalStorageState<number>(
 		"messageListWidth",
@@ -101,7 +101,7 @@ const Dashboard: FC = () => {
 
 	return (
 		<>
-			{!user.isLoggedIn && <Navigate to="/" replace={true} />}
+			{!isLoggedIn && <Navigate to="/" replace={true} />}
 			<LoginStateHandler />
 			<Snackbar />
 			<Layout withNavbar>

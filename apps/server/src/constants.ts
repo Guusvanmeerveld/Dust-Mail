@@ -7,7 +7,7 @@ export const getPort = () => parseInt(process.env.PORT) || 3000;
 
 export const getUnixSocketPath = () => process.env.UNIX_SOCKET_PATH;
 
-export const getBasePath = () => process.env.BASE_PATH;
+export const getBasePath = () => process.env.BASE_PATH ?? "";
 
 const getJwtSecretLocation = () =>
 	process.env.JWT_SECRET_LOCATION ?? join(process.cwd(), "secret");

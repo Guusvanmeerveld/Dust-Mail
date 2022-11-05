@@ -22,10 +22,14 @@ const getCookie = (cname) => {
 
 const tokens = JSON.parse(getCookie("tokens").replace("j:", ""));
 
+const username = getCookie("username");
+
+document.getElementById("text").innerHTML = "Logging in, please wait...";
+
 if ("__TAURI__" in window) {
-	window.__TAURI__.tauri.invoke("oauth_login_token", tokens);
+	window.__TAURI__.tauri.invoke("oauth_login_token", { tokens, username });
 } else if ("opener" in window && "postMessage" in window.opener) {
-	window.opener.postMessage(JSON.stringify(tokens), "*");
+	window.opener.postMessage(JSON.stringify({ tokens, username }), "*");
 
 	document.getElementById("text").innerHTML =
 		"Login complete, you can now close this window.";

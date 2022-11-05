@@ -1,4 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
 import create from "zustand";
 
 import { FC, memo, useState } from "react";
@@ -17,11 +16,10 @@ import TextField from "@mui/material/TextField";
 
 import Box from "@interfaces/box";
 
-import useBoxes from "@utils/hooks/useBoxes";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
-import nestBoxes from "@utils/nestBoxes";
+import { useModifyBox } from "@utils/hooks/useUser";
 
 interface RenameBoxStore {
 	boxToRename: Box | undefined;
@@ -39,6 +37,8 @@ const UnMemoizedRenameBox: FC = () => {
 		(state) => state.setShowRenameBoxDialog
 	);
 
+	const modifyBox = useModifyBox();
+
 	const setFetching = useStore((state) => state.setFetching);
 
 	const boxToRename = renameBoxStore((state) => state.boxToRename);
@@ -46,10 +46,6 @@ const UnMemoizedRenameBox: FC = () => {
 	const fetcher = useHttpClient();
 
 	const openSnackbar = useSnackbar();
-
-	let [flattenedBoxes] = useBoxes();
-
-	const [, setBoxes] = useLocalStorageState<Box[]>("boxes");
 
 	const [newName, setNewName] = useState("");
 
@@ -62,7 +58,7 @@ const UnMemoizedRenameBox: FC = () => {
 	};
 
 	const renameBox = async (): Promise<void> => {
-		if (!boxToRename) return;
+		if (!boxToRename || !newName) return;
 
 		const prefix = boxToRename.id.split(boxToRename.delimiter);
 
@@ -79,17 +75,9 @@ const UnMemoizedRenameBox: FC = () => {
 			.then(() => {
 				openSnackbar(`Folder '${boxToRename.name}' renamed to '${newName}'`);
 
-				if (flattenedBoxes) {
-					flattenedBoxes = flattenedBoxes.filter(
-						(box) => box.id != boxToRename.id
-					);
+				const newBox: Box = { ...boxToRename, id: newBoxID, name: newName };
 
-					const newBox: Box = { ...boxToRename, id: newBoxID, name: newName };
-
-					flattenedBoxes.push(newBox);
-
-					setBoxes(nestBoxes(flattenedBoxes));
-				}
+				modifyBox(boxToRename.id, newBox);
 
 				handleClose();
 			})
@@ -119,6 +107,7 @@ const UnMemoizedRenameBox: FC = () => {
 						type="text"
 						fullWidth
 						variant="standard"
+						required
 						value={newName}
 						onChange={(e) => setNewName(e.target.value)}
 						sx={{ mb: 2 }}

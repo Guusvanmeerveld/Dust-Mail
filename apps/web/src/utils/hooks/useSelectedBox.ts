@@ -1,4 +1,4 @@
-import useBoxes from "./useBoxes";
+import useUser from "./useUser";
 
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,28 +8,28 @@ import Box from "@interfaces/box";
 const useSelectedBox = (): [Box | void, (boxID?: string) => void] => {
 	const params = useParams<{ boxID: string }>();
 
-	const [flattenedBoxes] = useBoxes();
+	const { user } = useUser();
 
 	const navigate = useNavigate();
 
+	const boxID = params.boxID;
+
 	const setSelectedBox = useMemo(
 		() =>
-			(boxID?: string): void =>
-				navigate(`/dashboard/${encodeURIComponent(boxID ?? "")}`),
+			(id?: string): void =>
+				navigate(`/dashboard/${encodeURIComponent(id ?? "")}`),
 		[]
 	);
 
 	return useMemo(() => {
-		const boxID = params.boxID;
-
-		if (boxID && flattenedBoxes) {
-			const box = flattenedBoxes.find((item) => item.id == boxID);
+		if (boxID && user?.boxes.flattened) {
+			const box = user.boxes.flattened.find((item) => item.id == boxID);
 
 			return [box, setSelectedBox];
 		}
 
 		return [, setSelectedBox];
-	}, [params.boxID, flattenedBoxes]);
+	}, [boxID, setSelectedBox, user?.boxes.flattened]);
 };
 
 export default useSelectedBox;

@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "react-query";
 
+import { AxiosError } from "axios";
+
+import { ErrorResponse } from "@dust-mail/typings";
+
 // import { AxiosError } from "axios";
 import useFetch from "@utils/hooks/useFetch";
 
@@ -28,9 +32,12 @@ export default function useAvatar(
 		setNoAvatar = (date) => sessionStorage.setItem(id, date.toString());
 	}
 
-	const blacklisted = noAvatar != undefined;
+	const blacklisted = !!noAvatar;
 
-	const { data, isLoading, error } = useQuery<string>(
+	const { data, isLoading, error } = useQuery<
+		string,
+		AxiosError<ErrorResponse>
+	>(
 		["avatar", email],
 		() => fetcher.getAvatar(email),
 		// .catch((error: AxiosError) => {

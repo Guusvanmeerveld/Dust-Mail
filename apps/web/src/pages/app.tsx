@@ -1,4 +1,5 @@
 import NotFound from "./404";
+import AddAccount from "./addAccount";
 import Dashboard from "./dashboard";
 import Login from "./login";
 
@@ -24,6 +25,7 @@ const App: FC = () => {
 				<BrowserRouter>
 					<Routes>
 						<Route path="/" element={<Login />} />
+						<Route path="add-account" element={<AddAccount />} />
 						<Route path="dashboard" element={<Dashboard />}>
 							<Route path="compose" element={<Dashboard />} />
 							<Route path=":boxID" element={<Dashboard />}>

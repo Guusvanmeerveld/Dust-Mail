@@ -1,5 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
-
 import {
 	useEffect,
 	useRef,
@@ -13,7 +11,7 @@ import { useInfiniteQuery } from "react-query";
 
 import { AxiosError } from "axios";
 
-import { IncomingMessage, ErrorResponse, LocalToken } from "@dust-mail/typings";
+import { IncomingMessage, ErrorResponse } from "@dust-mail/typings";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -43,10 +41,11 @@ import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
+import useUser from "@utils/hooks/useUser";
 
 import MessageListItem from "@components/Message/ListItem";
 
-const ActionBar: FC<{
+const UnMemoizedActionBar: FC<{
 	setFilter: (filter: string) => void;
 	refetch: () => void;
 }> = ({ setFilter, refetch }) => {
@@ -135,6 +134,8 @@ const ActionBar: FC<{
 	);
 };
 
+const ActionBar = memo(UnMemoizedActionBar);
+
 const UnMemoizedMessageList: FC = () => {
 	const fetcher = useFetch();
 
@@ -145,7 +146,7 @@ const UnMemoizedMessageList: FC = () => {
 	const [selectedBox] = useSelectedBox();
 	const { selectedMessage } = useSelectedMessage();
 
-	const [token] = useLocalStorageState<LocalToken>("accessToken");
+	const { user } = useUser();
 
 	// Request the messages using react-query
 	const {
@@ -156,13 +157,13 @@ const UnMemoizedMessageList: FC = () => {
 		isFetchingNextPage,
 		refetch
 	} = useInfiniteQuery<IncomingMessage[], AxiosError<ErrorResponse>>(
-		["box", selectedBox?.id, filter, token?.body],
+		["box", selectedBox?.id, filter, user?.accessToken?.body],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];
 			}
 
-			if (!selectedBox?.id || !token?.body) return [];
+			if (!selectedBox?.id || !user?.accessToken?.body) return [];
 
 			return fetcher.getBox(selectedBox.id, pageParam, filter);
 		},
@@ -246,7 +247,9 @@ const UnMemoizedMessageList: FC = () => {
 				ref={rightClickMenuBox}
 			/>
 
-			<ActionBar refetch={refetch} setFilter={setFilter} />
+			<Box sx={{ display: selectedBox ? "block" : "none" }}>
+				<ActionBar refetch={refetch} setFilter={setFilter} />
+			</Box>
 
 			{data &&
 				data.pages &&

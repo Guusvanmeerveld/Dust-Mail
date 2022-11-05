@@ -25,7 +25,7 @@ export class ImapService {
 
 	private readonly clients: Map<string, Imap>;
 
-	public login = async (config: Config): Promise<Imap> => {
+	private _login = async (config: Config): Promise<Imap> => {
 		const client = new Imap({
 			user: config.username,
 			password: config.password,
@@ -38,29 +38,35 @@ export class ImapService {
 			}
 		});
 
-		return await connect(client).then(async (_client) => {
-			const identifier = createIdentifier(config);
+		const _client = await connect(client);
 
-			if (!this.clients.get(identifier)) this.clients.set(identifier, _client);
+		const identifier = createIdentifier(config);
+
+		const existingClient = this.clients.get(identifier);
+
+		if (!existingClient) {
+			this.clients.set(identifier, _client);
 
 			return _client;
-		});
-	};
+		}
 
+		return existingClient;
+	};
+	public get login() {
+		return this._login;
+	}
+	public set login(value) {
+		this._login = value;
+	}
 	public get = async (config: Config): Promise<IncomingClient> => {
 		const identifier = createIdentifier(config);
 
 		let client = this.clients.get(identifier);
 
-		if (!client) {
-			client = await this.login(config);
-		} else {
-			if (client.state != "authenticated") client.connect();
-		}
+		if (!client) client = await this.login(config);
 
 		return new Client(client, this.cacheService, identifier);
 	};
-
 	public logout = async (config: Config): Promise<void> => {
 		const identifier = createIdentifier(config);
 

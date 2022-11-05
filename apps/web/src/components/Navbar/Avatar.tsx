@@ -1,6 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { FC, memo, useState, MouseEvent } from "react";
+import { FC, memo, useState, MouseEvent, useMemo } from "react";
+import { useNavigate } from "react-router";
 
 import MUIAvatar from "@mui/material/Avatar";
 import Divider from "@mui/material/Divider";
@@ -17,10 +18,13 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import AddAccountIcon from "@mui/icons-material/PersonAdd";
 import SettingsIcon from "@mui/icons-material/Settings";
 
+import User from "@interfaces/user";
+
+import useAvatar from "@utils/hooks/useAvatar";
 import useLogout from "@utils/hooks/useLogout";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import useUser from "@utils/hooks/useUser";
+import useUser, { useCurrentUser, useUsers } from "@utils/hooks/useUser";
 
 const DarkModeListItem: FC = () => {
 	const [darkMode, setDarkMode] = useLocalStorageState<boolean>("darkMode");
@@ -39,10 +43,68 @@ const DarkModeListItem: FC = () => {
 	);
 };
 
+const AccountListItem: FC<{ user: User }> = ({ user }) => {
+	const theme = useTheme();
+
+	const [, setCurrentUser] = useCurrentUser();
+
+	const navigate = useNavigate();
+
+	const avatar = useAvatar(user.username);
+
+	return (
+		<MenuItem
+			onClick={() => {
+				setCurrentUser(user.username);
+				navigate("/dashboard");
+			}}
+		>
+			<ListItemIcon>
+				<MUIAvatar
+					sx={{
+						bgcolor: theme.palette.secondary.main,
+						height: theme.spacing(4),
+						width: theme.spacing(4),
+						mr: 1
+					}}
+					src={avatar?.data}
+					alt={user.username.toUpperCase()}
+				/>
+			</ListItemIcon>
+			<ListItemText>{user.username}</ListItemText>
+		</MenuItem>
+	);
+};
+
+const AccountList: FC = () => {
+	const [users] = useUsers();
+
+	return (
+		<>
+			{users?.slice(0, 5).map((user) => (
+				<AccountListItem key={user.username} user={user} />
+			))}
+		</>
+	);
+};
+
+const AddAccountListItem: FC = () => {
+	const navigate = useNavigate();
+
+	return (
+		<MenuItem onClick={() => navigate("/add-account")}>
+			<ListItemIcon>
+				<AddAccountIcon />
+			</ListItemIcon>
+			<ListItemText>Add account</ListItemText>
+		</MenuItem>
+	);
+};
+
 const UnMemoizedAvatar: FC = () => {
 	const theme = useTheme();
 
-	const user = useUser();
+	const { user } = useUser();
 
 	const logout = useLogout();
 
@@ -51,28 +113,33 @@ const UnMemoizedAvatar: FC = () => {
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
 
+	const avatar = useAvatar(user?.username);
+
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
 	// );
 
 	const menuItems: { title: string; icon: JSX.Element; onClick: () => void }[] =
-		[
-			// {
-			// 	title: "New message",
-			// 	icon: <ComposeIcon fontSize="small" />,
-			// 	onClick: () => setShowMessageComposer(true)
-			// },
-			{
-				title: "Settings",
-				icon: <SettingsIcon fontSize="small" />,
-				onClick: () => setShowSettings(true)
-			},
-			{
-				title: "Logout",
-				icon: <LogoutIcon fontSize="small" />,
-				onClick: () => logout()
-			}
-		];
+		useMemo(
+			() => [
+				// {
+				// 	title: "New message",
+				// 	icon: <ComposeIcon fontSize="small" />,
+				// 	onClick: () => setShowMessageComposer(true)
+				// },
+				{
+					title: "Settings",
+					icon: <SettingsIcon fontSize="small" />,
+					onClick: () => setShowSettings(true)
+				},
+				{
+					title: "Logout",
+					icon: <LogoutIcon fontSize="small" />,
+					onClick: () => logout()
+				}
+			],
+			[setShowSettings, logout]
+		);
 
 	return (
 		<>
@@ -82,8 +149,8 @@ const UnMemoizedAvatar: FC = () => {
 			>
 				<MUIAvatar
 					sx={{ bgcolor: theme.palette.secondary.main }}
-					src={user.avatar}
-					alt={user.username?.toUpperCase()}
+					src={avatar?.data}
+					alt={user?.username.toUpperCase()}
 				/>
 			</IconButton>
 
@@ -93,12 +160,8 @@ const UnMemoizedAvatar: FC = () => {
 				open={open}
 				onClose={() => setMenuAnchor(null)}
 			>
-				<MenuItem onClick={() => null}>
-					<ListItemIcon>
-						<AddAccountIcon />
-					</ListItemIcon>
-					<ListItemText>Add account</ListItemText>
-				</MenuItem>
+				<AccountList />
+				<AddAccountListItem />
 				<Divider />
 				<DarkModeListItem />
 				{menuItems.map((item) => (

@@ -52,7 +52,8 @@ export class CacheService implements Cache {
 				path: "$"
 			})) as Array<any>;
 
-			this.data = response.shift();
+			if (response) this.data = response.shift();
+			else this.data = {};
 		} else {
 			this.cacheFile = getCacheFile(identifier);
 

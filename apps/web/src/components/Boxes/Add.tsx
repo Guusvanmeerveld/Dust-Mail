@@ -1,4 +1,3 @@
-import useLocalStorageState from "use-local-storage-state";
 import create from "zustand";
 
 import { FC, memo, useEffect, useMemo, useState } from "react";
@@ -25,12 +24,11 @@ import MailBox from "@interfaces/box";
 import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
 
-import flattenBoxes from "@utils/flattenBoxes";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import nestBoxes from "@utils/nestBoxes";
+import useUser, { useAddBox } from "@utils/hooks/useUser";
 
 import FolderTree, {
 	CheckedBoxesContext,
@@ -66,7 +64,8 @@ export const addBoxStore = create<AddBoxStore>((set) => ({
 const UnMemoizedAddBox: FC = () => {
 	const theme = useTheme();
 
-	const [boxes, setBoxes] = useLocalStorageState<MailBox[]>("boxes");
+	const { user } = useUser();
+	const addBox = useAddBox();
 
 	const showSnackbar = useSnackbar();
 
@@ -114,28 +113,21 @@ const UnMemoizedAddBox: FC = () => {
 		}
 	}, [showAddBox]);
 
-	const flattenedBoxes = useMemo(() => {
-		if (boxes) return flattenBoxes(boxes);
-		else return [];
-	}, boxes);
-
 	const [modalSx, scrollbarSx] = useMemo(
 		() => [modalStyles(theme), scrollbarStyles(theme)],
 		[theme]
 	);
 
 	const checkAllBoxes = (checked: boolean): void => {
-		const ids = flattenedBoxes.map((box) => box.id);
+		if (!user) return;
+
+		const ids = user?.boxes.flattened.map((box) => box.id);
 
 		ids.forEach((id) => addUnifiedBox(id, checked));
 	};
 
 	const createBox = async (box: MailBox): Promise<void> => {
-		if (flattenedBoxes) {
-			flattenedBoxes.push(box);
-
-			setBoxes(nestBoxes(flattenedBoxes));
-		}
+		addBox(box);
 
 		if (!box.unifies) {
 			setFetching(true);
@@ -169,7 +161,7 @@ const UnMemoizedAddBox: FC = () => {
 						overflowY: "scroll"
 					}}
 				>
-					<Typography gutterBottom variant="h3">
+					<Typography gutterBottom variant="h4">
 						Create a new folder
 					</Typography>
 
@@ -228,7 +220,7 @@ const UnMemoizedAddBox: FC = () => {
 								value={parentFolder?.id ?? "none"}
 								label="Parent folder"
 								onChange={(e) => {
-									const parentFolder = flattenedBoxes.find(
+									const parentFolder = user?.boxes.flattened.find(
 										(box) => box.id == e.target.value
 									);
 
@@ -241,7 +233,7 @@ const UnMemoizedAddBox: FC = () => {
 								}}
 							>
 								<MenuItem value="none">None</MenuItem>
-								{flattenedBoxes.map((box, i) => (
+								{user?.boxes.flattened.map((box, i) => (
 									<MenuItem key={box.id + i} value={box.id}>
 										{box.id.split(box.delimiter).join(" / ")}
 									</MenuItem>
@@ -250,7 +242,7 @@ const UnMemoizedAddBox: FC = () => {
 						</FormControl>
 					)}
 
-					{folderType == "unified" && boxes && (
+					{folderType == "unified" && user?.boxes.nested && (
 						<>
 							<Stack direction="column" justifyContent="left" spacing={2}>
 								<Typography variant="h5">
@@ -283,7 +275,7 @@ const UnMemoizedAddBox: FC = () => {
 								}}
 							>
 								<CheckedBoxesContext.Provider value={checkedBoxesStore}>
-									<FolderTree showCheckBox boxes={boxes} />
+									<FolderTree showCheckBox boxes={user.boxes.nested} />
 								</CheckedBoxesContext.Provider>
 							</Box>
 						</>

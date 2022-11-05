@@ -1,10 +1,14 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import useUser from "./useUser";
+
 import { useEffect, useMemo } from "react";
 import { useQuery } from "react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { FullIncomingMessage, LocalToken } from "@dust-mail/typings";
+import { AxiosError } from "axios";
+
+import { ErrorResponse, FullIncomingMessage } from "@dust-mail/typings";
 
 import useFetch from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
@@ -12,8 +16,8 @@ import useStore from "@utils/hooks/useStore";
 
 interface UseSelectedMessage {
 	selectedMessage: FullIncomingMessage | undefined;
-	selectedMessageError: string | null;
-	setSelectedMessage: (id?: string) => void;
+	selectedMessageError: AxiosError<ErrorResponse> | null;
+	selectedMessageFetching: boolean;
 }
 
 export const useSetSelectedMessage = (): ((id?: string) => void) => {
@@ -34,15 +38,13 @@ export const useSetSelectedMessage = (): ((id?: string) => void) => {
 const useSelectedMessage = (): UseSelectedMessage => {
 	const [selectedBox] = useSelectedBox();
 
-	const setSelectedMessage = useSetSelectedMessage();
-
 	const fetcher = useFetch();
 
 	const params = useParams<{ messageID: string }>();
 
 	const setFetching = useStore((state) => state.setFetching);
 
-	const [token] = useLocalStorageState<LocalToken>("accessToken");
+	const { user } = useUser();
 
 	const [darkMode] = useLocalStorageState<boolean>("messageDarkMode", {
 		defaultValue: false
@@ -57,11 +59,18 @@ const useSelectedMessage = (): UseSelectedMessage => {
 	// eslint-disable-next-line prefer-const
 	let { data, isFetching, error } = useQuery<
 		FullIncomingMessage | undefined,
-		string
+		AxiosError<ErrorResponse>
 	>(
-		["message", messageID, selectedBox?.id, showImages, darkMode, token?.body],
+		[
+			"message",
+			messageID,
+			selectedBox?.id,
+			showImages,
+			darkMode,
+			user?.accessToken?.body
+		],
 		() => {
-			if (!token?.body) return undefined;
+			if (!user?.accessToken?.body) return undefined;
 			else
 				return fetcher.getMessage(
 					!showImages,
@@ -90,9 +99,9 @@ const useSelectedMessage = (): UseSelectedMessage => {
 		() => ({
 			selectedMessage: data,
 			selectedMessageError: error,
-			setSelectedMessage
+			selectedMessageFetching: isFetching
 		}),
-		[data, error, setSelectedMessage]
+		[data, error, isFetching]
 	);
 
 	return returnable;

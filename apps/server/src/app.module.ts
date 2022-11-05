@@ -3,6 +3,7 @@ import { join } from "path";
 import { AuthModule } from "./auth/auth.module";
 import { AvatarModule } from "./avatar/avatar.module";
 import { CacheModule } from "./cache/cache.module";
+import { getBasePath } from "./constants";
 import { ImapModule } from "./imap/imap.module";
 import { LoggerMiddleware } from "./logger.middleware";
 import { MailModule } from "./mail/mail.module";
@@ -22,7 +23,7 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 		}),
 		ServeStaticModule.forRoot({
 			rootPath: join(process.cwd(), "public", "scripts"),
-			serveRoot: "/scripts"
+			serveRoot: "/" + join(getBasePath(), "scripts")
 		}),
 		AuthModule,
 		MailModule,

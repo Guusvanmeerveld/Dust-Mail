@@ -1,5 +1,5 @@
 // import useLocalStorageState from "use-local-storage-state";
-import { FC, ReactNode } from "react";
+import { FC, memo, ReactNode } from "react";
 
 // import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
@@ -33,7 +33,7 @@ const Setting: FC<{
 	);
 };
 
-const Settings: FC = () => {
+const UnMemoizedSettings: FC = () => {
 	const theme = useTheme();
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
@@ -86,5 +86,7 @@ const Settings: FC = () => {
 		);
 	else return <></>;
 };
+
+const Settings = memo(UnMemoizedSettings);
 
 export default Settings;

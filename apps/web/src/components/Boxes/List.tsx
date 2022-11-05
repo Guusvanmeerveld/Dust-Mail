@@ -22,11 +22,11 @@ import MailBox from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useAddBox from "@utils/hooks/useAddBox";
-import useBoxes from "@utils/hooks/useBoxes";
 import useDeleteBox from "@utils/hooks/useDeleteBox";
 import useRenameBox from "@utils/hooks/useRenameBox";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
+import useUser from "@utils/hooks/useUser";
 
 import FolderTree, {
 	FolderTreeProps,
@@ -40,34 +40,87 @@ export const checkedBoxesStore = create<CheckedBoxesStore>((set) => ({
 		set((state) => ({ checkedBoxes: { ...state.checkedBoxes, [id]: checked } }))
 }));
 
-const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
-	clickOnBox
+const UnMemoizedBoxContextMenu: FC<{
+	contextMenuAnchorEl: HTMLElement | null;
+	contextMenuCurrentBox?: MailBox;
+	handleContextMenuClose: () => void;
+}> = ({
+	contextMenuAnchorEl,
+	handleContextMenuClose,
+	contextMenuCurrentBox
 }) => {
-	const [, boxes] = useBoxes();
-
 	const showAddBox = useAddBox();
-	const showDeleteBox = useDeleteBox();
 	const showRenameBox = useRenameBox();
+	const showDeleteBox = useDeleteBox();
 
-	const [selectedBox, setSelectedBox] = useSelectedBox();
+	const menuItems = useMemo(
+		() => [
+			{
+				name: "Create sub folder",
+				icon: <AddIcon fontSize="small" />,
+				action: () => {
+					handleContextMenuClose();
 
+					if (!contextMenuCurrentBox) return;
+
+					showAddBox({ parentFolder: contextMenuCurrentBox });
+				}
+			},
+			{
+				name: "Rename",
+				icon: <RenameIcon fontSize="small" />,
+				action: () => {
+					handleContextMenuClose();
+
+					if (!contextMenuCurrentBox) return;
+					showRenameBox(contextMenuCurrentBox);
+				}
+			},
+			{
+				name: "Delete",
+				icon: <DeleteIcon fontSize="small" />,
+				action: () => {
+					handleContextMenuClose();
+
+					if (!contextMenuCurrentBox) return;
+					showDeleteBox([contextMenuCurrentBox.id]);
+				}
+			}
+		],
+		[showAddBox, showRenameBox, showDeleteBox]
+	);
+
+	return (
+		<Menu
+			id="basic-menu"
+			anchorEl={contextMenuAnchorEl}
+			open={!!contextMenuAnchorEl}
+			onClose={handleContextMenuClose}
+			MenuListProps={{
+				"aria-labelledby": "basic-button"
+			}}
+		>
+			{menuItems.map((item) => (
+				<MenuItem key={item.name} onClick={item.action}>
+					<ListItemIcon>{item.icon}</ListItemIcon>
+					<ListItemText>{item.name}</ListItemText>
+				</MenuItem>
+			))}
+		</Menu>
+	);
+};
+
+const BoxContextMenu = memo(UnMemoizedBoxContextMenu);
+
+const UnMemoizedActionBar: FC<{
+	showSelector: boolean;
+	setShowSelector: (show: boolean) => void;
+}> = ({ showSelector, setShowSelector }) => {
+	const showDeleteBox = useDeleteBox();
 	const setShowAddBox = useStore((state) => state.setShowAddBox);
 
 	const checkedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
 	const setChecked = checkedBoxesStore((state) => state.setChecked);
-
-	const [showSelector, setShowSelector] = useState(false);
-
-	const [contextMenuAnchorEl, setContextMenuAnchorEl] =
-		useState<null | HTMLElement>(null);
-
-	const contextMenuOpen = !!contextMenuAnchorEl;
-
-	const [contextMenuCurrentBox, setContextMenuCurrentBox] = useState<MailBox>();
-
-	const handleContextMenuClose = (): void => {
-		setContextMenuAnchorEl(null);
-	};
 
 	const selectedBoxesArray = useMemo(
 		() =>
@@ -85,6 +138,75 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 		if (!showSelector) unCheckAllSelectedBoxes();
 	}, [showSelector]);
 
+	return (
+		<Stack
+			sx={{ padding: 1 }}
+			spacing={1}
+			direction="row"
+			alignItems="center"
+			justifyContent="right"
+		>
+			{!showSelector && (
+				<>
+					<IconButton onClick={() => setShowSelector(true)}>
+						<Tooltip title="Select folders">
+							<CheckBoxIcon />
+						</Tooltip>
+					</IconButton>
+					<IconButton onClick={() => setShowAddBox(true)}>
+						<Tooltip title="Add new folder">
+							<AddIcon />
+						</Tooltip>
+					</IconButton>
+				</>
+			)}
+			{showSelector && (
+				<>
+					<IconButton
+						onClick={() => {
+							if (selectedBoxesArray.length > 0) {
+								showDeleteBox(selectedBoxesArray);
+							}
+						}}
+					>
+						<Tooltip title="Delete selected items">
+							<DeleteIcon />
+						</Tooltip>
+					</IconButton>
+					<IconButton onClick={() => setShowSelector(false)}>
+						<Tooltip title="Stop selecting folders">
+							<CloseIcon />
+						</Tooltip>
+					</IconButton>
+				</>
+			)}
+		</Stack>
+	);
+};
+
+const ActionBar = memo(UnMemoizedActionBar);
+
+const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
+	clickOnBox
+}) => {
+	const { user } = useUser();
+
+	const [selectedBox, setSelectedBox] = useSelectedBox();
+
+	const [showSelector, setShowSelector] = useState(false);
+
+	const [contextMenuAnchorEl, setContextMenuAnchorEl] =
+		useState<null | HTMLElement>(null);
+
+	const [contextMenuCurrentBox, setContextMenuCurrentBox] = useState<MailBox>();
+
+	const handleContextMenuClose = useMemo(
+		() => (): void => {
+			setContextMenuAnchorEl(null);
+		},
+		[setContextMenuAnchorEl]
+	);
+
 	useEffect(() => {
 		if (selectedBox) {
 			const name = selectedBox.name ?? selectedBox.id;
@@ -98,7 +220,6 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	const folderTreeProps = useMemo(
 		(): FolderTreeProps => ({
 			showCheckBox: showSelector,
-
 			onClick: (box, e) => {
 				setSelectedBox(box.id);
 				if (clickOnBox) clickOnBox(e);
@@ -109,13 +230,13 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 				setContextMenuCurrentBox(box);
 			}
 		}),
-		[showSelector]
+		[showSelector, setSelectedBox]
 	);
 
 	// Find all of the primary boxes and sort them alphabetically
 	const primaryBoxes: MailBox[] | undefined = useMemo(
 		() =>
-			boxes
+			user?.boxes.nested
 				?.filter((box) => findBoxInPrimaryBoxesList(box.id))
 				.sort((a, b) => a.id.localeCompare(b.id))
 				.map((box) => {
@@ -124,110 +245,29 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					return { ...box, ...found! };
 				}),
-		[boxes]
+		[user?.boxes.nested]
 	);
 
 	// Find all of the other boxes and sort them alphabetically
 	const otherBoxes: MailBox[] | undefined = useMemo(
 		() =>
-			boxes
+			user?.boxes.nested
 				?.filter((box) => !findBoxInPrimaryBoxesList(box.id))
 				.sort((a, b) => a.id.localeCompare(b.id)),
-		[boxes]
+		[user?.boxes.nested]
 	);
 
 	return (
 		<>
-			<Menu
-				id="basic-menu"
-				anchorEl={contextMenuAnchorEl}
-				open={contextMenuOpen}
-				onClose={handleContextMenuClose}
-				MenuListProps={{
-					"aria-labelledby": "basic-button"
-				}}
-			>
-				{[
-					{
-						name: "Create sub folder",
-						icon: <AddIcon fontSize="small" />,
-						action: () => {
-							handleContextMenuClose();
-
-							if (!contextMenuCurrentBox) return;
-
-							showAddBox({ parentFolder: contextMenuCurrentBox });
-						}
-					},
-					{
-						name: "Rename",
-						icon: <RenameIcon fontSize="small" />,
-						action: () => {
-							handleContextMenuClose();
-
-							if (!contextMenuCurrentBox) return;
-							showRenameBox(contextMenuCurrentBox);
-						}
-					},
-					{
-						name: "Delete",
-						icon: <DeleteIcon fontSize="small" />,
-						action: () => {
-							handleContextMenuClose();
-
-							if (!contextMenuCurrentBox) return;
-							showDeleteBox([contextMenuCurrentBox.id]);
-						}
-					}
-				].map((item) => (
-					<MenuItem key={item.name} onClick={item.action}>
-						<ListItemIcon>{item.icon}</ListItemIcon>
-						<ListItemText>{item.name}</ListItemText>
-					</MenuItem>
-				))}
-			</Menu>
-			<Stack
-				sx={{ padding: 1 }}
-				spacing={1}
-				direction="row"
-				alignItems="center"
-				justifyContent="right"
-			>
-				{!showSelector && (
-					<>
-						<IconButton onClick={() => setShowSelector(true)}>
-							<Tooltip title="Select folders">
-								<CheckBoxIcon />
-							</Tooltip>
-						</IconButton>
-						<IconButton onClick={() => setShowAddBox(true)}>
-							<Tooltip title="Add new folder">
-								<AddIcon />
-							</Tooltip>
-						</IconButton>
-					</>
-				)}
-				{showSelector && (
-					<>
-						<IconButton
-							onClick={() => {
-								if (selectedBoxesArray.length > 0) {
-									showDeleteBox(selectedBoxesArray);
-								}
-							}}
-						>
-							<Tooltip title="Delete selected items">
-								<DeleteIcon />
-							</Tooltip>
-						</IconButton>
-						<IconButton onClick={() => setShowSelector(false)}>
-							<Tooltip title="Stop selecting folders">
-								<CloseIcon />
-							</Tooltip>
-						</IconButton>
-					</>
-				)}
-			</Stack>
+			<BoxContextMenu
+				contextMenuAnchorEl={contextMenuAnchorEl}
+				handleContextMenuClose={handleContextMenuClose}
+				contextMenuCurrentBox={contextMenuCurrentBox}
+			/>
+			<ActionBar
+				showSelector={showSelector}
+				setShowSelector={setShowSelector}
+			/>
 			<CheckedBoxesContext.Provider value={checkedBoxesStore}>
 				{(primaryBoxes || otherBoxes) && <Divider />}
 				{primaryBoxes && (

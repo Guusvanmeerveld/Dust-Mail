@@ -1,4 +1,4 @@
-import useLocalStorageState from "use-local-storage-state";
+import useUser, { useCurrentUser, useModifyUser } from "./useUser";
 
 import { useNavigate } from "react-router-dom";
 
@@ -6,7 +6,6 @@ import { AxiosError } from "axios";
 
 import {
 	ErrorResponse,
-	LocalToken,
 	LoginResponse,
 	VersionResponse,
 	GatewayError
@@ -15,21 +14,17 @@ import {
 import Box from "@interfaces/box";
 import { LoginConfig } from "@interfaces/login";
 
-import createGravatarUrl from "@utils/createGravatarUrl";
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useFetch from "@utils/hooks/useFetch";
 import useStore from "@utils/hooks/useStore";
-import nestBoxes from "@utils/nestBoxes";
 
 /**
- * A hook that request the users inboxes and puts them in local storage
+ * A hook that request the users inboxes and returns them
  */
-const useFetchBoxes = (): ((token: string) => Promise<void>) => {
+const useFetchBoxes = (): ((token: string) => Promise<Box[]>) => {
 	const fetcher = useFetch();
 
-	const [, setBoxes] = useLocalStorageState<Box[]>("boxes");
-
-	return async (token): Promise<void> => {
+	return async (token) => {
 		console.log("Fetching inboxes...");
 
 		const boxes = await fetcher.getBoxes(token);
@@ -38,19 +33,15 @@ const useFetchBoxes = (): ((token: string) => Promise<void>) => {
 
 		const unreadCount = await fetcher.getMessageCount(boxIDs, "unread", token);
 
-		setBoxes(
-			nestBoxes(
-				boxes.map((box) => {
-					const foundBox = findBoxInPrimaryBoxesList(box.id);
+		return boxes.map((box) => {
+			const foundBox = findBoxInPrimaryBoxesList(box.id);
 
-					return {
-						...box,
-						unreadCount: unreadCount[box.id],
-						name: foundBox?.name ?? box.name
-					};
-				})
-			)
-		);
+			return {
+				...box,
+				unreadCount: unreadCount[box.id],
+				name: foundBox?.name ?? box.name
+			};
+		});
 	};
 };
 
@@ -137,7 +128,8 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 
 		login(data, {
 			username: config.incoming.username,
-			redirectToDashboard: true
+			redirectToDashboard: true,
+			setAsDefault: true
 		});
 
 		setFetching(false);
@@ -149,17 +141,13 @@ const useLogin = (): ((
 	options?: {
 		username?: string;
 		redirectToDashboard?: boolean;
+		setAsDefault?: boolean;
 	}
 ) => Promise<void>) => {
-	const [, setAccessToken] = useLocalStorageState<LocalToken>("accessToken");
-	const [, setRefreshToken] = useLocalStorageState<LocalToken>("refreshToken");
+	const modifyUser = useModifyUser();
+	const [, setCurrentUser] = useCurrentUser();
 
-	const [, setUsername] = useLocalStorageState<string>("username");
-	const [, setAvatar] = useLocalStorageState<string>("avatar");
-
-	const [defaultBox] = useLocalStorageState("defaultBox", {
-		defaultValue: { id: "INBOX", name: "Inbox" }
-	});
+	const { user } = useUser();
 
 	const navigate = useNavigate();
 
@@ -174,22 +162,19 @@ const useLogin = (): ((
 
 		if (!refreshToken) return;
 
+		const username = options?.username ?? user?.username;
+
+		if (!username) return;
+
 		console.log("Successfully authorized with backend server");
 
-		await fetchBoxes(accessToken.body);
+		const boxes = await fetchBoxes(accessToken.body);
 
-		if (options?.username) {
-			setUsername(options.username);
+		modifyUser(username, { accessToken, refreshToken, boxes, username });
 
-			console.log("Creating avatar...");
+		setCurrentUser(username);
 
-			setAvatar(createGravatarUrl(options.username));
-		}
-
-		setAccessToken(accessToken);
-		setRefreshToken(refreshToken);
-
-		if (options?.redirectToDashboard) navigate(`/dashboard/${defaultBox.id}`);
+		if (options?.redirectToDashboard) navigate(`/dashboard`);
 	};
 };
 
