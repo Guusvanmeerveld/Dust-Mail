@@ -42,7 +42,7 @@ jobs:
         run: pnpm install --prefer-offline --ignore-scripts
 
       - name: Run full suite
-        run: pnpm run deploy
+        run: pnpm run deploy --filter @dust-mail/web --filter @dust-mail/server
 
   build-apps:
     name: Build Docker apps images
@@ -125,9 +125,6 @@ jobs:
         uses: docker/setup-qemu-action@v1.2.0
         with:
           platforms: linux/amd64,linux/arm64
-
-      - name: Setup Fly.io utility
-        uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1.6.0
