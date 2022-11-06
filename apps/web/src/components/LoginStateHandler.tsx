@@ -12,8 +12,6 @@ import useUser from "@utils/hooks/useUser";
 const UnMemoizedLoginStateHandler: FC = () => {
 	const { user } = useUser();
 
-	useEffect(() => console.log("login state"), [user]);
-
 	const setFetching = useStore((state) => state.setFetching);
 	const fetching = useStore((state) => state.fetching);
 
