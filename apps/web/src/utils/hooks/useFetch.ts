@@ -43,12 +43,12 @@ const useHttpClient = (): HttpClient => {
 							message: `Could not connect to remote ${
 								import.meta.env.VITE_APP_NAME
 							} server, please check your connectivity`,
-							type: GatewayError.Misc
+							code: GatewayError.Misc
 						};
 					} else {
 						throw {
 							message: `An unknown error occured: ${error.message}`,
-							type: GatewayError.Misc
+							code: GatewayError.Misc
 						};
 					}
 				});

@@ -52,6 +52,8 @@ const cleanMainHtml = (
 
 	html = $.html();
 
+	if (!html.startsWith("<!DOCTYPE html>")) html = `<!DOCTYPE html>${html}`;
+
 	html = minify(html);
 
 	return html;

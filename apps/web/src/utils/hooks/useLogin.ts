@@ -36,10 +36,12 @@ const useFetchBoxes = (): ((token: string) => Promise<Box[]>) => {
 		return boxes.map((box) => {
 			const foundBox = findBoxInPrimaryBoxesList(box.id);
 
+			const split = box.id.split(box.delimiter);
+
 			return {
 				...box,
 				unreadCount: unreadCount[box.id],
-				name: foundBox?.name ?? box.name
+				name: foundBox?.name ?? split.pop() ?? box.name
 			};
 		});
 	};
@@ -61,11 +63,13 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 
 		console.log("Checking if server version matches with client version...");
 
-		const versionResponse = await fetcher.getVersion().catch((e) => {
-			setFetching(false);
+		const versionResponse = await fetcher
+			.getVersion()
+			.catch((e: ErrorResponse) => {
+				setFetching(false);
 
-			throw e;
-		});
+				throw e;
+			});
 
 		if (!versionResponse) return;
 
@@ -86,19 +90,14 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 		// Request the JWT token
 		const data = await fetcher
 			.login(config)
+			// If there was anything wrong with the request, catch it
 			.catch((error: AxiosError<ErrorResponse>) => {
-				// If there was anything wrong with the request, catch it
-
-				setFetching(false);
-
-				// Check if the request was successfull
-
 				// Hide the fetching animation
+				setFetching(false);
 
 				console.log("An error occured when requesting the JWT token");
 
 				// Check the error type
-
 				switch (error.response?.data.code) {
 					case GatewayError.Credentials:
 						throw {
@@ -130,6 +129,8 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 			username: config.incoming.username,
 			redirectToDashboard: true,
 			setAsDefault: true
+		}).catch((e: AxiosError<ErrorResponse>) => {
+			throw e.response?.data;
 		});
 
 		setFetching(false);

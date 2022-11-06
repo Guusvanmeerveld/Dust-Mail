@@ -3,10 +3,31 @@ import { useNavigate } from "react-router";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
+
+import useStore from "@utils/hooks/useStore";
 
 import Layout from "@components/Layout";
 import LoginForm from "@components/Login/Form";
+
+const FetchBar: FC = () => {
+	const fetching = useStore((state) => state.fetching);
+
+	return (
+		<Box
+			sx={{
+				display: fetching ? "block" : "none",
+				position: "absolute",
+				top: 0,
+				width: 1,
+				height: 2
+			}}
+		>
+			<LinearProgress color="secondary" />
+		</Box>
+	);
+};
 
 const AddAccount: FC = () => {
 	const navigate = useNavigate();
@@ -17,6 +38,7 @@ const AddAccount: FC = () => {
 
 	return (
 		<Layout>
+			<FetchBar />
 			<Box
 				sx={{
 					display: "flex",

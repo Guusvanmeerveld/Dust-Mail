@@ -324,6 +324,8 @@ const LoginForm: FC<{
 
 	const login = useMailLogin();
 
+	useEffect(() => setError(undefined), [username, password]);
+
 	useEffect(() => {
 		document.title = `${import.meta.env.VITE_APP_NAME} - Login`;
 	}, []);

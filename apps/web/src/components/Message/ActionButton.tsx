@@ -16,7 +16,12 @@ const MessageActionButton: FC = () => {
 		return (
 			<SpeedDial
 				ariaLabel="Message actions"
-				sx={{ position: "absolute", bottom: 16, right: 16 }}
+				sx={{
+					position: "absolute",
+					bottom: 16,
+					right: 16,
+					display: { md: "none" }
+				}}
 				icon={<SpeedDialIcon />}
 			>
 				{actions.reverse().map((action) => (

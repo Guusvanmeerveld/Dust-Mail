@@ -53,7 +53,8 @@ export default function useAvatar(
 	);
 
 	if (
-		error &&
+		error?.response &&
+		error.response.status != 401 &&
 		!data &&
 		!isLoading &&
 		(!noAvatar || noAvatar < Date.now()) &&

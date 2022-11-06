@@ -170,7 +170,8 @@ const OtherLogins: FC = () => {
 										<CircularProgress />
 									</Box>
 								)}
-								{error && (
+								{(error ||
+									(oauthTokens && Object.keys(oauthTokens).length == 0)) && (
 									<Typography textAlign="center">
 										No other login methods supported on this{" "}
 										{import.meta.env.VITE_APP_NAME} server.

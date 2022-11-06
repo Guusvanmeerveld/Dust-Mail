@@ -48,7 +48,11 @@ const AddressListItem: FC<{ email: string; displayName: string }> = ({
 
 	return (
 		<Chip
-			sx={{ mr: 1, mb: 1, maxWidth: theme.spacing(35) }}
+			sx={{
+				mr: 1,
+				mb: 1,
+				maxWidth: { xs: theme.spacing(35), md: theme.spacing(50) }
+			}}
 			avatar={
 				<Avatar
 					sx={{
@@ -136,9 +140,11 @@ const CloseButton: FC = () => {
 	const setSelectedMessage = useSetSelectedMessage();
 
 	return (
-		<IconButton onClick={() => setSelectedMessage()}>
-			<CloseIcon />
-		</IconButton>
+		<Tooltip title="Close current message">
+			<IconButton onClick={() => setSelectedMessage()}>
+				<CloseIcon />
+			</IconButton>
+		</Tooltip>
 	);
 };
 
@@ -225,9 +231,8 @@ const UnMemoizedMessageOverview: FC = () => {
 								)}
 
 								<Stack direction="column" spacing={0.5}>
-									<Tooltip title="Close current message">
-										<CloseButton />
-									</Tooltip>
+									<CloseButton />
+
 									<Tooltip title="Toggle dark mode for message view">
 										<IconButton onClick={() => setDarkMode(() => !darkMode)}>
 											{darkMode ? <DarkModeIcon /> : <LightModeIcon />}

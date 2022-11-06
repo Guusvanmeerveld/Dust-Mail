@@ -46,7 +46,7 @@ const DarkModeListItem: FC = () => {
 const AccountListItem: FC<{ user: User }> = ({ user }) => {
 	const theme = useTheme();
 
-	const [, setCurrentUser] = useCurrentUser();
+	const [currentUser, setCurrentUser] = useCurrentUser();
 
 	const navigate = useNavigate();
 
@@ -55,8 +55,10 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 	return (
 		<MenuItem
 			onClick={() => {
-				setCurrentUser(user.username);
-				navigate("/dashboard");
+				if (currentUser?.username != user.username) {
+					setCurrentUser(user.username);
+					navigate("/dashboard");
+				}
 			}}
 		>
 			<ListItemIcon>
@@ -79,11 +81,20 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 const AccountList: FC = () => {
 	const [users] = useUsers();
 
+	const [currentUser] = useCurrentUser();
+
 	return (
 		<>
-			{users?.slice(0, 5).map((user) => (
-				<AccountListItem key={user.username} user={user} />
-			))}
+			{currentUser && (
+				<AccountListItem key={currentUser.username} user={currentUser} />
+			)}
+			<Divider />
+			{users
+				?.filter((user) => user.username != currentUser?.username)
+				.slice(0, 5)
+				.map((user) => (
+					<AccountListItem key={user.username} user={user} />
+				))}
 		</>
 	);
 };

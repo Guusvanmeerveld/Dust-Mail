@@ -277,8 +277,8 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 						boxes={primaryBoxes}
 					/>
 				)}
-				{primaryBoxes && <Divider />}
-				{otherBoxes && (
+				{primaryBoxes && otherBoxes && otherBoxes.length != 0 && <Divider />}
+				{otherBoxes && otherBoxes.length != 0 && (
 					<FolderTree
 						title="Other folders"
 						{...folderTreeProps}

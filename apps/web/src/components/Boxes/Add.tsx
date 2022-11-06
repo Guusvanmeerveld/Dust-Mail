@@ -184,7 +184,7 @@ const UnMemoizedAddBox: FC = () => {
 										color: theme.palette.text.secondary
 									}}
 								>
-									Create a (local) inbox that unifies together multiple inboxes
+									Create a (local) folder that unifies multiple folders
 								</Typography>
 							</MenuItem>
 							<MenuItem value="normal">
@@ -196,7 +196,7 @@ const UnMemoizedAddBox: FC = () => {
 										color: theme.palette.text.secondary
 									}}
 								>
-									Create a new inbox on the server
+									Create a new folder on the server
 								</Typography>
 							</MenuItem>
 						</Select>
@@ -233,6 +233,7 @@ const UnMemoizedAddBox: FC = () => {
 								}}
 							>
 								<MenuItem value="none">None</MenuItem>
+								<MenuItem value="root">Top level</MenuItem>
 								{user?.boxes.flattened.map((box, i) => (
 									<MenuItem key={box.id + i} value={box.id}>
 										{box.id.split(box.delimiter).join(" / ")}
@@ -285,23 +286,23 @@ const UnMemoizedAddBox: FC = () => {
 						disabled={
 							folderType == "none" ||
 							folderName == "" ||
-							parentFolder == undefined ||
 							(folderType == "unified" && checkedBoxes.length == 0)
 						}
-						onClick={() => {
-							if (!parentFolder) return;
-
+						onClick={() =>
 							createBox({
 								name: folderName,
-								id: parentFolder.id + parentFolder.delimiter + folderName,
-								delimiter: parentFolder.delimiter,
+								id:
+									(parentFolder
+										? parentFolder.id + parentFolder.delimiter
+										: "") + folderName,
+								delimiter: parentFolder?.delimiter ?? ".",
 								unreadCount: 0,
 								unifies:
 									folderType == "unified"
 										? checkedBoxes.map((box) => box[0])
 										: undefined
-							});
-						}}
+							})
+						}
 						variant="contained"
 					>
 						Create

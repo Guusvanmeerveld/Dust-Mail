@@ -236,15 +236,18 @@ export default class Client implements IncomingClient {
 		Object.fromEntries(
 			await Promise.all(
 				boxes.map(async (boxName) => {
-					const box = await this.getBox(boxName);
+					const box = await this.getBox(boxName).catch(() => {
+						return;
+					});
 
 					let count = 0;
 
-					if (flag == "unread")
-						count = box.messages.unseen ?? box.messages.new ?? 0;
-					else if (flag == "new") count = box.messages.new;
-					else if (flag == "total") count = box.messages.total;
-					else throw new BadRequestException("`flag` parameter is not valid");
+					if (box)
+						if (flag == "unread")
+							count = box.messages.unseen ?? box.messages.new ?? 0;
+						else if (flag == "new") count = box.messages.new;
+						else if (flag == "total") count = box.messages.total;
+						else throw new BadRequestException("`flag` parameter is not valid");
 
 					return [boxName, count];
 				})

@@ -57,9 +57,11 @@ export class GoogleController {
 			createTokenResponse("refresh", refreshToken)
 		];
 
-		res.cookie("tokens", tokens);
+		const cookieOptions = { secure: true, httpOnly: true };
 
-		res.cookie("username", username);
+		res.cookie("tokens", tokens, cookieOptions);
+
+		res.cookie("username", username, cookieOptions);
 
 		res.sendFile(this.pathToOAuthPage);
 	}

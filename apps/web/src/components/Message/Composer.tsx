@@ -187,10 +187,6 @@ const MessageComposer: FC = () => {
 	const navigate = useNavigate();
 	let [searchParams] = useSearchParams();
 
-	const [displayName, setDisplayName] = useLocalStorageState("displayName", {
-		defaultValue: { displayName: "", askAgain: true }
-	});
-
 	const [to, setTo] = useState<string | void>();
 	const [body, setBody] = useState<string | undefined>(undefined);
 	const [subject, setSubject] = useState<string | void>();
