@@ -11,7 +11,8 @@ on:
       - pnpm-lock.yaml
       - nginx/**
       - .dockerignore
-      - apps/**
+      - apps/web/**
+      - apps/server/**
       - packages/**
 
 jobs:

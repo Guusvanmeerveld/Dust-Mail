@@ -1,0 +1,13 @@
+{
+	"extends": "@dust-mail/tsconfig/next-react.json",
+	"compilerOptions": {
+		"tsBuildInfoFile": ".next/tsbuildinfo.json",
+		"baseUrl": "src",
+		"paths": {
+			"@styles/*": ["styles/*"],
+			"@components/*": ["components/*"],
+			"@src/*": ["src/*"]
+		}
+	},
+	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
+}

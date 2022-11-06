@@ -1,0 +1,41 @@
+{
+	"name": "@dust-mail/about",
+	"license": "MIT",
+	"scripts": {
+		"dev": "next dev -p 4731",
+		"build": "next build",
+		"build:check": "tsc",
+		"start": "next start",
+		"export:build": "next build && next export",
+		"export": "next export",
+		"lint": "eslint src",
+		"stylelint": "npx stylelint **/*.scss",
+		"full-test": "yarn test-build && yarn lint && yarn stylelint"
+	},
+	"dependencies": {
+		"next": "^12.3.2",
+		"next-seo": "^4.29.0",
+		"react": "^17.0.2",
+		"react-dom": "^17.0.2"
+	},
+	"devDependencies": {
+		"@dust-mail/tsconfig": "workspace:0.0.0",
+		"@types/node": "^15.14.9",
+		"@types/react": "^17.0.52",
+		"@types/react-dom": "^17.0.18",
+		"@typescript-eslint/eslint-plugin": "^4.33.0",
+		"@typescript-eslint/parser": "^4.33.0",
+		"eslint": "^7.32.0",
+		"eslint-plugin-css-modules": "^2.11.0",
+		"eslint-plugin-jsx-a11y": "^6.6.1",
+		"eslint-plugin-prettier": "^3.4.1",
+		"eslint-plugin-react": "^7.31.10",
+		"eslint-plugin-react-hooks": "^4.6.0",
+		"prettier": "^2.7.1",
+		"sass": "^1.56.0",
+		"stylelint": "^13.13.1",
+		"stylelint-config-idiomatic-order": "^8.1.0",
+		"stylelint-config-standard": "^22.0.0",
+		"typescript": "^4.8.4"
+	}
+}
