@@ -110,75 +110,75 @@ const Leaf: FC<{
 	</span>
 );
 
-const TextEditor: FC<{ initialValue?: string }> = ({ initialValue }) => {
-	const [value, setValue] = useState<Descendant[]>([
-		{
-			type: "paragraph",
-			children: [{ text: initialValue ?? "" }]
-		}
-	]);
+// const TextEditor: FC<{ initialValue?: string }> = ({ initialValue }) => {
+// 	const [value, setValue] = useState<Descendant[]>([
+// 		{
+// 			type: "paragraph",
+// 			children: [{ text: initialValue ?? "" }]
+// 		}
+// 	]);
 
-	const renderElement = useCallback<
-		(props: {
-			element: CustomElement;
-			attributes: Record<string, unknown>;
-			children: ReactNode;
-		}) => JSX.Element
-	>((props) => {
-		switch (props.element.type) {
-			case "code":
-				return <CodeElement {...props} />;
-			default:
-				return <DefaultElement {...props} />;
-		}
-	}, []);
+// 	const renderElement = useCallback<
+// 		(props: {
+// 			element: CustomElement;
+// 			attributes: Record<string, unknown>;
+// 			children: ReactNode;
+// 		}) => JSX.Element
+// 	>((props) => {
+// 		switch (props.element.type) {
+// 			case "code":
+// 				return <CodeElement {...props} />;
+// 			default:
+// 				return <DefaultElement {...props} />;
+// 		}
+// 	}, []);
 
-	const renderLeaf = useCallback<
-		(props: {
-			leaf: CustomText;
-			children?: ReactNode;
-			attributes: Record<string, unknown>;
-		}) => JSX.Element
-	>((props) => {
-		return <Leaf {...props} />;
-	}, []);
+// 	const renderLeaf = useCallback<
+// 		(props: {
+// 			leaf: CustomText;
+// 			children?: ReactNode;
+// 			attributes: Record<string, unknown>;
+// 		}) => JSX.Element
+// 	>((props) => {
+// 		return <Leaf {...props} />;
+// 	}, []);
 
-	const editor = useMemo(() => withReact(createEditor()), []);
+// 	const editor = useMemo(() => withReact(createEditor()), []);
 
-	return (
-		<Slate editor={editor} value={value} onChange={(value) => setValue(value)}>
-			<Editable
-				renderElement={renderElement}
-				renderLeaf={renderLeaf}
-				onKeyDown={(event: KeyboardEvent) => {
-					if (!event.ctrlKey) {
-						return;
-					}
+// 	return (
+// 		<Slate editor={editor} value={value} onChange={(value) => setValue(value)}>
+// 			<Editable
+// 				renderElement={renderElement}
+// 				renderLeaf={renderLeaf}
+// 				onKeyDown={(event: React.KeyboardEvent) => {
+// 					if (!event.ctrlKey) {
+// 						return;
+// 					}
 
-					switch (event.key) {
-						// When "`" is pressed, keep our existing code block logic.
-						case "`": {
-							event.preventDefault();
+// 					switch (event.key) {
+// 						// When "`" is pressed, keep our existing code block logic.
+// 						case "`": {
+// 							event.preventDefault();
 
-							toggleCodeBlock(editor);
+// 							toggleCodeBlock(editor);
 
-							break;
-						}
+// 							break;
+// 						}
 
-						// When "B" is pressed, bold the text in the selection.
-						case "b": {
-							event.preventDefault();
+// 						// When "B" is pressed, bold the text in the selection.
+// 						case "b": {
+// 							event.preventDefault();
 
-							toggleBoldMark(editor);
+// 							toggleBoldMark(editor);
 
-							break;
-						}
-					}
-				}}
-			/>
-		</Slate>
-	);
-};
+// 							break;
+// 						}
+// 					}
+// 				}}
+// 			/>
+// 		</Slate>
+// 	);
+// };
 
 const MessageComposer: FC = () => {
 	const theme = useTheme();
