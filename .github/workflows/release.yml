@@ -80,7 +80,7 @@ jobs:
           push: true
 
           context: .
-          file: packages/${{ matrix.type }}/Dockerfile
+          file: apps/${{ matrix.type }}/Dockerfile
 
           platforms: linux/amd64,linux/arm64
 
@@ -230,4 +230,5 @@ jobs:
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           projectPath: apps/web
+          tauriScript: pnpm
           releaseId: ${{ needs.create_release.outputs.release_id }}
