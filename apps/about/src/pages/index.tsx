@@ -1,16 +1,15 @@
 import { NextPage } from "next";
-import { NextSeo } from "next-seo";
 
+import Footer from "@components/Footer";
 import Header from "@components/Header";
+import Layout from "@components/Layout";
 
 const Index: NextPage = () => (
-	<>
-		<NextSeo title="Home" />
-		<div className="root">
-			<Header />
-			<main>lorem ipsum</main>
-		</div>
-	</>
+	<Layout title="Home">
+		<Header />
+		<main>lorem ipsum</main>
+		<Footer />
+	</Layout>
 );
 
 export default Index;
