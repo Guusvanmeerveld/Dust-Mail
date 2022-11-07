@@ -95,23 +95,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy-fly:
-    name: Deploy to Fly.io
-    needs: test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Setup
-        uses: actions/checkout@v2
-
-      - name: Setup Fly.io utility
-        uses: superfly/flyctl-actions/setup-flyctl@master
-
-      - name: Deploy to Fly.io
-        run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
   build-standalone:
     name: Build Docker standalone image
     needs: test

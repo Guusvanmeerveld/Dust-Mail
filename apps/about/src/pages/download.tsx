@@ -222,15 +222,17 @@ export const getStaticProps: GetStaticProps = async () => {
 		`https://api.github.com/repos/${process.env.NEXT_PUBLIC_GITHUB_USERNAME}/${process.env.NEXT_PUBLIC_GITHUB_REPO}/releases/latest`
 	);
 
-	const versions: Version[] = data.map((version) => ({
-		assets: version.assets.map(({ browser_download_url, name }) => ({
-			url: browser_download_url,
-			name
-		})),
-		description: version.body != "" ? version.body : null,
-		latest: latestVersion.tag_name == version.tag_name,
-		tag: version.tag_name
-	}));
+	const versions: Version[] = data
+		.filter((version) => version.assets.length >= 5)
+		.map((version) => ({
+			assets: version.assets.map(({ browser_download_url, name }) => ({
+				url: browser_download_url,
+				name
+			})),
+			description: version.body != "" ? version.body : null,
+			latest: latestVersion.tag_name == version.tag_name,
+			tag: version.tag_name
+		}));
 
 	return { props: { versions }, revalidate: 5 * 60 };
 };
