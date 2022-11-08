@@ -2,7 +2,7 @@
 	"name": "@dust-mail/root",
 	"private": true,
 	"license": "MIT",
-	"version": "0.1.4",
+	"version": "0.2.1",
 	"author": {
 		"name": "Guus van Meerveld"
 	},
