@@ -93,7 +93,7 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 				<h5>
 					Are you enjoying Dust-Mail? Consider making a{" "}
 					<Link
-						href={`https://github.com/sponsors/${process.env.NEXT_PUBLIC_GITHUB_USERNAME}/dashboard`}
+						href={`https://github.com/sponsors/${process.env.NEXT_PUBLIC_GITHUB_USERNAME}`}
 					>
 						<a>donation</a>
 					</Link>
