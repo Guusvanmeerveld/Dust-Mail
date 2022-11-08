@@ -1,7 +1,7 @@
 {
 	"$schema": "../node_modules/@tauri-apps/cli/schema.json",
 	"build": {
-		"beforeBuildCommand": "pnpm build",
+		"beforeBuildCommand": "cd ../../ && turbo run build --filter @dust-mail/web",
 		"beforeDevCommand": "pnpm dev",
 		"devPath": "http://localhost:5173/",
 		"distDir": "../dist",
