@@ -108,43 +108,43 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 				</Link>
 				.<h2>Features</h2>
 				<label>
-					<input type="checkbox" checked />
+					<input type="checkbox" checked readOnly />
 					Multiple accounts
 				</label>
 				<label>
-					<input type="checkbox" checked />
+					<input type="checkbox" checked readOnly />
 					IMAP
 				</label>
 				<label>
-					<input type="checkbox" checked />
+					<input type="checkbox" checked readOnly />
 					STMP
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					XOauth for IMAP
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					POP3
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					Gmail
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					JMAP
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					Protonmail
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					Webdav/Webcal
 				</label>
 				<label>
-					<input type="checkbox" checked={false} />
+					<input type="checkbox" checked={false} readOnly />
 					iCal
 				</label>
 			</main>
