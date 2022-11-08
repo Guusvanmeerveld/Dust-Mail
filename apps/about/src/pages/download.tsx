@@ -7,6 +7,7 @@ import axios from "axios";
 import Version, { Asset } from "@interfaces/version";
 
 import Footer from "@components/Footer";
+import Header from "@components/Header";
 import Layout from "@components/Layout";
 
 type Platform = "windows" | "osx" | "linux" | "unknown";
@@ -113,6 +114,10 @@ const Download: NextPage<{ versions: Version[] }> = ({ versions }) => {
 
 	return (
 		<Layout title="Download">
+			<Header
+				title="Downloads"
+				description="Download the newest version or browse the older versions"
+			/>
 			<main>
 				{platform != "unknown" && (
 					<>
