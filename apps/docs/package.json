@@ -1,0 +1,8 @@
+{
+	"name": "@dust-mail/docs",
+	"license": "MIT",
+	"scripts": {
+		"build": "mkdocs build",
+		"dev": "mkdocs serve"
+	}
+}

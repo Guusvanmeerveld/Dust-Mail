@@ -1,0 +1,34 @@
+name: Deploy documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/deploy-docs.yml
+      - apps/docs/**
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+       - name: Setup
+         uses: actions/checkout@v2
+
+       - name: Descend into apps/docs
+         run: cd apps/docs
+
+       - name: Build
+         uses: Tiryoh/actions-mkdocs@v0
+         with:
+          mkdocs_version: 'latest'
+          requirements: 'requirements.txt'
+          configfile: 'mkdocs.yml'
+
+       - name: Deploy
+         uses: peaceiris/actions-gh-pages@v3
+         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          cname: docs.dust.email
+          publish_dir: ./dist
