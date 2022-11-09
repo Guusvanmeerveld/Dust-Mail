@@ -23,12 +23,12 @@ jobs:
          uses: Tiryoh/actions-mkdocs@v0
          with:
           mkdocs_version: 'latest'
-          requirements: 'requirements.txt'
-          configfile: 'mkdocs.yml'
+          requirements: 'apps/docs/requirements.txt'
+          configfile: 'apps/docs/mkdocs.yml'
 
        - name: Deploy
          uses: peaceiris/actions-gh-pages@v3
          with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cname: docs.dust.email
-          publish_dir: ./dist
+          publish_dir: ./apps/docs/dist
