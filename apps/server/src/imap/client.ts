@@ -163,9 +163,7 @@ export default class Client implements IncomingClient {
 		const cachePath = [this.identifier, "messages", boxID];
 
 		const cached =
-			(await this.cacheService.get<IncomingMessageWithInternalID[]>(
-				cachePath
-			)) || [];
+			this.cacheService.get<IncomingMessageWithInternalID[]>(cachePath) || [];
 
 		if (cached.length != 0) {
 			let results: IncomingMessageWithInternalID[] = [];
@@ -256,12 +254,12 @@ export default class Client implements IncomingClient {
 
 	public getMessage = async (
 		id: string,
-		boxName: string,
+		boxID: string,
 		markAsRead: boolean,
 		noImages: boolean,
 		darkMode: boolean
 	): Promise<FullIncomingMessage | void> => {
-		await this.getBox(boxName, false);
+		await this.getBox(boxID, false);
 
 		const body = "";
 
@@ -309,13 +307,39 @@ export default class Client implements IncomingClient {
 							.map((address) => address.value.map(createAddress))
 							.flat()
 					: result.body.to?.value.map(createAddress),
-				box: { id: boxName }
+				box: { id: boxID }
 			}));
+
+		const cachePath = [this.identifier, "messages", boxID];
+
+		const cached =
+			this.cacheService.get<IncomingMessageWithInternalID[]>(cachePath) || [];
+
+		if (
+			markAsRead &&
+			cached &&
+			cached.length != 0 &&
+			!!cached.find(
+				(message) => ids.includes(message.internalID) && !message.flags.seen
+			)
+		) {
+			const markedAsRead = cached.map((message) => ({
+				...message,
+				flags: {
+					...message.flags,
+					seen: ids.includes(message.internalID) ? true : message.flags.seen
+				}
+			}));
+
+			await this.cacheService.set(cachePath, markedAsRead);
+		}
+
+		const seen = !!message.flags.find((flag) => flag.match(/Seen/));
 
 		return {
 			...headers.shift(),
 			date: message.date,
-			flags: { seen: !!message.flags.find((flag) => flag.match(/Seen/)) }
+			flags: { seen }
 		};
 	};
 }

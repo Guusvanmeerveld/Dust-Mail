@@ -75,7 +75,7 @@ export class CacheService implements Cache {
 		}
 	};
 
-	public get: getter = async <T>(path: string[]): Promise<T | undefined> => {
+	public get: getter = <T>(path: string[]): T | undefined => {
 		const key = this.createKey(path);
 
 		const item = this.data[key];
