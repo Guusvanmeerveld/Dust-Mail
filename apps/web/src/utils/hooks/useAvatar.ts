@@ -35,7 +35,7 @@ export default function useAvatar(
 	const blacklisted = !!noAvatar;
 
 	const { data, isLoading, error } = useQuery<
-		string,
+		string | undefined,
 		AxiosError<ErrorResponse>
 	>(
 		["avatar", email],

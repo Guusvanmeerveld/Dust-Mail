@@ -16,7 +16,7 @@ export default interface HttpClient {
 	refresh: (refreshToken: string) => Promise<LoginResponse>;
 	getBoxes: (token?: string) => Promise<BoxResponse[]>;
 	getPublicOAuthTokens: () => Promise<PublicTokensResponse>;
-	getAvatar: (address?: string) => Promise<string>;
+	getAvatar: (address?: string) => Promise<string | undefined>;
 	getBox: (
 		boxID: string,
 		pageParam: number,
