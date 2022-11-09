@@ -1,0 +1,4 @@
+{
+	"*.ts": "prettier --list-different",
+	"*.json": "prettier --list-different"
+}
