@@ -16,9 +16,6 @@ jobs:
        - name: Setup
          uses: actions/checkout@v2
 
-       - name: Descend into apps/docs
-         run: cd apps/docs
-
        - name: Build
          uses: Tiryoh/actions-mkdocs@v0
          with:
