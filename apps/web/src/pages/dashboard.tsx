@@ -1,6 +1,6 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { FC, MouseEvent, useMemo } from "react";
+import { FC, useMemo } from "react";
 import { Navigate } from "react-router-dom";
 
 import Box from "@mui/material/Box";
@@ -22,6 +22,7 @@ import LoginStateHandler from "@components/LoginStateHandler";
 import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
+import Slider from "@components/Slider";
 import Snackbar from "@components/Snackbar";
 
 const defaultMessageListWidth = 400;
@@ -47,14 +48,6 @@ const Dashboard: FC = () => {
 		}
 	);
 
-	const widthSetters = useMemo(
-		() => ({
-			boxes: setBoxesListWidth,
-			messages: setMessageListWidth
-		}),
-		[setBoxesListWidth, setMessageListWidth]
-	);
-
 	const fullpageHeight = useMemo(
 		() => `calc(100vh - ${theme.spacing(8)})`,
 		[theme.spacing]
@@ -63,37 +56,6 @@ const Dashboard: FC = () => {
 	const windowWidth = useWindowWidth();
 
 	const grabberWidth = 2;
-
-	const handleDragStart = useMemo(
-		() =>
-			(
-				originalWidth: number,
-				dragEvent: MouseEvent,
-				component: keyof typeof widthSetters
-			): void => {
-				const pageX = dragEvent.pageX;
-
-				const run = (moveEvent: globalThis.MouseEvent): void => {
-					moveEvent.preventDefault();
-
-					const difference = pageX - moveEvent.pageX;
-
-					const newWidth = originalWidth - difference;
-
-					if (newWidth >= 200 && newWidth <= 600)
-						widthSetters[component](newWidth);
-				};
-
-				const unsub = (): void => {
-					document.removeEventListener("mousemove", run);
-					document.removeEventListener("mouseup", unsub);
-				};
-
-				document.addEventListener("mousemove", run);
-				document.addEventListener("mouseup", unsub);
-			},
-		[widthSetters]
-	);
 
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
@@ -120,16 +82,10 @@ const Dashboard: FC = () => {
 							>
 								<BoxesList />
 							</Box>
-
-							<Box
-								onMouseDown={(e: MouseEvent) =>
-									handleDragStart(boxesListWidth, e, "boxes")
-								}
-								sx={{
-									width: `${grabberWidth}px`,
-									bgcolor: theme.palette.divider,
-									cursor: "col-resize"
-								}}
+							<Slider
+								currentWidth={boxesListWidth}
+								widthSetter={setBoxesListWidth}
+								grabberWidth={grabberWidth}
 							/>
 						</>
 					)}
@@ -146,15 +102,10 @@ const Dashboard: FC = () => {
 
 					<>
 						{!isMobile && (
-							<Box
-								onMouseDown={(e: MouseEvent) =>
-									handleDragStart(messageListWidth, e, "messages")
-								}
-								sx={{
-									width: `${grabberWidth}px`,
-									bgcolor: theme.palette.divider,
-									cursor: "col-resize"
-								}}
+							<Slider
+								currentWidth={messageListWidth}
+								widthSetter={setMessageListWidth}
+								grabberWidth={grabberWidth}
 							/>
 						)}
 
