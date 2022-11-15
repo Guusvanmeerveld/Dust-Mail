@@ -179,8 +179,8 @@ export class MailController {
 		@Query("markRead", ParseBoolPipe) markAsRead: boolean,
 		@Query("noImages", ParseBoolPipe) noImages: boolean,
 		@Query("darkMode", ParseBoolPipe) darkMode: boolean,
-		@Query("id") id?: string,
-		@Query("box") box?: string
+		@Query("id", StringValidationPipe) id?: string,
+		@Query("box", StringValidationPipe) box?: string
 	): Promise<FullIncomingMessage | void> {
 		if (!id) throw new BadRequestException("Missing message `id` param");
 

@@ -3,7 +3,7 @@ import Imap from "imap";
 import Client from "./client";
 import connect from "./connect";
 
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import { CacheService } from "@src/cache/cache.service";
 import { createIdentifier } from "@src/utils/createIdentifier";
@@ -56,6 +56,8 @@ export class ImapService {
 		let client = this.clients.get(identifier);
 
 		if (!client) client = await this.login(config);
+
+		if (client.state == "connected") client.connect();
 
 		return new Client(client, this.cacheService, identifier);
 	};
