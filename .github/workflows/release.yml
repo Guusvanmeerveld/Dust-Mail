@@ -232,3 +232,19 @@ jobs:
           projectPath: apps/web
           tauriScript: pnpm run tauri
           releaseId: ${{ needs.create_release.outputs.release_id }}
+
+  aur-publish:
+    name: Publish to AUR
+    runs-on: ubuntu-latest
+
+    needs: release_assets
+
+    steps:
+      - name: Publish AUR package
+        uses: aksh1618/update-aur-package@v1.0.5
+        with:
+          tag_version_prefix: ""
+          package_name: dust-mail-client
+          commit_username: "Github Action Bot"
+          commit_email: mail@guusvanmeerveld.dev
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
