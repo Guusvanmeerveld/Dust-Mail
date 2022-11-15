@@ -30,7 +30,6 @@ import MoreIcon from "@mui/icons-material/MoreHoriz";
 import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
-import useHttpClient from "@utils/hooks/useFetch";
 import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedMessage, {
 	useSetSelectedMessage
