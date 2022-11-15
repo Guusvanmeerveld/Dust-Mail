@@ -226,14 +226,15 @@ export class AuthController {
 				"Can't use any other token as refresh token"
 			);
 
-		return await this.jwtService
+		const data: false | LoginResponse = await this.jwtService
 			.verifyAsync(refreshTokenPayload.accessToken, { ignoreExpiration: false })
+			.then((): false => false)
 			.catch(() => {
 				return this.authService.refreshTokens(refreshTokenPayload);
-			})
-			.then(() => {
-				throw new UnauthorizedException("Access token is still valid");
 			});
+
+		if (!data) throw new UnauthorizedException("Access token is still valid");
+		else return data;
 	}
 
 	@Get(["oauth", "tokens"].join("/"))
