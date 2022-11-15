@@ -48,11 +48,11 @@ ENV NODE_ENV "production"
 
 ENV BASE_PATH "api"
 
-ENV JWT_SECRET_LOCATION "/data/jwt/secret"
+ENV SECRETS_DIR "/data/secrets"
 
 ENV CACHE_DIR "/data/cache"
 
-RUN mkdir /data/jwt /data/cache -p
+RUN mkdir /data/secrets /data/cache -p
 
 COPY --from=deployer /app/server/dist ./dist
 COPY --from=deployer /app/server/node_modules ./node_modules
