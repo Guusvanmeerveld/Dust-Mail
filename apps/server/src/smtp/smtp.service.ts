@@ -10,8 +10,7 @@ import Config from "@auth/interfaces/config.interface";
 
 @Injectable()
 export class SmtpService {
-	@Inject("CACHE")
-	private readonly cacheService: CacheService;
+	constructor(private readonly cacheService: CacheService) {}
 
 	public get = async (config: Config): Promise<OutgoingClient> =>
 		new Client(this.cacheService, config);

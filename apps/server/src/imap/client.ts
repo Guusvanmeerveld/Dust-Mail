@@ -166,7 +166,9 @@ export default class Client implements IncomingClient {
 		const cachePath = [this.identifier, "messages", boxID];
 
 		const cached =
-			this.cacheService.get<IncomingMessageWithInternalID[]>(cachePath) || [];
+			(await this.cacheService.get<IncomingMessageWithInternalID[]>(
+				cachePath
+			)) || [];
 
 		if (cached.length != 0) {
 			let results: IncomingMessageWithInternalID[] = [];
@@ -384,7 +386,9 @@ export default class Client implements IncomingClient {
 		const cachePath = [this.identifier, "messages", boxID];
 
 		const cached =
-			this.cacheService.get<IncomingMessageWithInternalID[]>(cachePath) || [];
+			(await this.cacheService.get<IncomingMessageWithInternalID[]>(
+				cachePath
+			)) || [];
 
 		if (
 			markAsRead &&

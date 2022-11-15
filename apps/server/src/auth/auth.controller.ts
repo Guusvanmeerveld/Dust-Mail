@@ -228,12 +228,12 @@ export class AuthController {
 
 		return await this.jwtService
 			.verifyAsync(refreshTokenPayload.accessToken, { ignoreExpiration: false })
-			.then((e) => {
-				console.log(e);
-
-				throw new UnauthorizedException("Access token is still valid");
+			.catch(() => {
+				return this.authService.refreshTokens(refreshTokenPayload);
 			})
-			.catch(() => this.authService.refreshTokens(refreshTokenPayload));
+			.then(() => {
+				throw new UnauthorizedException("Access token is still valid");
+			});
 	}
 
 	@Get(["oauth", "tokens"].join("/"))

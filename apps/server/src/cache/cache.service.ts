@@ -8,6 +8,7 @@ import { createClient, RedisClientType } from "redis";
 
 import { Injectable } from "@nestjs/common";
 
+import { CryptoService } from "@src/crypto/crypto.service";
 import { createHash } from "@src/utils/createHash";
 import createIdentifierFromEnvironment from "@src/utils/createIdentifierFromEnvironment";
 
@@ -29,9 +30,9 @@ export class CacheService implements Cache {
 
 	private readonly cacheTimeout: number;
 
-	private data: Record<string, CacheItem> = {};
+	private data: Record<string, CacheItem>;
 
-	constructor() {
+	constructor(private readonly cryptoService: CryptoService) {
 		this.cacheTimeout = getCacheTimeout();
 
 		this.isRedisCache = !!getRedisUri();
@@ -42,7 +43,7 @@ export class CacheService implements Cache {
 
 	private createKey = (path: string[]) => createHash(path.join("."), "sha256");
 
-	public init: initter = async () => {
+	private init: initter = async () => {
 		const identifier = await createIdentifierFromEnvironment();
 
 		if (this.isRedisCache) {
@@ -52,8 +53,11 @@ export class CacheService implements Cache {
 				path: "$"
 			})) as Array<any>;
 
-			if (response) this.data = response.shift();
-			else this.data = {};
+			if (response) {
+				const encrypted = response.shift();
+
+				this.data = await this.cryptoService.decryptTokenPayload(encrypted);
+			} else this.data = {};
 		} else {
 			this.cacheFile = getCacheFile(identifier);
 
@@ -62,8 +66,8 @@ export class CacheService implements Cache {
 			if (
 				await fs
 					.readJSON(this.cacheFile)
-					.then((data) => {
-						this.data = data;
+					.then(async (data) => {
+						this.data = await this.cryptoService.decryptTokenPayload(data);
 						return false;
 					})
 					.catch(() => {
@@ -75,7 +79,9 @@ export class CacheService implements Cache {
 		}
 	};
 
-	public get: getter = <T>(path: string[]): T | undefined => {
+	public get: getter = async <T>(path: string[]): Promise<T | undefined> => {
+		if (!this.data) await this.init();
+
 		const key = this.createKey(path);
 
 		const item = this.data[key];
@@ -108,14 +114,16 @@ export class CacheService implements Cache {
 	};
 
 	private write = async (): Promise<void> => {
+		const encrypted = await this.cryptoService.encryptTokenPayload(this.data);
+
 		if (this.isRedisCache) {
 			const identifier = await createIdentifierFromEnvironment();
 
 			await this.redisClient.json.set(
 				identifier,
 				"$",
-				this.data as Record<string, any>
+				encrypted as Record<any, any>
 			);
-		} else await fs.writeJSON(this.cacheFile, this.data);
+		} else await fs.writeJSON(this.cacheFile, encrypted);
 	};
 }

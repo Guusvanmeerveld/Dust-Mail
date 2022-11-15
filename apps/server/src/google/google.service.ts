@@ -19,12 +19,12 @@ import { JwtToken } from "@auth/interfaces/jwt.interface";
 
 @Injectable()
 export class GoogleService {
-	constructor(private readonly jwtService: JwtService) {
+	constructor(
+		private readonly jwtService: JwtService,
+		private readonly cacheService: CacheService
+	) {
 		this.clients = new Map();
 	}
-
-	@Inject("CACHE")
-	private readonly cacheService: CacheService;
 
 	private readonly clients: Map<string, Config>;
 

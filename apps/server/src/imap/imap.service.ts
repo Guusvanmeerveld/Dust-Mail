@@ -14,14 +14,11 @@ import Config from "@auth/interfaces/config.interface";
 
 @Injectable()
 export class ImapService {
-	constructor() {
+	constructor(private readonly cacheService: CacheService) {
 		this.clients = new Map();
 	}
 
 	private readonly authTimeout = 30 * 1000;
-
-	@Inject("CACHE")
-	private readonly cacheService: CacheService;
 
 	private readonly clients: Map<string, Imap>;
 

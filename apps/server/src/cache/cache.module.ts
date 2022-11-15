@@ -2,19 +2,11 @@ import { CacheService } from "./cache.service";
 
 import { Module } from "@nestjs/common";
 
+import { CryptoModule } from "@src/crypto/crypto.module";
+
 @Module({
-	providers: [
-		{
-			provide: "CACHE",
-			useFactory: async () => {
-				const service = new CacheService();
-
-				await service.init();
-
-				return service;
-			}
-		}
-	],
-	exports: ["CACHE"]
+	imports: [CryptoModule],
+	providers: [CacheService],
+	exports: [CacheService]
 })
 export class CacheModule {}
