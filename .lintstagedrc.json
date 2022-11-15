@@ -1,5 +1,5 @@
 {
-	"*.ts": "prettier --list-different",
-	"*.tsx": "prettier --list-different",
+	"*.ts": ["prettier --list-different", "eslint -c apps/server/.eslintrc.js"],
+	"*.tsx": ["prettier --list-different", "eslint -c apps/web/.eslintrc.json"],
 	"*.json": "prettier --list-different"
 }
