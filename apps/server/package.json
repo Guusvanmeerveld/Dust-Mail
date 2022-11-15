@@ -1,7 +1,7 @@
 {
 	"name": "@dust-mail/server",
 	"displayName": "Dust Mail Server",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"license": "MIT",
 	"main": "dist/main",
 	"scripts": {
