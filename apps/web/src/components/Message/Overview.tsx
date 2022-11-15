@@ -21,6 +21,8 @@ import Typography from "@mui/material/Typography";
 
 import CloseIcon from "@mui/icons-material/Close";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
+import CollapseIcon from "@mui/icons-material/ExpandLess";
+import ExpandIcon from "@mui/icons-material/ExpandMore";
 import HideImageIcon from "@mui/icons-material/HideImage";
 import ImageIcon from "@mui/icons-material/Image";
 import BrowserIcon from "@mui/icons-material/Language";
@@ -161,7 +163,7 @@ const AttachmentList: FC<{
 					url = `${backendServer}/mail/message/attachment?token=${attachment.token}`;
 
 				return (
-					<Link href={url} sx={{ mr: 2 }} key={attachment.id}>
+					<Link href={url} target="_blank" sx={{ mr: 2 }} key={attachment.id}>
 						{attachment.name}
 					</Link>
 				);
@@ -184,6 +186,8 @@ const UnMemoizedMessageOverview: FC = () => {
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
 	// );
+
+	const [minimized, setMinimized] = useState(false);
 
 	const [darkMode, setDarkMode] =
 		useLocalStorageState<boolean>("messageDarkMode");
@@ -215,7 +219,9 @@ const UnMemoizedMessageOverview: FC = () => {
 								{data && !error && (
 									<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
 										<Box>
-											<Typography variant="h5">
+											<Typography
+												sx={{ fontSize: { xs: "1.25rem", md: "1.5rem" } }}
+											>
 												{isFetching || !data ? (
 													<Skeleton />
 												) : (
@@ -237,46 +243,68 @@ const UnMemoizedMessageOverview: FC = () => {
 												)}
 											</Typography>
 										</Box>
-										{data?.from && data?.from.length != 0 && (
-											<AddressList data={data.from} prefixText="From:" />
-										)}
-										{data?.to && data?.to.length != 0 && (
-											<AddressList data={data.to} prefixText="To:" />
-										)}
-										{data?.cc && data?.cc.length != 0 && (
-											<AddressList data={data.cc} prefixText="CC:" />
-										)}
-										{data?.bcc && data?.bcc.length != 0 && (
-											<AddressList data={data.bcc} prefixText="BCC:" />
-										)}
-										{data?.attachments && data.attachments.length != 0 && (
-											<AttachmentList attachments={data.attachments} />
-										)}
+										<Stack
+											direction="column"
+											spacing={0.5}
+											sx={{ display: minimized ? "none" : "flex" }}
+										>
+											{data?.from && data?.from.length != 0 && (
+												<AddressList data={data.from} prefixText="From:" />
+											)}
+											{data?.to && data?.to.length != 0 && (
+												<AddressList data={data.to} prefixText="To:" />
+											)}
+											{data?.cc && data?.cc.length != 0 && (
+												<AddressList data={data.cc} prefixText="CC:" />
+											)}
+											{data?.bcc && data?.bcc.length != 0 && (
+												<AddressList data={data.bcc} prefixText="BCC:" />
+											)}
+											{data?.attachments && data.attachments.length != 0 && (
+												<AttachmentList attachments={data.attachments} />
+											)}
+										</Stack>
 									</Stack>
 								)}
 
 								<Stack direction="column" spacing={0.5}>
 									<CloseButton />
 
-									<Tooltip title="Toggle dark mode for message view">
-										<IconButton onClick={() => setDarkMode(() => !darkMode)}>
-											{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
-										</IconButton>
-									</Tooltip>
-									<Tooltip title="Toggle images in message view">
-										<IconButton
-											onClick={() => setShowImages((state) => !state)}
-										>
-											{showImages ? <ImageIcon /> : <HideImageIcon />}
-										</IconButton>
-									</Tooltip>
-									<Tooltip title="Message actions">
-										<IconButton
-											onClick={(e: MouseEvent) =>
-												setMessageActionsAnchor(e.currentTarget as Element)
-											}
-										>
-											<MoreIcon />
+									<Stack
+										direction="column"
+										spacing={0.5}
+										sx={{ display: minimized ? "none" : "flex" }}
+									>
+										<Tooltip title="Toggle dark mode for message view">
+											<IconButton onClick={() => setDarkMode(() => !darkMode)}>
+												{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
+											</IconButton>
+										</Tooltip>
+										<Tooltip title="Toggle images in message view">
+											<IconButton
+												onClick={() => setShowImages((state) => !state)}
+											>
+												{showImages ? <ImageIcon /> : <HideImageIcon />}
+											</IconButton>
+										</Tooltip>
+										<Tooltip title="Message actions">
+											<IconButton
+												onClick={(e: MouseEvent) =>
+													setMessageActionsAnchor(e.currentTarget as Element)
+												}
+											>
+												<MoreIcon />
+											</IconButton>
+										</Tooltip>
+									</Stack>
+									<Tooltip title={minimized ? "Expand" : "Collapse"}>
+										<IconButton onClick={() => setMinimized((state) => !state)}>
+											<ExpandIcon
+												sx={{ display: minimized ? "block" : "none" }}
+											/>
+											<CollapseIcon
+												sx={{ display: minimized ? "none" : "block" }}
+											/>
 										</IconButton>
 									</Tooltip>
 									<Menu
