@@ -9,7 +9,7 @@
 	},
 	"package": {
 		"productName": "Dust-Mail",
-		"version": "0.2.3"
+		"version": "../package.json"
 	},
 	"tauri": {
 		"allowlist": {
