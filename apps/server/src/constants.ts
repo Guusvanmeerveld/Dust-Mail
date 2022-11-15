@@ -9,14 +9,16 @@ export const getUnixSocketPath = () => process.env.UNIX_SOCKET_PATH;
 
 export const getBasePath = () => process.env.BASE_PATH ?? "";
 
-const getJwtSecretLocation = () =>
-	process.env.JWT_SECRET_LOCATION ?? join(process.cwd(), "secret");
+export const bearerPrefix = "Bearer ";
+
+export const getSecretsDir = () =>
+	process.env.SECRETS_DIR ?? join(process.cwd(), "secrets");
 
 export const jwtConstants = {
 	getSecret: async () => {
 		if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
 
-		const jwtSecretLocation = getJwtSecretLocation();
+		const jwtSecretLocation = join(getSecretsDir(), "jwt");
 
 		await ensureFile(jwtSecretLocation);
 
@@ -36,7 +38,7 @@ export const jwtConstants = {
 	getSecretSync: () => {
 		if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
 
-		return readFileSync(getJwtSecretLocation());
+		return readFileSync(join(getSecretsDir(), "jwt"));
 	},
 	/**
 	 * Expiry time in seconds

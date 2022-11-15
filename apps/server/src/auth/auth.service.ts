@@ -1,5 +1,5 @@
 import Config from "./interfaces/config.interface";
-import { JwtToken } from "./interfaces/jwt.interface";
+import { JwtToken, MultiConfig } from "./interfaces/jwt.interface";
 
 import {
 	IncomingServiceType,
@@ -7,14 +7,24 @@ import {
 	LoginResponse
 } from "@dust-mail/typings";
 
-import { Injectable } from "@nestjs/common";
+import {
+	Injectable,
+	InternalServerErrorException,
+	UnauthorizedException
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { jwtConstants } from "@src/constants";
+import { CryptoService } from "@src/crypto/crypto.service";
+import { GoogleService } from "@src/google/google.service";
+import GoogleConfig from "@src/google/interfaces/config";
 import { ImapService } from "@src/imap/imap.service";
 import { SmtpService } from "@src/smtp/smtp.service";
 
 import createTokenResponse from "@utils/createTokenResponse";
+
+import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
 type ConfigWithServiceType<T> = Config & {
 	service: T;
@@ -25,27 +35,33 @@ export class AuthService {
 	constructor(
 		private readonly jwtService: JwtService,
 		private readonly imapService: ImapService,
-		private readonly smtpService: SmtpService
+		private readonly smtpService: SmtpService,
+		private readonly googleService: GoogleService,
+		private readonly cryptoService: CryptoService
 	) {}
 
-	public refreshTokens(oldRefreshToken: JwtToken): LoginResponse {
+	public async refreshTokens(
+		oldRefreshToken: JwtToken
+	): Promise<LoginResponse> {
 		const accessToken = this.jwtService.sign(
-			{
+			await this.cryptoService.encryptTokenPayload<JwtToken>({
 				tokenType: "access",
 				services: oldRefreshToken.services,
 				body: oldRefreshToken.body
-			} as JwtToken,
+			}),
 			{
 				expiresIn: jwtConstants.accessTokenExpires
 			}
 		);
 
-		const refreshToken = this.jwtService.sign({
-			tokenType: "refresh",
-			accessToken,
-			services: oldRefreshToken.services,
-			body: oldRefreshToken.body
-		} as JwtToken);
+		const refreshToken = this.jwtService.sign(
+			await this.cryptoService.encryptTokenPayload<JwtToken>({
+				tokenType: "refresh",
+				accessToken,
+				services: oldRefreshToken.services,
+				body: oldRefreshToken.body
+			})
+		);
 
 		return [
 			createTokenResponse("access", accessToken),
@@ -77,9 +93,12 @@ export class AuthService {
 			body: config
 		};
 
-		const accessToken = this.jwtService.sign(accessTokenPayload, {
-			expiresIn: jwtConstants.accessTokenExpires
-		});
+		const accessToken = this.jwtService.sign(
+			await this.cryptoService.encryptTokenPayload(accessTokenPayload),
+			{
+				expiresIn: jwtConstants.accessTokenExpires
+			}
+		);
 
 		const refreshTokenPayload: JwtToken = {
 			tokenType: "refresh",
@@ -88,11 +107,61 @@ export class AuthService {
 			body: config
 		};
 
-		const refreshToken = this.jwtService.sign(refreshTokenPayload);
+		const refreshToken = this.jwtService.sign(
+			await this.cryptoService.encryptTokenPayload(refreshTokenPayload)
+		);
 
 		return [
 			createTokenResponse("access", accessToken),
 			createTokenResponse("refresh", refreshToken)
 		];
+	}
+
+	public async validateRefreshOrAccessTokenPayload(payload: JwtToken) {
+		if (payload.tokenType != "access")
+			throw new UnauthorizedException(
+				"Can't use any other token as access token"
+			);
+
+		let incomingClient: IncomingClient, outgoingClient: OutgoingClient;
+
+		switch (payload.services.incoming) {
+			case "imap":
+				incomingClient = await this.imapService.get(
+					(payload.body as MultiConfig).incoming
+				);
+				break;
+
+			case "pop3":
+				throw new InternalServerErrorException("Pop3 is not supported yet");
+
+			default:
+				break;
+		}
+
+		switch (payload.services.outgoing) {
+			case "smtp":
+				outgoingClient = await this.smtpService.get(
+					(payload.body as MultiConfig).outgoing
+				);
+				break;
+
+			default:
+				break;
+		}
+
+		if (
+			payload.services.incoming == "google" &&
+			payload.services.outgoing == "google"
+		) {
+			[incomingClient] = this.googleService.getClients(
+				payload.body as GoogleConfig
+			);
+		}
+
+		return {
+			incomingClient,
+			outgoingClient
+		};
 	}
 }

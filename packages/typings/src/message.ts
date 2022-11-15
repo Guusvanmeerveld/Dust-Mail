@@ -35,6 +35,12 @@ export interface IncomingMessage {
 
 export type ContentType = "html" | "text";
 
+export interface Attachment {
+	id: string;
+	token?: string;
+	name: string;
+}
+
 /**
  * An object containing all data about an incoming email
  */
@@ -42,6 +48,8 @@ export interface FullIncomingMessage extends IncomingMessage {
 	to?: Address[];
 	bcc?: Address[];
 	cc?: Address[];
+	attachments?: Attachment[];
+	inReplyTo?: FullIncomingMessage;
 	content: {
 		type?: ContentType;
 		html?: string;

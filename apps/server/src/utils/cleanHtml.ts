@@ -10,7 +10,7 @@ const cleanMainHtml = (
 	dirty: string,
 	noImages: boolean,
 	darkMode: boolean
-): string => {
+): string | undefined => {
 	const imgAttributes = ["alt", "title", "width", "height", "loading"];
 
 	if (!noImages) imgAttributes.push("src");
@@ -56,9 +56,17 @@ const cleanMainHtml = (
 
 	html = minify(html);
 
-	return html;
+	return hasContent(html);
 };
 
-export const cleanTextHtml = (dirty: string): string => sanitizeHtml(dirty);
+export const cleanTextHtml = (dirty: string): string | undefined =>
+	hasContent(sanitizeHtml(dirty));
+
+const hasContent = (toCheck: string): string | undefined => {
+	const $ = load(toCheck);
+
+	if ($("body").text().trim().length == 0) return;
+	else return toCheck;
+};
 
 export default cleanMainHtml;

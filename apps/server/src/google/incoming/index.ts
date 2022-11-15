@@ -1,3 +1,5 @@
+import { Readable } from "nodemailer/lib/xoauth2";
+
 import GoogleConfig from "../interfaces/config";
 import { getBox, getBoxes, getBoxMessages } from "./box";
 import connect from "./connect";
@@ -7,7 +9,9 @@ import { IncomingMessage } from "@dust-mail/typings";
 
 import { CacheService } from "@cache/cache.service";
 
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import IncomingClient, {
+	Attachment
+} from "@mail/interfaces/client/incoming.interface";
 import Flags from "@mail/interfaces/flags";
 
 export default class IncomingGoogleClient implements IncomingClient {
@@ -81,6 +85,12 @@ export default class IncomingGoogleClient implements IncomingClient {
 
 		return messages;
 	};
+
+	public getMessageAttachment: (
+		id: string,
+		messageID: string,
+		boxID: string
+	) => Promise<Attachment>;
 
 	public getMessage = (id: string, boxName: string, markAsRead: boolean) =>
 		getMessage(this.authorization, id, boxName, markAsRead);

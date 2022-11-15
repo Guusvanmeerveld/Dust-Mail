@@ -1,4 +1,4 @@
-export type TokenType = "access" | "refresh";
+export type TokenType = "access" | "refresh" | "attachment";
 
 export type Token = { type: TokenType; body: string; expires: Date };
 export type LocalToken = Omit<Token, "type">;

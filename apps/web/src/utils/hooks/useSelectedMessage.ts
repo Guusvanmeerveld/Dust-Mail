@@ -56,8 +56,7 @@ const useSelectedMessage = (): UseSelectedMessage => {
 
 	const messageID = params.messageID;
 
-	// eslint-disable-next-line prefer-const
-	let { data, isFetching, error } = useQuery<
+	const { data, isFetching, error } = useQuery<
 		FullIncomingMessage | undefined,
 		AxiosError<ErrorResponse>
 	>(
@@ -84,20 +83,18 @@ const useSelectedMessage = (): UseSelectedMessage => {
 
 	useEffect(() => setFetching(isFetching), [isFetching]);
 
-	if (!data && messageID) {
-		data = {
-			id: messageID,
-			box: { id: "" },
-			content: {},
-			date: new Date(),
-			flags: { seen: false },
-			from: []
-		};
-	}
-
 	const returnable = useMemo(
 		() => ({
-			selectedMessage: data,
+			selectedMessage: messageID
+				? data ?? {
+						id: messageID,
+						box: { id: "" },
+						content: {},
+						date: new Date(),
+						flags: { seen: false },
+						from: []
+				  }
+				: undefined,
 			selectedMessageError: error,
 			selectedMessageFetching: isFetching
 		}),

@@ -12,6 +12,8 @@ yarn-error.log*
 lerna-debug.log*
 
 /cache/**
+/certs/**
+/secrets/**
 
 # OS
 .DS_Store
@@ -24,7 +26,6 @@ lerna-debug.log*
 /coverage
 /.nyc_output
 
-/secret
 
 # IDEs and editors
 /.idea

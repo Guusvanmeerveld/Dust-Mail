@@ -45,6 +45,12 @@ import useUser from "@utils/hooks/useUser";
 
 import MessageListItem from "@components/Message/ListItem";
 
+interface RightClickMenuAnchor {
+	x: number;
+	y: number;
+	id?: string;
+}
+
 const UnMemoizedActionBar: FC<{
 	setFilter: (filter: string) => void;
 	refetch: () => void;
@@ -136,6 +142,34 @@ const UnMemoizedActionBar: FC<{
 
 const ActionBar = memo(UnMemoizedActionBar);
 
+const UnMemoizedMessageListItems: FC<{
+	data?: IncomingMessage[][];
+	selectedMessageID?: string;
+	setRightClickMenuAnchor: (anchor: RightClickMenuAnchor) => void;
+}> = ({ data, selectedMessageID, setRightClickMenuAnchor }) => {
+	return (
+		<>
+			{data &&
+				data.map((messages) =>
+					messages.map((message) => {
+						const selected = selectedMessageID == message.id;
+
+						return (
+							<MessageListItem
+								key={message.id}
+								selectedMessage={selected}
+								message={message}
+								setRightClickMenuAnchor={setRightClickMenuAnchor}
+							/>
+						);
+					})
+				)}
+		</>
+	);
+};
+
+const MessageListItems = memo(UnMemoizedMessageListItems);
+
 const UnMemoizedMessageList: FC = () => {
 	const fetcher = useFetch();
 
@@ -186,11 +220,8 @@ const UnMemoizedMessageList: FC = () => {
 
 	const rightClickMenuBox = useRef(null);
 
-	const [rightClickMenuAnchor, setRightClickMenuAnchor] = useState<{
-		x: number;
-		y: number;
-		id?: string;
-	}>({ x: 0, y: 0 });
+	const [rightClickMenuAnchor, setRightClickMenuAnchor] =
+		useState<RightClickMenuAnchor>({ x: 0, y: 0 });
 
 	const messageActions = useMessageActions();
 
@@ -251,22 +282,11 @@ const UnMemoizedMessageList: FC = () => {
 				<ActionBar refetch={refetch} setFilter={setFilter} />
 			</Box>
 
-			{data &&
-				data.pages &&
-				data.pages.map((messages) =>
-					messages.map((message) => {
-						const selected = selectedMessage?.id == message.id;
-
-						return (
-							<MessageListItem
-								key={message.id}
-								selectedMessage={selected}
-								message={message}
-								setRightClickMenuAnchor={setRightClickMenuAnchor}
-							/>
-						);
-					})
-				)}
+			<MessageListItems
+				data={data?.pages}
+				selectedMessageID={selectedMessage?.id}
+				setRightClickMenuAnchor={setRightClickMenuAnchor}
+			/>
 
 			{(isFetching || isFetchingNextPage) && (
 				<Box

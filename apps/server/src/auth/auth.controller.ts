@@ -27,6 +27,8 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
+import { bearerPrefix } from "@src/constants";
+import { CryptoService, EncryptedData } from "@src/crypto/crypto.service";
 import { getClientInfo as getGoogleClientInfo } from "@src/google/constants";
 
 import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
@@ -39,6 +41,7 @@ export class AuthController {
 
 	constructor(
 		private authService: AuthService,
+		private cryptoService: CryptoService,
 		private jwtService: JwtService
 	) {
 		if (allowedDomains) this.allowedDomains = allowedDomains.split(",");
@@ -190,7 +193,7 @@ export class AuthController {
 	// 	req.user.incomingClient
 	// }
 
-	private readonly bearerPrefix = "Bearer ";
+	private readonly bearerPrefix = bearerPrefix;
 
 	@Get("refresh")
 	public async refreshTokens(
@@ -207,11 +210,16 @@ export class AuthController {
 			authHeader?.length
 		);
 
-		const refreshTokenPayload: JwtToken = await this.jwtService
+		const encryptedRefreshTokenPayload: EncryptedData = await this.jwtService
 			.verifyAsync(userRefreshToken)
 			.catch(() => {
 				throw new UnauthorizedException("Refresh token is invalid");
 			});
+
+		const refreshTokenPayload =
+			await this.cryptoService.decryptTokenPayload<JwtToken>(
+				encryptedRefreshTokenPayload
+			);
 
 		if (refreshTokenPayload.tokenType != "refresh")
 			throw new UnauthorizedException(

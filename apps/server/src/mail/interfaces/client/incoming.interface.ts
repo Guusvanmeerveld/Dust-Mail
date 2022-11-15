@@ -1,3 +1,5 @@
+import { Readable } from "stream";
+
 import Flags from "../flags";
 
 import {
@@ -12,9 +14,14 @@ export interface Box {
 	name: string;
 }
 
+export type Attachment = [
+	Readable,
+	{ contentType: string; contentDisposition: string; id: string }
+];
+
 export default interface IncomingClient {
 	getBoxes: () => Promise<BoxResponse[]>;
-	getBox: (boxName: string, readOnly?: boolean) => Promise<Box>;
+	getBox: (boxID: string, readOnly?: boolean) => Promise<Box>;
 	getBoxMessages: (
 		boxName: string,
 		options: { filter: string; start: number; end: number }
@@ -26,9 +33,14 @@ export default interface IncomingClient {
 		boxes: string[],
 		flag: Flags
 	) => Promise<MessageCountResponse>;
+	getMessageAttachment: (
+		id: string,
+		messageID: string,
+		boxID: string
+	) => Promise<Attachment | void>;
 	getMessage: (
 		id: string,
-		boxName: string,
+		boxID: string,
 		markAsRead: boolean,
 		noImages: boolean,
 		darkMode: boolean

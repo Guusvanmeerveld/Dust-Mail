@@ -1,9 +1,13 @@
+import { Response } from "express";
+
 import { mailDefaultLimit, mailFetchLimit } from "./constants";
 import Flags from "./interfaces/flags";
+import { MailService } from "./mail.service";
 import { AddressValidationPipe } from "./pipes/address.pipe";
 
 import type {
 	Address,
+	Attachment,
 	BoxResponse,
 	FullIncomingMessage,
 	IncomingMessage,
@@ -22,8 +26,13 @@ import {
 	Query,
 	Req,
 	UseGuards,
-	Delete
+	Delete,
+	Res,
+	NotFoundException,
+	UnauthorizedException
 } from "@nestjs/common";
+
+import { bearerPrefix } from "@src/constants";
 
 import handleError from "@utils/handleError";
 
@@ -35,6 +44,10 @@ import { StringValidationPipe } from "@auth/pipes/string.pipe";
 
 @Controller("mail")
 export class MailController {
+	constructor(private mailService: MailService) {}
+
+	private readonly bearerPrefix = bearerPrefix;
+
 	@Get("folders")
 	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
@@ -177,22 +190,76 @@ export class MailController {
 			throw new BadRequestException("`id` or `box` property must be a string");
 		}
 
+		const authorizationHeader = req.headers.authorization;
+
+		const userAccessToken = authorizationHeader.slice(this.bearerPrefix.length);
+
 		id = Buffer.from(id, "base64").toString("utf-8");
 
 		const client = req.user.incomingClient;
 
 		const message = await client
 			.getMessage(id, box, markAsRead, noImages, darkMode)
-			.then((message) => {
-				if (message)
+			.then(async (message) => {
+				if (message) {
+					let attachments: Attachment[];
+					if (message.attachments)
+						attachments = await Promise.all(
+							message.attachments.map(async (attachment) => {
+								const token = await this.mailService.createAttachmentToken(
+									{
+										id: attachment.id,
+										box: message.box.id,
+										message: message.id
+									},
+									userAccessToken
+								);
+
+								return { ...attachment, token };
+							})
+						);
+
 					return {
 						...message,
+						attachments,
 						date: new Date(message.date),
 						id: Buffer.from(message.id, "utf-8").toString("base64")
 					};
+				}
 			});
 
 		return message;
+	}
+
+	@Get("message/attachment")
+	async getMessageAttachment(
+		@Res() res: Response,
+		@Query("token", StringValidationPipe) token: string
+	) {
+		if (!token)
+			throw new UnauthorizedException("Missing required `token` param");
+
+		const [{ id, message, box }, client] =
+			await this.mailService.getAttachmentDataFromToken(token);
+
+		const attachment = await client
+			.getMessageAttachment(id, message, box)
+			.catch(handleError);
+
+		if (attachment) {
+			const [stream, properties] = attachment;
+
+			res.set({
+				"Content-Type": properties.contentType,
+				"Content-Disposition": properties.contentDisposition
+			});
+
+			stream.pipe(res);
+		} else {
+			throw new NotFoundException(
+				`The attachment with id \`${id}\` could not be found`
+			);
+		}
 	}
 
 	@Get("message/count")

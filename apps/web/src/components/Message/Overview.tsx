@@ -2,7 +2,7 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { useEffect, useRef, useState, memo, FC, MouseEvent } from "react";
 
-import { Address } from "@dust-mail/typings";
+import { Address, Attachment } from "@dust-mail/typings";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -30,6 +30,7 @@ import MoreIcon from "@mui/icons-material/MoreHoriz";
 import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
+import useHttpClient from "@utils/hooks/useFetch";
 import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedMessage, {
 	useSetSelectedMessage
@@ -148,6 +149,28 @@ const CloseButton: FC = () => {
 	);
 };
 
+const AttachmentList: FC<{
+	attachments: Attachment[];
+}> = ({ attachments }) => {
+	const [backendServer] = useLocalStorageState("customServerUrl");
+
+	return (
+		<>
+			{attachments.map((attachment) => {
+				let url;
+				if (attachment.token)
+					url = `${backendServer}/mail/message/attachment?token=${attachment.token}`;
+
+				return (
+					<Link href={url} sx={{ mr: 2 }} key={attachment.id}>
+						{attachment.name}
+					</Link>
+				);
+			})}
+		</>
+	);
+};
+
 const UnMemoizedMessageOverview: FC = () => {
 	const theme = useTheme();
 
@@ -187,7 +210,7 @@ const UnMemoizedMessageOverview: FC = () => {
 							<>
 								{error && (
 									<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
-										{error.response?.data.message ?? "Unknown error"}
+										{error.response?.data?.message ?? "Unknown error"}
 									</Stack>
 								)}
 								{data && !error && (
@@ -226,6 +249,9 @@ const UnMemoizedMessageOverview: FC = () => {
 										)}
 										{data?.bcc && data?.bcc.length != 0 && (
 											<AddressList data={data.bcc} prefixText="BCC:" />
+										)}
+										{data?.attachments && data.attachments.length != 0 && (
+											<AttachmentList attachments={data.attachments} />
 										)}
 									</Stack>
 								)}
@@ -314,15 +340,22 @@ const UnMemoizedMessageOverview: FC = () => {
 						)}
 						{!isFetching && data?.content && (
 							<>
-								{data.content.type == "text" && (
-									<Box
-										dangerouslySetInnerHTML={{
-											__html: data.content.html ?? ""
-										}}
-									/>
+								{data.content.html && (
+									<>
+										{data.content.type == "text" && (
+											<Box
+												dangerouslySetInnerHTML={{
+													__html: data.content.html
+												}}
+											/>
+										)}
+										{data.content.type == "html" && (
+											<MessageDisplay content={data.content.html} />
+										)}
+									</>
 								)}
-								{data.content.type == "html" && (
-									<MessageDisplay content={data.content.html as string} />
+								{!data.content.html && (
+									<Typography sx={{ m: 1 }}>No message content</Typography>
 								)}
 							</>
 						)}

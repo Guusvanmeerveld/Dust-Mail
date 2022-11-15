@@ -40,7 +40,7 @@ const fetch = async (
 				(attribute) => ((date = attribute.date), (flags = attribute.flags))
 			);
 
-			msg.on("error", (error) => reject(error));
+			msg.on("error", reject);
 
 			msg.on("end", () => messages.push({ date, flags, bodies }));
 		});

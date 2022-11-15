@@ -37,20 +37,19 @@ export default function useAvatar(
 	const { data, isLoading, error } = useQuery<
 		string | undefined,
 		AxiosError<ErrorResponse>
-	>(
-		["avatar", email],
-		() => fetcher.getAvatar(email),
-		// .catch((error: AxiosError) => {
-		// 	if (error.response?.status == 404) {
-		// 	}
-		// }),
-		{
-			retry: false,
-			enabled:
-				(email != undefined && !blacklisted) ||
-				!!(noAvatar && noAvatar < Date.now())
-		}
-	);
+	>(["avatar", email], () => fetcher.getAvatar(email), {
+		retry: false,
+		onError: () => {
+			return;
+		},
+		enabled:
+			(email != undefined && !blacklisted) ||
+			!!(noAvatar && noAvatar < Date.now())
+	});
+
+	const avatar = useMemo(() => ({ data, isLoading }), [data, isLoading]);
+
+	if (!email || email == "") return;
 
 	if (
 		error?.response &&
@@ -63,5 +62,5 @@ export default function useAvatar(
 		setNoAvatar(Date.now() + REFRESH_INBOX_AVATARS * 1000);
 	}
 
-	return useMemo(() => ({ data, isLoading }), [data, isLoading]);
+	return avatar;
 }

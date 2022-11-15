@@ -1,7 +1,7 @@
 import cryptoRandomString from "crypto-random-string";
 
-const generateRandomPassword = async (): Promise<string> => {
-	const password = cryptoRandomString({ length: 128 });
+const generateRandomPassword = async (length?: number): Promise<string> => {
+	const password = cryptoRandomString({ length: length ?? 128 });
 
 	return password;
 };

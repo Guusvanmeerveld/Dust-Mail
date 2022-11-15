@@ -7,6 +7,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { ThrottlerModule } from "@nestjs/throttler";
 
 import { jwtConstants } from "@src/constants";
+import { CryptoModule } from "@src/crypto/crypto.module";
 import { GoogleModule } from "@src/google/google.module";
 import { ImapModule } from "@src/imap/imap.module";
 import { SmtpModule } from "@src/smtp/smtp.module";
@@ -23,6 +24,7 @@ import { SmtpModule } from "@src/smtp/smtp.module";
 			ttl: 60,
 			limit: 5
 		}),
+		CryptoModule,
 		GoogleModule,
 		ImapModule,
 		SmtpModule

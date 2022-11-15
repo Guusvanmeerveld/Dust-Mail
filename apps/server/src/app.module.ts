@@ -4,6 +4,7 @@ import { AuthModule } from "./auth/auth.module";
 import { AvatarModule } from "./avatar/avatar.module";
 import { CacheModule } from "./cache/cache.module";
 import { getBasePath } from "./constants";
+import { CryptoModule } from "./crypto/crypto.module";
 import { ImapModule } from "./imap/imap.module";
 import { LoggerMiddleware } from "./logger.middleware";
 import { MailModule } from "./mail/mail.module";
@@ -31,7 +32,8 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 		SystemModule,
 		CacheModule,
 		ImapModule,
-		SmtpModule
+		SmtpModule,
+		CryptoModule
 	]
 })
 export class AppModule implements NestModule {

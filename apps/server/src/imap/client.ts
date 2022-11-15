@@ -1,4 +1,5 @@
 import Imap from "imap";
+import { Readable } from "stream";
 
 import {
 	getBox,
@@ -32,7 +33,9 @@ import uniqueBy from "@utils/uniqueBy";
 import { CacheService } from "@cache/cache.service";
 import { getCacheTimeout } from "@cache/constants";
 
-import IncomingClient from "@mail/interfaces/client/incoming.interface";
+import IncomingClient, {
+	Attachment
+} from "@mail/interfaces/client/incoming.interface";
 
 type IncomingMessageWithInternalID = IncomingMessage & { internalID: number };
 
@@ -252,6 +255,68 @@ export default class Client implements IncomingClient {
 			)
 		);
 
+	public getMessageAttachment = async (
+		id: string,
+		messageID: string,
+		boxID: string
+	): Promise<Attachment | void> => {
+		await this.getBox(boxID);
+
+		const includeInMessage = "";
+
+		const ids = await this.search({
+			filters: [["HEADER", "Message-ID", messageID]]
+		});
+
+		if (ids.length == 0)
+			throw new InternalServerErrorException("Message not found");
+
+		const messages = await this.fetch({
+			id: ids,
+			bodies: [includeInMessage]
+		});
+
+		// await this.closeBox();
+
+		if (messages.length == 0) return;
+
+		const attachments = messages
+			.map((message) => {
+				const body = message.bodies.find(
+					(body) => body.which == includeInMessage
+				).body;
+
+				const arrayOfAttachments: Attachment[] = body.attachments.map(
+					(attachment) => {
+						const stream = new Readable({
+							read() {
+								this.push(attachment.content);
+								this.push(null);
+							}
+						});
+
+						return [
+							stream,
+							{
+								id: attachment.checksum,
+								contentType: attachment.contentType,
+								contentDisposition: attachment.contentDisposition
+							}
+						];
+					}
+				);
+
+				return arrayOfAttachments;
+			})
+			.flat();
+
+		const attachment = attachments.find(
+			([, properties]) => properties.id == id
+		);
+
+		if (attachment) return attachment;
+	};
+
 	public getMessage = async (
 		id: string,
 		boxID: string,
@@ -284,31 +349,37 @@ export default class Client implements IncomingClient {
 
 		const headers = message.bodies
 			.filter((result) => result.which == body)
-			.map((result) => ({
-				...parseMessage(result.body),
-				content: {
-					html: result.body.html
-						? cleanMainHtml(result.body.html, noImages, darkMode)
-						: cleanTextHtml(result.body.textAsHtml),
-					type: (result.body.html ? "html" : "text") as ContentType
-				},
-				cc: Array.isArray(result.body.cc)
-					? result.body.cc
-							.map((address) => address.value.map(createAddress))
-							.flat()
-					: result.body.cc?.value.map(createAddress),
-				bcc: Array.isArray(result.body.bcc)
-					? result.body.bcc
-							.map((address) => address.value.map(createAddress))
-							.flat()
-					: result.body.bcc?.value.map(createAddress),
-				to: Array.isArray(result.body.to)
-					? result.body.to
-							.map((address) => address.value.map(createAddress))
-							.flat()
-					: result.body.to?.value.map(createAddress),
-				box: { id: boxID }
-			}));
+			.map((result) => {
+				return {
+					...parseMessage(result.body),
+					attachments: result.body.attachments.map((attachment) => ({
+						id: attachment.checksum,
+						name: attachment.filename
+					})),
+					content: {
+						html: result.body.html
+							? cleanMainHtml(result.body.html, noImages, darkMode)
+							: cleanTextHtml(result.body.textAsHtml),
+						type: (result.body.html ? "html" : "text") as ContentType
+					},
+					cc: Array.isArray(result.body.cc)
+						? result.body.cc
+								.map((address) => address.value.map(createAddress))
+								.flat()
+						: result.body.cc?.value.map(createAddress),
+					bcc: Array.isArray(result.body.bcc)
+						? result.body.bcc
+								.map((address) => address.value.map(createAddress))
+								.flat()
+						: result.body.bcc?.value.map(createAddress),
+					to: Array.isArray(result.body.to)
+						? result.body.to
+								.map((address) => address.value.map(createAddress))
+								.flat()
+						: result.body.to?.value.map(createAddress),
+					box: { id: boxID }
+				};
+			});
 
 		const cachePath = [this.identifier, "messages", boxID];
 

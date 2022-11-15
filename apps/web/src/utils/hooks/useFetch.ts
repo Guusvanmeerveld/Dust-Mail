@@ -154,12 +154,10 @@ const useHttpClient = (): HttpClient => {
 		},
 		async getAvatar(address) {
 			const res = await instance.get("/avatar", {
-				params: { address },
-				validateStatus: (status) =>
-					(status >= 200 && status < 300) || status == 404
+				params: { address }
+				// validateStatus: (status) =>
+				// 	(status >= 200 && status < 300)
 			});
-
-			if (res.status == 404) return;
 
 			return res?.data;
 		}
