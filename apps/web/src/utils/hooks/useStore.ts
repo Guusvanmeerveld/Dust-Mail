@@ -16,6 +16,8 @@ interface Store {
 	showSettings: boolean;
 	setShowSettings: (show: boolean) => void;
 	toggleShowSettings: () => void;
+	showChangelog: boolean;
+	setShowChangelog: (show: boolean) => void;
 	showMessageComposer: boolean;
 	setShowMessageComposer: (open: boolean) => void;
 	appVersion: { title: string; type: "git" | "stable" };
@@ -41,6 +43,8 @@ const createStore = create<Store>((set) => ({
 	setShowSettings: (showSettings) => set({ showSettings }),
 	toggleShowSettings: () =>
 		set(({ showSettings }) => ({ showSettings: !showSettings })),
+	showChangelog: false,
+	setShowChangelog: (show) => set({ showChangelog: show }),
 	showMessageComposer: false,
 	setShowMessageComposer: (open) => set({ showMessageComposer: open }),
 	appVersion: {

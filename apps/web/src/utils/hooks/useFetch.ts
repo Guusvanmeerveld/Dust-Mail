@@ -1,5 +1,6 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import { version } from "../../../package.json";
 import useUser from "./useUser";
 
 import axios from "axios";
@@ -33,6 +34,15 @@ const useHttpClient = (): HttpClient => {
 	});
 
 	return {
+		async getChangelog() {
+			const { data } = await axios.get(
+				`https://raw.githubusercontent.com/${
+					import.meta.env.VITE_REPO
+				}/${version}/CHANGELOG.md`
+			);
+
+			return data;
+		},
 		async getVersion() {
 			const { data } = await axios
 				.get<VersionResponse>("/system/version", { baseURL: backendServer })
