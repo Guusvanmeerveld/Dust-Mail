@@ -5,10 +5,11 @@ import getUser from "./utils/getUser";
 
 import { IncomingServiceType, OutgoingServiceType } from "@dust-mail/typings";
 
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
 import { jwtConstants } from "@src/constants";
+import { CryptoService } from "@src/crypto/crypto.service";
 
 import { CacheService } from "@cache/cache.service";
 
@@ -21,7 +22,8 @@ import { JwtToken } from "@auth/interfaces/jwt.interface";
 export class GoogleService {
 	constructor(
 		private readonly jwtService: JwtService,
-		private readonly cacheService: CacheService
+		private readonly cacheService: CacheService,
+		private readonly cryptoService: CryptoService
 	) {
 		this.clients = new Map();
 	}
@@ -57,9 +59,12 @@ export class GoogleService {
 			body: config
 		};
 
-		const accessToken = this.jwtService.sign(accessTokenPayload, {
-			expiresIn: jwtConstants.accessTokenExpires
-		});
+		const accessToken = this.jwtService.sign(
+			await this.cryptoService.encryptTokenPayload(accessTokenPayload),
+			{
+				expiresIn: jwtConstants.accessTokenExpires
+			}
+		);
 
 		const refreshTokenPayload: JwtToken = {
 			tokenType: "refresh",
@@ -68,7 +73,9 @@ export class GoogleService {
 			body: config
 		};
 
-		const refreshToken = this.jwtService.sign(refreshTokenPayload);
+		const refreshToken = this.jwtService.sign(
+			await this.cryptoService.encryptTokenPayload(refreshTokenPayload)
+		);
 
 		return [accessToken, refreshToken, user.email];
 	};

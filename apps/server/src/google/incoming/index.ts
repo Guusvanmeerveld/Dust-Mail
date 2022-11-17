@@ -60,7 +60,7 @@ export default class IncomingGoogleClient implements IncomingClient {
 
 	public getBoxMessages = async (
 		boxName: string,
-		options: { start: number; end: number }
+		options: { start: number; end: number; filter: string }
 	) => {
 		const current = this.messages.get(boxName);
 		// console.log(current);

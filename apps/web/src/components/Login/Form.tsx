@@ -38,11 +38,15 @@ import AdvancedLogin, { SecurityType, ServerType } from "@interfaces/login";
 import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
 
+import detectProviderFromEmail from "@utils/detectProviderFromEmail";
 import { useMailLogin } from "@utils/hooks/useLogin";
+import {
+	useGoogleOAuthLink,
+	useTauriOAuth,
+	useWebOAuth
+} from "@utils/hooks/useOAuth";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-
-import OtherLogins from "@components/Login/OtherLogins";
 
 type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
 	setProperty: (
@@ -71,9 +75,22 @@ const Credentials: FC<{
 	required?: boolean;
 	identifier: string;
 	setError: (error?: ErrorResponse) => void;
+	password: string;
+	showPasswordField?: boolean;
 	setPassword: (password: string) => void;
+	username: string;
 	setUsername: (username: string) => void;
-}> = ({ identifier, error, required, setError, setPassword, setUsername }) => {
+}> = ({
+	identifier,
+	error,
+	required,
+	setError,
+	showPasswordField,
+	setPassword,
+	password,
+	setUsername,
+	username
+}) => {
 	const [showPassword, setShowPassword] = useState(false);
 
 	return (
@@ -89,42 +106,46 @@ const Credentials: FC<{
 				helperText={
 					error && error.code == GatewayError.Credentials && error.message
 				}
+				value={username}
 				label="Username"
 				variant="outlined"
 				type="email"
 			/>
 
-			<FormControl
-				error={error && error.code == GatewayError.Credentials}
-				required={required}
-				variant="outlined"
-			>
-				<InputLabel htmlFor="password">Password</InputLabel>
-				<OutlinedInput
+			{showPasswordField !== false && (
+				<FormControl
+					error={error && error.code == GatewayError.Credentials}
 					required={required}
-					onChange={(e) => {
-						setError(undefined);
-						setPassword(e.currentTarget.value);
-					}}
-					endAdornment={
-						<InputAdornment position="end">
-							<Tooltip title={`${showPassword ? "Hide" : "Show"} password`}>
-								<IconButton
-									aria-label="toggle password visibility"
-									onClick={() => setShowPassword((state) => !state)}
-									onMouseDown={() => setShowPassword((state) => !state)}
-									edge="end"
-								>
-									{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-								</IconButton>
-							</Tooltip>
-						</InputAdornment>
-					}
-					id={"password-" + identifier}
-					label="Password"
-					type={showPassword ? "text" : "password"}
-				/>
-			</FormControl>
+					variant="outlined"
+				>
+					<InputLabel htmlFor="password">Password</InputLabel>
+					<OutlinedInput
+						required={required}
+						onChange={(e) => {
+							setError(undefined);
+							setPassword(e.currentTarget.value);
+						}}
+						endAdornment={
+							<InputAdornment position="end">
+								<Tooltip title={`${showPassword ? "Hide" : "Show"} password`}>
+									<IconButton
+										aria-label="toggle password visibility"
+										onClick={() => setShowPassword((state) => !state)}
+										onMouseDown={() => setShowPassword((state) => !state)}
+										edge="end"
+									>
+										{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+									</IconButton>
+								</Tooltip>
+							</InputAdornment>
+						}
+						value={password}
+						id={"password-" + identifier}
+						label="Password"
+						type={showPassword ? "text" : "password"}
+					/>
+				</FormControl>
+			)}
 		</>
 	);
 };
@@ -134,7 +155,11 @@ const UnMemoizedServerPropertiesColumn: FC<{
 }> = ({ type }) => {
 	const setSetting = createLoginSettingsStore((state) => state.setProperty);
 
+	const username = createLoginSettingsStore((state) => state[type].username);
+	const password = createLoginSettingsStore((state) => state[type].password);
 	const security = createLoginSettingsStore((state) => state[type].security);
+	const port = createLoginSettingsStore((state) => state[type].port);
+	const server = createLoginSettingsStore((state) => state[type].server);
 
 	const error = createLoginSettingsStore((state) => state[type].error);
 
@@ -148,7 +173,7 @@ const UnMemoizedServerPropertiesColumn: FC<{
 					fullWidth
 					id={`${type}-server`}
 					onChange={(e) => setSetting(type)("server")(e.currentTarget.value)}
-					// value={server}
+					value={server}
 					label="Server url/ip"
 					variant="outlined"
 					type="text"
@@ -174,7 +199,7 @@ const UnMemoizedServerPropertiesColumn: FC<{
 					fullWidth
 					id={`${type}-server-port`}
 					onChange={(e) => setSetting(type)("port")(e.currentTarget.value)}
-					// value={port}
+					value={port}
 					label="Port"
 					helperText={`Default: ${
 						type == "incoming"
@@ -197,7 +222,9 @@ const UnMemoizedServerPropertiesColumn: FC<{
 					required={type == "incoming"}
 					setError={setSetting(type)("error")}
 					setPassword={setSetting(type)("password")}
+					password={password ?? ""}
 					setUsername={setSetting(type)("username")}
+					username={username ?? ""}
 				/>
 			</Stack>
 		</Grid>
@@ -320,6 +347,11 @@ const LoginForm: FC<{
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 
+	const handleWebOAuth = useWebOAuth();
+	const handleTauriOAuth = useTauriOAuth();
+
+	const googleOAuthLink = useGoogleOAuthLink(username);
+
 	const [error, setError] = useState<ErrorResponse>();
 
 	const login = useMailLogin();
@@ -330,7 +362,24 @@ const LoginForm: FC<{
 		document.title = `${import.meta.env.VITE_APP_NAME} - Login`;
 	}, []);
 
-	const missingFields = !username || !password;
+	const emailProvider = useMemo(
+		() => detectProviderFromEmail(username),
+		[username]
+	);
+
+	useEffect(() => {
+		if (!googleOAuthLink && emailProvider == "google")
+			setError({
+				code: GatewayError.Misc,
+				message: "Google login is not supported on this Dust-Mail instance."
+			});
+	}, [emailProvider]);
+
+	const missingFields =
+		!username ||
+		((emailProvider != "google" ||
+			(emailProvider == "google" && !googleOAuthLink)) &&
+			!password);
 
 	/**
 	 * Runs when the form should be submitted to the server
@@ -347,7 +396,26 @@ const LoginForm: FC<{
 		// Remove any old errors
 		setError(undefined);
 
-		await login({ incoming: { username, password } }).catch((e) => setError(e));
+		switch (emailProvider) {
+			case "google":
+				if (googleOAuthLink)
+					if ("__TAURI_METADATA__" in window) handleTauriOAuth(googleOAuthLink);
+					else if ("open" in window) handleWebOAuth(googleOAuthLink);
+				break;
+
+			case "protonmail":
+				setError({
+					code: GatewayError.Misc,
+					message: "No support for Protonmail yet"
+				});
+				break;
+
+			default:
+				await login({ incoming: { username, password } }).catch((e) =>
+					setError(e)
+				);
+				break;
+		}
 	};
 
 	return (
@@ -361,8 +429,11 @@ const LoginForm: FC<{
 						identifier="default"
 						setError={setError}
 						required
+						showPasswordField={emailProvider != "google"}
 						setPassword={setPassword}
+						password={password}
 						setUsername={setUsername}
+						username={username}
 					/>
 
 					<Button
@@ -385,7 +456,6 @@ const LoginForm: FC<{
 						)}
 				</Stack>
 			</form>
-			<OtherLogins />
 			<AdvancedLoginMenu />
 			{trailing}
 		</Stack>

@@ -137,6 +137,9 @@ function createEmailServer(
 	return {
 		port: server.port,
 		server: server.hostname,
+		oauth: Array.isArray(server.authentication)
+			? !!server.authentication.find((authMethod) => authMethod == "OAuth2")
+			: server.authentication == "OAuth2",
 		security,
 		type
 	};

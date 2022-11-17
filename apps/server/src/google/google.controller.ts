@@ -3,8 +3,6 @@ import { join } from "path";
 
 import { GoogleService } from "./google.service";
 
-import { LoginResponse } from "@dust-mail/typings";
-
 import {
 	BadRequestException,
 	Controller,
@@ -15,22 +13,19 @@ import {
 	UnauthorizedException,
 	UseGuards
 } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 
-import createTokenResponse from "@utils/createTokenResponse";
+import createOAuthPage from "@src/utils/createOAuthPage";
+
 import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 import handleError from "@utils/handleError";
 
 import { StringValidationPipe } from "@auth/pipes/string.pipe";
 
 @Controller("google")
+@ApiTags("oauth")
 export class GoogleController {
 	constructor(private readonly googleService: GoogleService) {}
-
-	private readonly pathToOAuthPage = join(
-		process.cwd(),
-		"public",
-		"oauth.html"
-	);
 
 	@Get("login")
 	@UseGuards(ThrottlerBehindProxyGuard)
@@ -52,17 +47,12 @@ export class GoogleController {
 			.login(code, redirect_uri)
 			.catch(handleError);
 
-		const tokens: LoginResponse = [
-			createTokenResponse("access", accessToken),
-			createTokenResponse("refresh", refreshToken)
-		];
+		const oauthPage = await createOAuthPage(
+			accessToken,
+			refreshToken,
+			username
+		);
 
-		const cookieOptions = { secure: true, httpOnly: true };
-
-		res.cookie("tokens", tokens, cookieOptions);
-
-		res.cookie("username", username, cookieOptions);
-
-		res.sendFile(this.pathToOAuthPage);
+		res.type("text/html").send(oauthPage);
 	}
 }

@@ -4,6 +4,7 @@ export interface EmailServer<T> {
 	server: string;
 	port: number;
 	security: Security;
+	oauth: boolean;
 	type: T;
 }
 

@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import InfoIcon from "@mui/icons-material/Info";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import UpdateIcon from "@mui/icons-material/Update";
 
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -29,6 +30,8 @@ const Login: FC = () => {
 
 	const appVersion = useStore((state) => state.appVersion);
 	const setShowAbout = useStore((state) => state.setShowAbout);
+
+	const setShowChangelog = useStore((state) => state.setShowChangelog);
 
 	const user = useUser();
 
@@ -88,6 +91,9 @@ const Login: FC = () => {
 					}}
 				>
 					<Stack sx={{ alignItems: "center" }} direction="row" spacing={1}>
+						<IconButton onClick={() => setShowChangelog(true)}>
+							<UpdateIcon />
+						</IconButton>
 						<IconButton onClick={() => setShowAbout(true)}>
 							<InfoIcon />
 						</IconButton>

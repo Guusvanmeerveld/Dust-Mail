@@ -16,7 +16,7 @@ export interface Server {
 	hostname: string;
 	port: number;
 	socketType: "STARTTLS" | "SSL" | "plain";
-	authentication: Authentication;
+	authentication: Authentication | Authentication[];
 	"@": {
 		type: IncomingServiceType | OutgoingServiceType;
 	};

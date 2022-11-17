@@ -26,6 +26,7 @@ import {
 	UseGuards
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { ApiTags } from "@nestjs/swagger";
 
 import { bearerPrefix } from "@src/constants";
 import { CryptoService, EncryptedData } from "@src/crypto/crypto.service";
@@ -35,6 +36,7 @@ import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 import handleError from "@utils/handleError";
 
 @Controller("auth")
+@ApiTags("auth")
 export class AuthController {
 	private allowedDomains?: string[];
 	private allowedAddresses?: string[];

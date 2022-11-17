@@ -31,6 +31,7 @@ import {
 	NotFoundException,
 	UnauthorizedException
 } from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 
 import { bearerPrefix } from "@src/constants";
 
@@ -43,6 +44,8 @@ import { StringValidationPipe } from "@auth/pipes/string.pipe";
 // import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 
 @Controller("mail")
+@ApiTags("mail")
+@ApiBearerAuth()
 export class MailController {
 	constructor(private mailService: MailService) {}
 
@@ -51,6 +54,9 @@ export class MailController {
 	@Get("folders")
 	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
+	/**
+	 * Fetch all a users folders/boxes
+	 */
 	async fetchBoxes(@Req() req: Request): Promise<BoxResponse[]> {
 		const client = req.user.incomingClient;
 
@@ -60,12 +66,19 @@ export class MailController {
 	@Get("folder")
 	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
+	/**
+	 * Fetch all of the messages in a folder/box.
+	 * @param limit The maximum number of messages to return
+	 * @param cursor The page to retrieve
+	 * @param filter Only return the messages containing this filter
+	 * @param box The folder/box to retrieve the messages from.
+	 */
 	async fetchBox(
 		@Req() req: Request,
 		@Query("limit", ParseIntPipe) limit: number,
 		@Query("cursor", ParseIntPipe) page: number,
-		@Query("filter", StringValidationPipe) filter: string,
-		@Query("folder", StringValidationPipe) box: string
+		@Query("folder", StringValidationPipe) box: string,
+		@Query("filter", StringValidationPipe) filter?: string
 	): Promise<IncomingMessage[]> {
 		if (!limit) limit = mailDefaultLimit;
 

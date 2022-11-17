@@ -13,6 +13,11 @@ struct Payload {
   message: String,
 }
 
+#[tauri::command]
+fn oauth_login_token(config: String) -> Result<String, String> {
+  Ok(config.into())
+}
+
 fn main() {
   // File menu
   let file_submenu = Submenu::new(
@@ -94,10 +99,10 @@ fn main() {
         open::that("https://ko-fi.com/Guusvanmeerveld").unwrap();
       }
       "report_issue" => {
-        open::that([github_page, "/issues"].join("")).unwrap();
+        open::that([github_page, "issues"].join("/")).unwrap();
       }
       "license" => {
-        open::that([github_page, "/blob/main/LICENSE"].join("")).unwrap();
+        open::that([github_page, "blob/main/LICENSE"].join("/")).unwrap();
       }
       "about" => {
         event
@@ -131,6 +136,7 @@ fn main() {
       },
       _ => {}
     })
+    .invoke_handler(tauri::generate_handler![oauth_login_token])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

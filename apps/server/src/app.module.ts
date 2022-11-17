@@ -1,9 +1,6 @@
-import { join } from "path";
-
 import { AuthModule } from "./auth/auth.module";
 import { AvatarModule } from "./avatar/avatar.module";
 import { CacheModule } from "./cache/cache.module";
-import { getBasePath } from "./constants";
 import { CryptoModule } from "./crypto/crypto.module";
 import { ImapModule } from "./imap/imap.module";
 import { LoggerMiddleware } from "./logger.middleware";
@@ -13,7 +10,6 @@ import { SystemModule } from "./system/system.module";
 
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { ServeStaticModule } from "@nestjs/serve-static";
 
 @Module({
 	imports: [
@@ -21,10 +17,6 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 			envFilePath: ".env.local",
 			cache: true,
 			isGlobal: true
-		}),
-		ServeStaticModule.forRoot({
-			rootPath: join(process.cwd(), "public", "scripts"),
-			serveRoot: "/" + join(getBasePath(), "scripts")
 		}),
 		AuthModule,
 		MailModule,

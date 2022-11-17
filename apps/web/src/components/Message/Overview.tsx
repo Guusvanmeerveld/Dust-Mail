@@ -101,7 +101,7 @@ const AddressList: FC<{
 	);
 };
 
-const MessageDisplay: FC<{ content: string }> = ({ content }) => {
+const UnMemoizedMessageDisplay: FC<{ content: string }> = ({ content }) => {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 
 	useEffect(() => {
@@ -137,6 +137,8 @@ const MessageDisplay: FC<{ content: string }> = ({ content }) => {
 		/>
 	);
 };
+
+const MessageDisplay = memo(UnMemoizedMessageDisplay);
 
 const CloseButton: FC = () => {
 	const setSelectedMessage = useSetSelectedMessage();

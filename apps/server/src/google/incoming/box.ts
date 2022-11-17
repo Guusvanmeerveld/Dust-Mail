@@ -66,6 +66,8 @@ export const getBoxMessages = async (
 
 	if (!data.messages) return [[], null];
 
+	// console.log(data.messages);
+
 	return [
 		await Promise.all(
 			data.messages.map(async (message) => {

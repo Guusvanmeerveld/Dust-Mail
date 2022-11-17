@@ -5,6 +5,7 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 
 import { jwtConstants } from "@src/constants";
+import { CryptoModule } from "@src/crypto/crypto.module";
 
 import { CacheModule } from "@cache/cache.module";
 
@@ -16,6 +17,7 @@ import { CacheModule } from "@cache/cache.module";
 				signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
 			})
 		}),
+		CryptoModule,
 		CacheModule
 	],
 	providers: [GoogleService],
