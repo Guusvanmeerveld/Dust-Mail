@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import { join } from "path";
 
 import { GoogleService } from "./google.service";
 
@@ -33,6 +32,7 @@ export class GoogleController {
 		@Req() req: Request,
 		@Res() res: Response,
 		@Query("code", StringValidationPipe) code: string,
+		@Query("state", StringValidationPipe) clientHostname: string,
 		@Query("error", StringValidationPipe) error: string
 	) {
 		if (error) {
@@ -41,18 +41,25 @@ export class GoogleController {
 
 		if (!code) throw new BadRequestException("`code` param required");
 
+		if (!clientHostname)
+			throw new BadRequestException("`state` param required");
+
 		const redirect_uri = `${req.protocol}://${req.get("host")}${req.path}`;
 
 		const [accessToken, refreshToken, username] = await this.googleService
 			.login(code, redirect_uri)
 			.catch(handleError);
 
-		const oauthPage = await createOAuthPage(
+		const [oauthPage, hash] = await createOAuthPage(
 			accessToken,
 			refreshToken,
-			username
+			username,
+			clientHostname
 		);
 
-		res.type("text/html").send(oauthPage);
+		res
+			.header("Content-Security-Policy", `script-src '${hash}'`)
+			.type("text/html")
+			.send(oauthPage);
 	}
 }

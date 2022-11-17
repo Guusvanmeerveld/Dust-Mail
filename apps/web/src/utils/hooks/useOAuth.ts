@@ -112,6 +112,7 @@ export const useGoogleOAuthLink = (username?: string): string | undefined => {
 				"https://www.googleapis.com/auth/userinfo.profile",
 				"https://www.googleapis.com/auth/userinfo.email"
 			].join(" "),
+			state: window.location.origin,
 			login_hint: username ?? "",
 			client_id: oauthTokens.google,
 			redirect_uri: `${backendServer}/google/login`

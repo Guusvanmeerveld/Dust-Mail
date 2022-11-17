@@ -23,12 +23,7 @@ async function bootstrap() {
 
 	app.use(
 		helmet({
-			crossOriginOpenerPolicy: { policy: "unsafe-none" },
-			contentSecurityPolicy: {
-				directives: {
-					"script-src": "'unsafe-inline'"
-				}
-			}
+			crossOriginOpenerPolicy: { policy: "unsafe-none" }
 		})
 	);
 
