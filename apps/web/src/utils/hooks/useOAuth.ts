@@ -64,17 +64,9 @@ export const useTauriOAuth = (): ((oauthLink: string) => void) => {
 			url,
 			focus: true,
 			minWidth: 200,
-			minHeight: 300
+			minHeight: 300,
+			center: true
 		});
-
-		const unlisten = await webview.listen<OAuthLoginResponse>(
-			"oauth_login_token",
-			(e) => {
-				setToken(e.payload);
-			}
-		);
-
-		unlisten();
 
 		// await webview.close();
 
@@ -112,7 +104,10 @@ export const useGoogleOAuthLink = (username?: string): string | undefined => {
 				"https://www.googleapis.com/auth/userinfo.profile",
 				"https://www.googleapis.com/auth/userinfo.email"
 			].join(" "),
-			state: window.location.origin,
+			state:
+				"__TAURI_METADATA__" in window
+					? "tauri://localhost"
+					: window.location.origin,
 			login_hint: username ?? "",
 			client_id: oauthTokens.google,
 			redirect_uri: `${backendServer}/google/login`

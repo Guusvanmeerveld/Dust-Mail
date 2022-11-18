@@ -4,13 +4,19 @@ const username = "{{username}}";
 
 document.getElementById("text").innerHTML = "Logging in, please wait...";
 
-if ("__TAURI__" in window) {
-	window.__TAURI__.tauri.invoke("oauth_login_token", {
-		config: JSON.stringify({
-			tokens: [accessToken, refreshToken],
-			username
-		})
-	});
+if ("{{isTauri}}") {
+	document.getElementById("text").innerHTML =
+		"OAuth login using the desktop application is currently not yet supported";
+
+	// const payload = btoa(JSON.stringify([accessToken, refreshToken, username]));
+
+	// const textarea = document.createElement("textarea");
+
+	// textarea.value = payload;
+
+	// textarea.rows = 1;
+
+	// document.body.appendChild(textarea);
 } else if ("opener" in window && "postMessage" in window.opener) {
 	window.opener.postMessage(
 		JSON.stringify({ tokens: [accessToken, refreshToken], username }),

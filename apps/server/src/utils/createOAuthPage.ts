@@ -30,6 +30,10 @@ const createOAuthPage = async (
 			.replace("{{refresh_token}}", JSON.stringify(tokens.refresh))
 			.replace("{{username}}", username)
 			.replace("{{clientHostname}}", clientHostname)
+			.replace(
+				`"{{isTauri}}"`,
+				clientHostname == "tauri://localhost" ? "true" : "false"
+			)
 	);
 
 	$("body").append(`<script>${oauthScript}</script>`);
