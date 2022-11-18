@@ -45,6 +45,7 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 						<Link href={windowsDownload.url} passHref>
 							<a>
 								<Image
+									alt="windows-download-button"
 									src="/badge-windows.png"
 									width={badgeWidth}
 									height={badgeHeight}
@@ -56,6 +57,7 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 						<Link href={osxDownload.url} passHref>
 							<a>
 								<Image
+									alt="macos-download-button"
 									src="/badge-osx.png"
 									width={badgeWidth}
 									height={badgeHeight}
@@ -67,6 +69,7 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 						<Link href={linuxDownload.url} passHref>
 							<a>
 								<Image
+									alt="linux-download-button"
 									src="/badge-linux.png"
 									width={badgeWidth}
 									height={badgeHeight}

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { FC } from "react";
 
 const Header: FC<{ title: string; description: string }> = ({
@@ -7,11 +9,15 @@ const Header: FC<{ title: string; description: string }> = ({
 	return (
 		<header>
 			<nav>
-				<a href="/">Home</a>
-				<a href="/download">Download</a>
-				<a href={`https://docs.${process.env.NEXT_PUBLIC_DOMAIN}`}>Docs</a>
-				<a href={`https://app.${process.env.NEXT_PUBLIC_DOMAIN}`}>Demo</a>
-				<a href={`https://github.com/Guusvanmeerveld/Dust-Mail`}>Github</a>
+				<Link href="/">Home</Link>
+				<Link href="/download">Download</Link>
+				<Link href={`https://docs.${process.env.NEXT_PUBLIC_DOMAIN}`}>
+					Docs
+				</Link>
+				<Link href={`https://app.${process.env.NEXT_PUBLIC_DOMAIN}`}>Demo</Link>
+				<Link href={`https://github.com/Guusvanmeerveld/Dust-Mail`}>
+					Github
+				</Link>
 			</nav>
 			<h1>Dust-Mail - {title}</h1>
 			<p>{description}</p>
