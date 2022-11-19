@@ -1,6 +1,6 @@
 import { useCurrentUser, useRemoveUser, useUsers } from "./useUser";
 
-import { useMemo } from "react";
+import { useCallback } from "react";
 import { useNavigate } from "react-router";
 
 import useStore from "@utils/hooks/useStore";
@@ -16,24 +16,21 @@ const useLogout = (): (() => void) => {
 
 	const setFetching = useStore((state) => state.setFetching);
 
-	const logout = useMemo(
-		() => (): void => {
-			setFetching(false);
+	const logout = useCallback((): void => {
+		setFetching(false);
 
-			if (!currentUser || !users) return;
+		if (!currentUser || !users) return;
 
-			removeUser(currentUser?.username);
+		removeUser(currentUser?.username);
 
-			const newCurrentUser = users
-				.filter((user) => user.username != currentUser.username)
-				?.shift();
+		const newCurrentUser = users
+			.filter((user) => user.username != currentUser.username)
+			?.shift();
 
-			setCurrentUser(newCurrentUser?.username);
+		setCurrentUser(newCurrentUser?.username);
 
-			if (newCurrentUser?.username) navigate("/dashboard");
-		},
-		[users, currentUser, setFetching]
-	);
+		if (newCurrentUser?.username) navigate("/dashboard");
+	}, [users, currentUser, setFetching]);
 
 	return logout;
 };

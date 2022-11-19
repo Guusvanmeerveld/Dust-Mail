@@ -2,6 +2,7 @@ import Imap from "imap";
 import { Readable } from "stream";
 
 import {
+	openBox,
 	getBox,
 	closeBox,
 	getBoxes,
@@ -60,7 +61,7 @@ export default class Client implements IncomingClient {
 	 * @returns The box
 	 */
 	public getBox = (name: string, readOnly?: boolean) =>
-		getBox(this._client, name, readOnly);
+		openBox(this._client, name, readOnly);
 
 	/**
 	 *
@@ -235,11 +236,13 @@ export default class Client implements IncomingClient {
 	public getMessageCount = async (
 		boxes: string[],
 		flag: Flags
-	): Promise<MessageCountResponse> =>
-		Object.fromEntries(
+	): Promise<MessageCountResponse> => {
+		await this.closeBox().catch(() => null);
+
+		return Object.fromEntries(
 			await Promise.all(
 				boxes.map(async (boxName) => {
-					const box = await this.getBox(boxName).catch(() => {
+					const box = await getBox(this._client, boxName).catch(() => {
 						return;
 					});
 
@@ -256,6 +259,7 @@ export default class Client implements IncomingClient {
 				})
 			)
 		);
+	};
 
 	public getMessageAttachment = async (
 		id: string,

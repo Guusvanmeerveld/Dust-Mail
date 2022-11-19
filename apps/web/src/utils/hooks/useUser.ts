@@ -1,6 +1,6 @@
 import useLocalStorageState from "use-local-storage-state";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import Box from "@interfaces/box";
 import User, { NewUser } from "@interfaces/user";
@@ -15,19 +15,18 @@ export const useUsers = (): [
 		defaultValue: []
 	});
 
-	const setNewUsers = useMemo(
-		() =>
-			(newUsers: NewUser[], oldUsers: User[] = []) =>
-				setUsers([
-					...oldUsers,
-					...newUsers.map((user) => ({
-						...user,
-						boxes: {
-							flattened: user.boxes,
-							nested: nestBoxes(user.boxes)
-						}
-					}))
-				]),
+	const setNewUsers = useCallback(
+		(newUsers: NewUser[], oldUsers: User[] = []) =>
+			setUsers([
+				...oldUsers,
+				...newUsers.map((user) => ({
+					...user,
+					boxes: {
+						flattened: user.boxes,
+						nested: nestBoxes(user.boxes)
+					}
+				}))
+			]),
 		[setUsers]
 	);
 
@@ -45,8 +44,6 @@ export const useCurrentUser = (): [
 
 	const [currentUser, setCurrentUser] = useMemo(() => {
 		const user = users?.find((user) => user.username == currentUsername);
-
-		if (!user) return [, setUsername];
 
 		return [user, setUsername];
 	}, [currentUsername, users]);
@@ -67,8 +64,8 @@ export const useAddUser = (): ((user: NewUser) => void) => {
 export const useRemoveUser = (): ((username: string) => void) => {
 	const [users, setUsers] = useUsers();
 
-	return useMemo(
-		() => (username) => {
+	return useCallback(
+		(username) => {
 			if (!users) return;
 
 			setUsers(
@@ -141,16 +138,12 @@ export const useModifyBox = (): ((id: string, newBox: Box) => void) => {
 	};
 };
 
-const useUser = (): { user?: User; isLoggedIn: boolean } => {
+const useUser = (): User | undefined => {
 	const [currentUser] = useCurrentUser();
 
-	const isLoggedIn = !!currentUser;
+	const user = useMemo(() => currentUser, [currentUser]);
 
-	if (isLoggedIn) {
-		return { user: currentUser, isLoggedIn };
-	} else {
-		return { isLoggedIn };
-	}
+	return user;
 };
 
 export default useUser;

@@ -148,7 +148,7 @@ const useLogin = (): ((
 	const modifyUser = useModifyUser();
 	const [, setCurrentUser] = useCurrentUser();
 
-	const { user } = useUser();
+	const user = useUser();
 
 	const navigate = useNavigate();
 

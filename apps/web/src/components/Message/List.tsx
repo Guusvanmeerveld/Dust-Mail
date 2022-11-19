@@ -180,7 +180,7 @@ const UnMemoizedMessageList: FC = () => {
 	const [selectedBox] = useSelectedBox();
 	const { selectedMessage } = useSelectedMessage();
 
-	const { user } = useUser();
+	const user = useUser();
 
 	// Request the messages using react-query
 	const {

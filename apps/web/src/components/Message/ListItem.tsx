@@ -1,4 +1,4 @@
-import { FC, memo, MouseEvent, useMemo, useState } from "react";
+import { FC, memo, MouseEvent, useMemo } from "react";
 
 import { IncomingMessage } from "@dust-mail/typings";
 
@@ -22,8 +22,6 @@ const UnMemoizedMessageListItem: FC<{
 }> = ({ message, selectedMessage, setRightClickMenuAnchor }) => {
 	const theme = useTheme();
 
-	const [unSeen, setUnSeen] = useState(!message.flags.seen);
-
 	const setSelectedMessage = useSetSelectedMessage();
 
 	const from = useMemo(
@@ -38,8 +36,6 @@ const UnMemoizedMessageListItem: FC<{
 	const handleClick = useMemo(
 		() => (): void => {
 			if (!message.id) return;
-
-			setUnSeen(false);
 
 			if (selectedMessage) setSelectedMessage();
 			else setSelectedMessage(message.id);
@@ -78,7 +74,7 @@ const UnMemoizedMessageListItem: FC<{
 						alignItems: "center"
 					}}
 				>
-					{unSeen && (
+					{!message.flags.seen && (
 						<Box
 							sx={{
 								width: theme.spacing(0.5),
@@ -115,7 +111,7 @@ const UnMemoizedMessageListItem: FC<{
 							noWrap
 							textOverflow="ellipsis"
 							variant="h6"
-							sx={{ fontWeight: unSeen ? "bold" : null }}
+							sx={{ fontWeight: !message.flags.seen ? "bold" : null }}
 						>
 							{!message.subject ||
 							(message.subject && message.subject.length == 0)

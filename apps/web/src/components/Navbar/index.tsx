@@ -41,7 +41,7 @@ const UnMemoizedBreadCrumbs: FC = () => {
 		[theme.palette]
 	);
 
-	const { user } = useUser();
+	const user = useUser();
 
 	const breadcrumbs = useMemo(() => {
 		const boxIDSplit = selectedBox?.id.split(selectedBox.delimiter);

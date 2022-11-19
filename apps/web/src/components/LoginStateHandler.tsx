@@ -10,7 +10,7 @@ import useStore from "@utils/hooks/useStore";
 import useUser from "@utils/hooks/useUser";
 
 const UnMemoizedLoginStateHandler: FC = () => {
-	const { user } = useUser();
+	const user = useUser();
 
 	const setFetching = useStore((state) => state.setFetching);
 	const fetching = useStore((state) => state.fetching);

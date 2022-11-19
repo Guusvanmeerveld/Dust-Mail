@@ -9,6 +9,9 @@ import {
 	useContext,
 	MouseEvent
 } from "react";
+import { useQuery } from "react-query";
+
+import { MessageCountResponse } from "@dust-mail/typings";
 
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
@@ -29,6 +32,7 @@ import FolderIcon from "@mui/icons-material/Folder";
 
 import MailBox from "@interfaces/box";
 
+import useHttpClient from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useTheme from "@utils/hooks/useTheme";
 
@@ -140,7 +144,7 @@ const UnMemoizedListItem: FC<
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
 						<ListItemIcon>
-							<Icon icon={box.icon} badge={badge} />
+							<Icon box={box.id} icon={box.icon} badge={badge} />
 						</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
@@ -174,7 +178,7 @@ const UnMemoizedListItem: FC<
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
 						<ListItemIcon>
-							<Icon icon={box.icon} badge={badge} />
+							<Icon box={box.id} icon={box.icon} badge={badge} />
 						</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
@@ -188,13 +192,22 @@ const UnMemoizedListItem: FC<
 	);
 };
 
-const Icon: FC<{ icon?: JSX.Element; badge?: number | string }> = ({
-	icon,
-	badge
-}) => {
-	if (badge)
+const Icon: FC<{
+	icon?: JSX.Element;
+	badge?: number;
+	box: string;
+}> = ({ icon, badge, box }) => {
+	const fetcher = useHttpClient();
+
+	const { data } = useQuery<MessageCountResponse>(
+		["unreadCount", box],
+		() => fetcher.getMessageCount([box], "unread"),
+		{ enabled: !!badge && badge != 0 }
+	);
+
+	if (badge && badge != 0)
 		return (
-			<Badge badgeContent={badge} color="primary">
+			<Badge badgeContent={data ? data[box] : badge} color="primary">
 				{icon ?? <FolderIcon />}
 			</Badge>
 		);

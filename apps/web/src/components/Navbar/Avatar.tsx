@@ -115,7 +115,7 @@ const AddAccountListItem: FC = () => {
 const UnMemoizedAvatar: FC = () => {
 	const theme = useTheme();
 
-	const { user } = useUser();
+	const user = useUser();
 
 	const logout = useLogout();
 

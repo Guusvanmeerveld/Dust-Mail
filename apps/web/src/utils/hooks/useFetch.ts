@@ -13,12 +13,12 @@ import HttpClient from "@interfaces/http";
 
 const UNIX_PREFIX = "unix://";
 
-const useHttpClient = (): HttpClient => {
+const useHttpClient = (token?: string): HttpClient => {
 	let [backendServer] = useLocalStorageState<string>("customServerUrl", {
 		defaultValue: import.meta.env.VITE_DEFAULT_SERVER
 	});
 
-	const { user } = useUser();
+	const user = useUser();
 
 	const isUnixSocket = backendServer.startsWith(UNIX_PREFIX);
 
@@ -29,7 +29,7 @@ const useHttpClient = (): HttpClient => {
 	const instance = axios.create({
 		baseURL: backendServer,
 		headers: {
-			Authorization: `Bearer ${user?.accessToken?.body}`
+			Authorization: `Bearer ${token ?? user?.accessToken?.body}`
 		}
 	});
 
@@ -94,15 +94,12 @@ const useHttpClient = (): HttpClient => {
 
 			return data;
 		},
-		async getBoxes(token) {
-			const { data } = await instance.get(
-				"/mail/folders",
-				token
-					? {
-							headers: { Authorization: `Bearer ${token}` }
-					  }
-					: undefined
-			);
+		async getBoxes(token?: string) {
+			const { data } = await instance.get("/mail/folders", {
+				headers: {
+					Authorization: `Bearer ${token ?? user?.accessToken?.body}`
+				}
+			});
 
 			return data;
 		},
@@ -138,12 +135,14 @@ const useHttpClient = (): HttpClient => {
 				newID: newBoxID
 			});
 		},
-		async getMessageCount(boxes, flag, token) {
+		async getMessageCount(boxes, flag, token?: string) {
 			const { data } = await instance.get("/mail/message/count", {
-				headers: token ? { Authorization: `Bearer ${token}` } : undefined,
 				params: {
 					boxes: boxes.join(","),
 					flag
+				},
+				headers: {
+					Authorization: `Bearer ${token ?? user?.accessToken?.body}`
 				}
 			});
 

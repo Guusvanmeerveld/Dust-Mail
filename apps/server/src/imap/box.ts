@@ -4,7 +4,7 @@ import { BoxResponse } from "@dust-mail/typings";
 
 import { Box } from "@mail/interfaces/client/incoming.interface";
 
-export const getBox = async (
+export const openBox = async (
 	_client: Imap,
 	name: string,
 	readOnly?: boolean
@@ -17,6 +17,14 @@ export const getBox = async (
 	);
 };
 
+export const getBox = async (_client: Imap, name: string): Promise<Box> => {
+	return new Promise((resolve, reject) => {
+		_client.status(name, (err, box) => {
+			if (box) resolve({ messages: box.messages, name: box.name });
+			if (err) reject(err);
+		});
+	});
+};
 export const closeBox = async (_client: Imap): Promise<void> => {
 	return new Promise((resolve, reject) => {
 		_client.closeBox((err) => {

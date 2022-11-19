@@ -22,6 +22,8 @@ import LoginStateHandler from "@components/LoginStateHandler";
 import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
+import ParamStateHandler from "@components/ParamStateHandler";
+import Settings from "@components/Settings";
 import Slider from "@components/Slider";
 import Snackbar from "@components/Snackbar";
 
@@ -32,7 +34,9 @@ const Dashboard: FC = () => {
 
 	const scrollBarSx = useMemo(() => scrollbarStyles(theme), [theme]);
 
-	const { isLoggedIn } = useUser();
+	const user = useUser();
+
+	const isLoggedIn = !!user;
 
 	const [messageListWidth, setMessageListWidth] = useLocalStorageState<number>(
 		"messageListWidth",
@@ -65,7 +69,9 @@ const Dashboard: FC = () => {
 		<>
 			{!isLoggedIn && <Navigate to="/" replace={true} />}
 			<LoginStateHandler />
+			<ParamStateHandler />
 			<Snackbar />
+			<Settings />
 			<Layout withNavbar>
 				<Stack direction="row" sx={{ height: fullpageHeight }}>
 					<AddBox />

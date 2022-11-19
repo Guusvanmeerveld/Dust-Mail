@@ -1,27 +1,25 @@
+import useSelectedStore from "./useSelected";
 import useUser from "./useUser";
 
 import { useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 
 import Box from "@interfaces/box";
 
-const useSelectedBox = (): [Box | void, (boxID?: string) => void] => {
-	const params = useParams<{ boxID: string }>();
+type UseSelectedBox = [Box | void, (boxID?: string) => void];
 
-	const { user } = useUser();
+export const useSetSelectedBox = (): ((id?: string) => void) => {
+	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
 
-	const navigate = useNavigate();
+	return setSelectedBox;
+};
 
-	const boxID = params.boxID;
+const useSelectedBox = (): UseSelectedBox => {
+	const setSelectedBox = useSetSelectedBox();
+	const boxID = useSelectedStore((state) => state.selectedBox);
 
-	const setSelectedBox = useMemo(
-		() =>
-			(id?: string): void =>
-				navigate(`/dashboard/${encodeURIComponent(id ?? "")}`),
-		[]
-	);
+	const user = useUser();
 
-	return useMemo(() => {
+	const selectedBox: UseSelectedBox = useMemo(() => {
 		if (boxID && user?.boxes.flattened) {
 			const box = user.boxes.flattened.find((item) => item.id == boxID);
 
@@ -30,6 +28,8 @@ const useSelectedBox = (): [Box | void, (boxID?: string) => void] => {
 
 		return [, setSelectedBox];
 	}, [boxID, setSelectedBox, user?.boxes.flattened]);
+
+	return selectedBox;
 };
 
 export default useSelectedBox;

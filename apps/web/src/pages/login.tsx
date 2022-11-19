@@ -42,7 +42,7 @@ const Login: FC = () => {
 					<LinearProgress color="secondary" />
 				</Box>
 			)}
-			{user.isLoggedIn && <Navigate to={`/dashboard`} replace={true} />}
+			{!!user && <Navigate to={`/dashboard`} replace={true} />}
 			<Layout>
 				<Box
 					sx={{

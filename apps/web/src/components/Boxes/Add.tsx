@@ -64,7 +64,7 @@ export const addBoxStore = create<AddBoxStore>((set) => ({
 const UnMemoizedAddBox: FC = () => {
 	const theme = useTheme();
 
-	const { user } = useUser();
+	const user = useUser();
 	const addBox = useAddBox();
 
 	const showSnackbar = useSnackbar();

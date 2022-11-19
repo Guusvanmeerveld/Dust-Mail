@@ -1,10 +1,10 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import useSelectedStore from "./useSelected";
 import useUser from "./useUser";
 
 import { useEffect, useMemo } from "react";
-import { useQuery } from "react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "react-query";
 
 import { AxiosError } from "axios";
 
@@ -21,15 +21,8 @@ interface UseSelectedMessage {
 }
 
 export const useSetSelectedMessage = (): ((id?: string) => void) => {
-	const navigate = useNavigate();
-
-	const [selectedBox] = useSelectedBox();
-
-	const setSelectedMessage = useMemo(
-		() =>
-			(id?: string): void =>
-				navigate(`/dashboard/${selectedBox?.id}${id ? `/${id}` : ""}`),
-		[selectedBox]
+	const setSelectedMessage = useSelectedStore(
+		(state) => state.setSelectedMessage
 	);
 
 	return setSelectedMessage;
@@ -40,11 +33,11 @@ const useSelectedMessage = (): UseSelectedMessage => {
 
 	const fetcher = useFetch();
 
-	const params = useParams<{ messageID: string }>();
+	const queryClient = useQueryClient();
 
 	const setFetching = useStore((state) => state.setFetching);
 
-	const { user } = useUser();
+	const user = useUser();
 
 	const [darkMode] = useLocalStorageState<boolean>("messageDarkMode", {
 		defaultValue: false
@@ -54,7 +47,7 @@ const useSelectedMessage = (): UseSelectedMessage => {
 		defaultValue: false
 	});
 
-	const messageID = params.messageID;
+	const messageID = useSelectedStore((state) => state.selectedMessage);
 
 	const { data, isFetching, error } = useQuery<
 		FullIncomingMessage | undefined,
@@ -78,7 +71,12 @@ const useSelectedMessage = (): UseSelectedMessage => {
 					selectedBox?.id
 				);
 		},
-		{ enabled: messageID != undefined }
+		{
+			enabled: messageID != undefined,
+			onSuccess: (data) => {
+				queryClient.invalidateQueries(["unreadCount", data?.box.id]);
+			}
+		}
 	);
 
 	useEffect(() => setFetching(isFetching), [isFetching]);

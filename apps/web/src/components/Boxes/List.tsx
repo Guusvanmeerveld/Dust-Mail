@@ -189,7 +189,7 @@ const ActionBar = memo(UnMemoizedActionBar);
 const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	clickOnBox
 }) => {
-	const { user } = useUser();
+	const user = useUser();
 
 	const [selectedBox, setSelectedBox] = useSelectedBox();
 
