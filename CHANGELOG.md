@@ -1,3 +1,21 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.2.4](https://github.com/Guusvanmeerveld/Mail-Client/compare/v0.2.3...v0.2.4) (2022-11-19)
+
+
+### Features
+
+* **server+web:** remove 'OtherLogins' and now recognize when logging in with google ([bc87680](https://github.com/Guusvanmeerveld/Mail-Client/commit/bc87680278c3ae03767a074a98d84ce0a35de68e))
+* **versioning:** now using standard-version to generate changelogs and update version ([532e6f1](https://github.com/Guusvanmeerveld/Mail-Client/commit/532e6f11f28691fa3b64258993b127cb428ad0e7))
+* **web:** added a changelog ([57927ea](https://github.com/Guusvanmeerveld/Mail-Client/commit/57927ea9dc85a4168911c95910e2666d89a205f7))
+
+
+### Bug Fixes
+
+* **server+web:** greatly increase security of oauth logins ([d452bc2](https://github.com/Guusvanmeerveld/Mail-Client/commit/d452bc2cff989dabbf011d368fe08a8200a9100a))
+
 ## [0.2.3](https://github.com/Guusvanmeerveld/Mail-Client/compare/0.2.2...0.2.3) (2022-11-15)
 
 
@@ -31,6 +49,3 @@
 ### Performance Improvements
 
 * **server:** server now encrypts cache ([d521d77](https://github.com/Guusvanmeerveld/Mail-Client/commit/d521d7706e4e7a069e622b7745907dfef0a94e71))
-
-
-
