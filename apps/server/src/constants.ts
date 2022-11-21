@@ -1,4 +1,4 @@
-import { ensureFile, readFile, readFileSync, writeFile } from "fs-extra";
+import { ensureFile, readFile, writeFile } from "fs-extra";
 import { join } from "path";
 
 import generateRandomPassword from "@utils/createPassword";
@@ -34,11 +34,6 @@ export const jwtConstants = {
 
 			return password;
 		}
-	},
-	getSecretSync: () => {
-		if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
-
-		return readFileSync(join(getSecretsDir(), "jwt"));
 	},
 	/**
 	 * Expiry time in seconds

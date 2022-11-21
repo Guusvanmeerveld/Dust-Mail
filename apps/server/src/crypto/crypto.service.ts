@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { ensureFile, readFile, writeFile } from "fs-extra";
 import { join } from "path";
 
+import { getPassphrase } from "./constants";
+
 import { Injectable } from "@nestjs/common";
 
 import { getSecretsDir } from "@src/constants";
@@ -17,6 +19,9 @@ export class CryptoService {
 	private readonly iv = crypto.randomBytes(16);
 
 	private async getPassphrase(): Promise<string> {
+		const passphraseFromEnvironment = getPassphrase();
+		if (passphraseFromEnvironment) return passphraseFromEnvironment;
+
 		const passphraseLocation = join(getSecretsDir(), "passphrase");
 
 		await ensureFile(passphraseLocation);

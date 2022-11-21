@@ -32,7 +32,9 @@ const ParamStateHandler: FC = () => {
 			if (selectedBox && !selectedMessage)
 				navigate(`/dashboard/${selectedBox}`);
 			else if (selectedBox && selectedMessage)
-				navigate(`/dashboard/${selectedBox}/${selectedMessage}`);
+				navigate(
+					`/dashboard/${selectedBox}/${encodeURIComponent(selectedMessage)}`
+				);
 			else if (!selectedBox && !selectedMessage) navigate(`/dashboard`);
 	}, [selectedMessage, selectedBox]);
 

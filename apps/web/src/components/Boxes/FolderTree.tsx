@@ -207,7 +207,7 @@ const Icon: FC<{
 
 	if (badge && badge != 0)
 		return (
-			<Badge badgeContent={data ? data[box] : badge} color="primary">
+			<Badge max={999} badgeContent={data ? data[box] : badge} color="primary">
 				{icon ?? <FolderIcon />}
 			</Badge>
 		);

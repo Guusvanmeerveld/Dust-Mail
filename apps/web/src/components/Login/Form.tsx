@@ -56,13 +56,16 @@ type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
 	) => (newValue?: string | number | SecurityType | ErrorResponse) => void;
 };
 
+const defaultSettings: AdvancedLogin & { error?: ErrorResponse } = {
+	security: "TLS",
+	password: "",
+	username: "",
+	server: ""
+};
+
 const createLoginSettingsStore = create<Store>((set) => ({
-	incoming: {
-		security: "TLS"
-	},
-	outgoing: {
-		security: "TLS"
-	},
+	incoming: defaultSettings,
+	outgoing: defaultSettings,
 	setProperty: (type) => (property) => (newValue) =>
 		set((state) => ({ [type]: { ...state[type], [property]: newValue } }))
 }));
@@ -162,6 +165,11 @@ const UnMemoizedServerPropertiesColumn: FC<{
 	const server = createLoginSettingsStore((state) => state[type].server);
 
 	const error = createLoginSettingsStore((state) => state[type].error);
+
+	useEffect(
+		() => setSetting("incoming")("error")(undefined),
+		[username, password, security, port, server]
+	);
 
 	return (
 		<Grid item xs={12} md={6}>
@@ -392,9 +400,6 @@ const LoginForm: FC<{
 			setError({ message: "Missing required fields", code: GatewayError.Misc });
 			return;
 		}
-
-		// Remove any old errors
-		setError(undefined);
 
 		switch (emailProvider) {
 			case "google":

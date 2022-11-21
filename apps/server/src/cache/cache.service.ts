@@ -47,7 +47,7 @@ export class CacheService implements Cache {
 		const identifier = await createIdentifierFromEnvironment();
 
 		if (this.isRedisCache) {
-			if (!this.redisClient.isOpen) await this.redisClient.connect();
+			await this.redisClient.connect();
 
 			const response = (await this.redisClient.json.get(identifier, {
 				path: "$"

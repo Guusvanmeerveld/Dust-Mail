@@ -3,9 +3,13 @@ import useLocalStorageState from "use-local-storage-state";
 import { version } from "../../../package.json";
 import useUser from "./useUser";
 
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
-import { VersionResponse, GatewayError } from "@dust-mail/typings";
+import {
+	VersionResponse,
+	GatewayError,
+	PackageError
+} from "@dust-mail/typings";
 
 import { messageCountForPage } from "@src/constants";
 
@@ -46,7 +50,7 @@ const useHttpClient = (token?: string): HttpClient => {
 		async getVersion() {
 			const { data } = await axios
 				.get<VersionResponse>("/system/version", { baseURL: backendServer })
-				.catch((error) => {
+				.catch((error: AxiosError<PackageError>) => {
 					// Handle axios errors
 					if (error.code == "ERR_NETWORK") {
 						throw {

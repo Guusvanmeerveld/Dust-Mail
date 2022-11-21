@@ -81,7 +81,7 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 
 			throw {
 				message: `Server and client versions did not match, server has version ${serverVersion} (${serverVersionType}) while client has version ${appVersion.title} (${appVersion.type})`,
-				type: GatewayError.Misc
+				code: GatewayError.Misc
 			};
 		}
 
@@ -129,8 +129,6 @@ export const useMailLogin = (): ((config: LoginConfig) => Promise<void>) => {
 			username: config.incoming.username,
 			redirectToDashboard: true,
 			setAsDefault: true
-		}).catch((e: AxiosError<ErrorResponse>) => {
-			throw e.response?.data;
 		});
 
 		setFetching(false);
@@ -169,7 +167,16 @@ const useLogin = (): ((
 
 		console.log("Successfully authorized with backend server");
 
-		const boxes = await fetchBoxes(accessToken.body);
+		const boxes = await fetchBoxes(accessToken.body).catch(
+			(e: AxiosError<ErrorResponse>) => {
+				const data = e.response?.data;
+
+				throw {
+					message: data?.message ?? "Unknown error",
+					code: data?.code ?? GatewayError.Timeout
+				};
+			}
+		);
 
 		modifyUser(username, { accessToken, refreshToken, boxes, username });
 

@@ -1,4 +1,6 @@
-import { FC, memo, MouseEvent, useMemo } from "react";
+import create from "zustand";
+
+import { FC, memo, MouseEvent, useMemo, useState } from "react";
 
 import { IncomingMessage } from "@dust-mail/typings";
 
@@ -10,6 +12,28 @@ import Typography from "@mui/material/Typography";
 import useAvatar from "@utils/hooks/useAvatar";
 import { useSetSelectedMessage } from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
+
+// interface Message {
+// 	id: string;
+// 	seen: boolean;
+// }
+
+// interface UnSeenMessagesStore {
+// 	messages: Message[];
+// 	addMessage: (msg: Message) => void;
+// 	setSeen: (id: string, seen: boolean) => void;
+// 	isSeen: (id: string) => void;
+// }
+
+// export const unSeenMessagesStore = create<UnSeenMessagesStore>((set) => ({
+// 	messages: [],
+// 	addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+// 	setSeen: (id, seen) =>
+// 		set((state) => ({
+// 			messages: [...state.messages.filter((msg) => msg.id != id), { id, seen }]
+// 		})),
+// 		isSeen: (id) =>
+// }));
 
 const UnMemoizedMessageListItem: FC<{
 	message: IncomingMessage;
@@ -24,6 +48,8 @@ const UnMemoizedMessageListItem: FC<{
 
 	const setSelectedMessage = useSetSelectedMessage();
 
+	const [unSeen, setUnSeen] = useState(!message.flags.seen);
+
 	const from = useMemo(
 		() => message.from.map((from) => from.displayName || from.email).join(", "),
 		[message]
@@ -36,6 +62,8 @@ const UnMemoizedMessageListItem: FC<{
 	const handleClick = useMemo(
 		() => (): void => {
 			if (!message.id) return;
+
+			setUnSeen(false);
 
 			if (selectedMessage) setSelectedMessage();
 			else setSelectedMessage(message.id);
@@ -74,7 +102,7 @@ const UnMemoizedMessageListItem: FC<{
 						alignItems: "center"
 					}}
 				>
-					{!message.flags.seen && (
+					{unSeen && (
 						<Box
 							sx={{
 								width: theme.spacing(0.5),
