@@ -6,12 +6,29 @@ import {
 	OutgoingServiceType
 } from "@dust-mail/typings";
 
-import GoogleConfig from "@src/google/interfaces/config";
+type ConfigType = "basic";
 
-export interface MultiConfig {
+interface BaseConfig {
+	configType: ConfigType;
+}
+
+export interface OAuthConfig {
+	refreshToken: string;
+	accessToken?: string;
+	refreshUrl: string;
+	clientID: string;
+	clientSecret: string;
+	user: { name: string; id: string };
+}
+
+export interface BasicConfig extends BaseConfig {
+	configType: "basic";
+	oauth?: OAuthConfig;
 	incoming: DefaultConfig;
 	outgoing: DefaultConfig;
 }
+
+export type LoginConfig = BasicConfig;
 
 export interface JwtToken {
 	tokenType: TokenType;
@@ -20,5 +37,5 @@ export interface JwtToken {
 		outgoing: OutgoingServiceType;
 	};
 	accessToken?: string;
-	body: MultiConfig | GoogleConfig;
+	body: LoginConfig;
 }

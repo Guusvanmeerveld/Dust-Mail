@@ -22,6 +22,7 @@ import User from "@interfaces/user";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useLogout from "@utils/hooks/useLogout";
+import useSelectedStore from "@utils/hooks/useSelected";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 import useUser, { useCurrentUser, useUsers } from "@utils/hooks/useUser";
@@ -48,7 +49,7 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 
 	const [currentUser, setCurrentUser] = useCurrentUser();
 
-	const navigate = useNavigate();
+	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
 
 	const avatar = useAvatar(user.username);
 
@@ -57,7 +58,7 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 			onClick={() => {
 				if (currentUser?.username != user.username) {
 					setCurrentUser(user.username);
-					navigate("/dashboard");
+					setSelectedBox();
 				}
 			}}
 		>

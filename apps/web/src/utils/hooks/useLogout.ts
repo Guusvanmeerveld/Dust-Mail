@@ -1,7 +1,7 @@
+import useSelectedStore from "./useSelected";
 import { useCurrentUser, useRemoveUser, useUsers } from "./useUser";
 
 import { useCallback } from "react";
-import { useNavigate } from "react-router";
 
 import useStore from "@utils/hooks/useStore";
 
@@ -12,7 +12,7 @@ const useLogout = (): (() => void) => {
 
 	const [currentUser, setCurrentUser] = useCurrentUser();
 
-	const navigate = useNavigate();
+	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
 
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -29,7 +29,7 @@ const useLogout = (): (() => void) => {
 
 		setCurrentUser(newCurrentUser?.username);
 
-		if (newCurrentUser?.username) navigate("/dashboard");
+		if (newCurrentUser?.username) setSelectedBox();
 	}, [users, currentUser, setFetching]);
 
 	return logout;

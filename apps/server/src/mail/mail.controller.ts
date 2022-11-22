@@ -329,6 +329,8 @@ export class MailController {
 
 		const client = req.user.outgoingClient;
 
+		await client.connect();
+
 		await client
 			.send({ from, to, cc, bcc, content, subject })
 			.catch(handleError);

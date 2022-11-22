@@ -1,5 +1,5 @@
 import Config from "./interfaces/config.interface";
-import { JwtToken, MultiConfig } from "./interfaces/jwt.interface";
+import { BasicConfig, JwtToken } from "./interfaces/jwt.interface";
 
 import {
 	IncomingServiceType,
@@ -16,8 +16,6 @@ import { JwtService } from "@nestjs/jwt";
 
 import { jwtConstants } from "@src/constants";
 import { CryptoService } from "@src/crypto/crypto.service";
-import { GoogleService } from "@src/google/google.service";
-import GoogleConfig from "@src/google/interfaces/config";
 import { ImapService } from "@src/imap/imap.service";
 import { SmtpService } from "@src/smtp/smtp.service";
 
@@ -36,7 +34,6 @@ export class AuthService {
 		private readonly jwtService: JwtService,
 		private readonly imapService: ImapService,
 		private readonly smtpService: SmtpService,
-		private readonly googleService: GoogleService,
 		private readonly cryptoService: CryptoService
 	) {}
 
@@ -73,12 +70,17 @@ export class AuthService {
 		incoming: ConfigWithServiceType<IncomingServiceType>;
 		outgoing: ConfigWithServiceType<OutgoingServiceType>;
 	}): Promise<LoginResponse> {
+		const configWithConfigType: BasicConfig = {
+			...config,
+			configType: "basic"
+		};
+
 		switch (config.incoming.service) {
-			case "imap":
-				await this.imapService.login(config.incoming);
+			case "pop3":
 				break;
 
-			default:
+			case "imap":
+				await this.imapService.login(configWithConfigType);
 				break;
 		}
 
@@ -90,7 +92,7 @@ export class AuthService {
 		const accessTokenPayload: JwtToken = {
 			tokenType: "access",
 			services,
-			body: config
+			body: configWithConfigType
 		};
 
 		const accessToken = this.jwtService.sign(
@@ -104,7 +106,7 @@ export class AuthService {
 			tokenType: "refresh",
 			accessToken,
 			services,
-			body: config
+			body: configWithConfigType
 		};
 
 		const refreshToken = this.jwtService.sign(
@@ -126,37 +128,18 @@ export class AuthService {
 		let incomingClient: IncomingClient, outgoingClient: OutgoingClient;
 
 		switch (payload.services.incoming) {
-			case "imap":
-				incomingClient = await this.imapService.get(
-					(payload.body as MultiConfig).incoming
-				);
-				break;
-
 			case "pop3":
 				throw new InternalServerErrorException("Pop3 is not supported yet");
 
-			default:
+			case "imap":
+				incomingClient = await this.imapService.get(payload.body);
 				break;
 		}
 
 		switch (payload.services.outgoing) {
 			case "smtp":
-				outgoingClient = await this.smtpService.get(
-					(payload.body as MultiConfig).outgoing
-				);
+				outgoingClient = await this.smtpService.get(payload.body);
 				break;
-
-			default:
-				break;
-		}
-
-		if (
-			payload.services.incoming == "google" &&
-			payload.services.outgoing == "google"
-		) {
-			[incomingClient] = this.googleService.getClients(
-				payload.body as GoogleConfig
-			);
 		}
 
 		return {

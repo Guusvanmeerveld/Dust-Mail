@@ -14,6 +14,7 @@ interface CreateXOAuth2GeneratorOptions {
 	clientSecret: string;
 	refreshToken: string;
 	accessToken?: string;
+	accessUrl?: string;
 	timeout?: number;
 	customHeaders?: Record<string, string>;
 	customParams?: Record<string, string>;

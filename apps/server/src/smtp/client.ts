@@ -4,32 +4,42 @@ import send from "./send";
 
 import { OutgoingMessage } from "@dust-mail/typings";
 
-import { CacheService } from "@src/cache/cache.service";
-
 import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
-import Config from "@auth/interfaces/config.interface";
+import { BasicConfig } from "@auth/interfaces/jwt.interface";
 
 export default class Client implements OutgoingClient {
-	constructor(
-		private readonly cacheService: CacheService,
-		private readonly config: Config
-	) {}
+	constructor(private readonly config: BasicConfig) {}
 
 	private _client: Transporter;
 
 	private readonly authTimeout = 30 * 1000;
 
 	public connect = async (): Promise<void> => {
+		const outgoing = this.config.outgoing;
+
+		const oauth = this.config.oauth;
+
 		this._client = nodemailer.createTransport({
-			host: this.config.server,
-			port: this.config.port,
-			secure: this.config.security == "TLS",
+			host: outgoing.server,
+			port: outgoing.port,
+			secure: outgoing.security == "TLS",
 			connectionTimeout: this.authTimeout,
-			auth: {
-				user: this.config.username,
-				pass: this.config.password
-			}
+			auth: oauth
+				? {
+						type: "OAuth2",
+						user: oauth.user.name,
+						clientId: oauth.clientID,
+						clientSecret: oauth.clientSecret,
+						refreshToken: oauth.refreshToken,
+						accessToken: oauth.accessToken,
+						accessUrl: oauth.refreshUrl
+				  }
+				: {
+						type: "Login",
+						user: outgoing.username,
+						pass: outgoing.password
+				  }
 		});
 	};
 

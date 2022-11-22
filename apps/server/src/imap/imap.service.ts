@@ -1,6 +1,5 @@
 import Imap from "imap";
 
-// import xoauth2 from "xoauth2";
 import Client from "./client";
 import connect from "./connect";
 
@@ -9,10 +8,11 @@ import { Injectable } from "@nestjs/common";
 import { CacheService } from "@src/cache/cache.service";
 // import { getClientInfo } from "@src/google/constants";
 import { createIdentifier } from "@src/utils/createIdentifier";
+import getOAuthToken from "@src/utils/getOAuthToken";
 
 import IncomingClient from "@mail/interfaces/client/incoming.interface";
 
-import Config from "@auth/interfaces/config.interface";
+import { BasicConfig } from "@auth/interfaces/jwt.interface";
 
 @Injectable()
 export class ImapService {
@@ -24,44 +24,21 @@ export class ImapService {
 
 	private readonly clients: Map<string, Imap>;
 
-	// private readonly googleClientInfo = getClientInfo();
+	public login = async (config: BasicConfig): Promise<Imap> => {
+		const identifier = createIdentifier(config);
 
-	// private getOAuth2Token = async (
-	// 	config: Config
-	// ): Promise<string | undefined> => {
-	// 	console.log(config.server);
+		const incoming = config.incoming;
 
-	// 	switch (config.server) {
-	// 		case "imap.gmail.com":
-	// 			const xoauth2gen = xoauth2.createXOAuth2Generator({
-	// 				user: config.username,
-	// 				clientId: this.googleClientInfo.id,
-	// 				clientSecret: this.googleClientInfo.secret,
-	// 				refreshToken: "{User Refresh Token}"
-	// 			});
-
-	// 			xoauth2gen.getToken((error, token) => {
-	// 				console.log(error);
-	// 			});
-	// 			break;
-
-	// 		default:
-	// 			break;
-	// 	}
-
-	// 	return;
-	// };
-
-	public login = async (config: Config): Promise<Imap> => {
 		let xoauth2: string;
+		if (config.oauth) xoauth2 = await getOAuthToken(config.oauth);
 
 		const client = new Imap({
-			user: config.username,
-			password: config.password,
-			host: config.server,
-			port: config.port,
+			user: incoming.username,
+			password: incoming.password,
+			host: incoming.server,
+			port: incoming.port,
+			tls: incoming.security != "NONE",
 			xoauth2,
-			tls: config.security != "NONE",
 			authTimeout: this.authTimeout,
 			tlsOptions: {
 				rejectUnauthorized: false
@@ -70,11 +47,14 @@ export class ImapService {
 
 		const _client = await connect(client);
 
-		const identifier = createIdentifier(config);
-
 		const existingClient = this.clients.get(identifier);
 
-		if (!existingClient) {
+		const existingClientIsNotAuthenticated =
+			existingClient && existingClient.state == "connected";
+
+		if (!existingClient || existingClientIsNotAuthenticated) {
+			if (existingClientIsNotAuthenticated) existingClient.destroy();
+
 			this.clients.set(identifier, _client);
 
 			return _client;
@@ -83,19 +63,19 @@ export class ImapService {
 		return existingClient;
 	};
 
-	public get = async (config: Config): Promise<IncomingClient> => {
+	public get = async (config: BasicConfig): Promise<IncomingClient> => {
 		const identifier = createIdentifier(config);
 
 		let client = this.clients.get(identifier);
 
 		if (!client) client = await this.login(config);
 
-		if (client.state == "connected") client.connect();
+		if (client.state == "disconnected") client.connect();
 
 		return new Client(client, this.cacheService, identifier);
 	};
 
-	public logout = async (config: Config): Promise<void> => {
+	public logout = async (config: BasicConfig): Promise<void> => {
 		const identifier = createIdentifier(config);
 
 		const client = this.clients.get(identifier);

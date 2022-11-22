@@ -28,14 +28,19 @@ const ParamStateHandler: FC = () => {
 	}, []);
 
 	useEffect(() => {
-		if (user)
-			if (selectedBox && !selectedMessage)
-				navigate(`/dashboard/${selectedBox}`);
-			else if (selectedBox && selectedMessage)
-				navigate(
-					`/dashboard/${selectedBox}/${encodeURIComponent(selectedMessage)}`
-				);
-			else if (!selectedBox && !selectedMessage) navigate(`/dashboard`);
+		if (user) {
+			if (selectedBox) {
+				const box = encodeURIComponent(selectedBox);
+
+				if (!selectedMessage) navigate(`/dashboard/${box}`);
+
+				if (selectedMessage) {
+					const message = encodeURIComponent(selectedMessage);
+
+					navigate(`/dashboard/${box}/${message}`);
+				}
+			} else if (!selectedBox && !selectedMessage) navigate(`/dashboard`);
+		}
 	}, [selectedMessage, selectedBox]);
 
 	return <></>;

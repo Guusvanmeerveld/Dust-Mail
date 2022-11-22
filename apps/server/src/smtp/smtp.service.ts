@@ -1,17 +1,17 @@
 import Client from "./client";
 
-import { Inject, Injectable } from "@nestjs/common";
-
-import { CacheService } from "@cache/cache.service";
+import { Injectable } from "@nestjs/common";
 
 import OutgoingClient from "@mail/interfaces/client/outgoing.interface";
 
-import Config from "@auth/interfaces/config.interface";
+import { LoginConfig } from "@auth/interfaces/jwt.interface";
 
 @Injectable()
 export class SmtpService {
-	constructor(private readonly cacheService: CacheService) {}
-
-	public get = async (config: Config): Promise<OutgoingClient> =>
-		new Client(this.cacheService, config);
+	public get = async (config: LoginConfig): Promise<OutgoingClient> => {
+		switch (config.configType) {
+			case "basic":
+				return new Client(config);
+		}
+	};
 }

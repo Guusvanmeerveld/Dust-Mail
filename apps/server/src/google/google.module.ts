@@ -7,8 +7,6 @@ import { JwtModule } from "@nestjs/jwt";
 import { jwtConstants } from "@src/constants";
 import { CryptoModule } from "@src/crypto/crypto.module";
 
-import { CacheModule } from "@cache/cache.module";
-
 @Module({
 	imports: [
 		JwtModule.registerAsync({
@@ -17,8 +15,7 @@ import { CacheModule } from "@cache/cache.module";
 				signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
 			})
 		}),
-		CryptoModule,
-		CacheModule
+		CryptoModule
 	],
 	providers: [GoogleService],
 	exports: [GoogleService],

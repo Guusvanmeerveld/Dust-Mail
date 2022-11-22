@@ -98,7 +98,6 @@ export const useGoogleOAuthLink = (username?: string): string | undefined => {
 		const params: Record<string, string> = {
 			response_type: "code",
 			access_type: "offline",
-			approval_prompt: "force",
 			scope: [
 				"https://mail.google.com/",
 				"https://www.googleapis.com/auth/userinfo.profile",
@@ -108,6 +107,7 @@ export const useGoogleOAuthLink = (username?: string): string | undefined => {
 				"__TAURI_METADATA__" in window
 					? "tauri://localhost"
 					: window.location.origin,
+			prompt: "select_account",
 			login_hint: username ?? "",
 			client_id: oauthTokens.google,
 			redirect_uri: `${backendServer}/google/login`
