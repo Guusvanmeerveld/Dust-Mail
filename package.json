@@ -16,6 +16,7 @@
 		"lint": "turbo run lint",
 		"test": "turbo run test",
 		"deploy": "turbo run deploy",
+		"lint-staged": "lint-staged",
 		"dev": "turbo run dev",
 		"postinstall": "husky install",
 		"release": "standard-version"
