@@ -3,6 +3,7 @@ import { GoogleService } from "./google.service";
 
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
+import { ThrottlerModule } from "@nestjs/throttler";
 
 import { jwtConstants } from "@src/constants";
 import { CryptoModule } from "@src/crypto/crypto.module";
@@ -14,6 +15,10 @@ import { CryptoModule } from "@src/crypto/crypto.module";
 				secret: await jwtConstants.getSecret(),
 				signOptions: { expiresIn: jwtConstants.getRefreshTokenExpires() }
 			})
+		}),
+		ThrottlerModule.forRoot({
+			ttl: 60,
+			limit: 5
 		}),
 		CryptoModule
 	],

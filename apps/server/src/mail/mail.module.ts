@@ -19,8 +19,8 @@ import { AuthModule } from "@auth/auth.module";
 			})
 		}),
 		ThrottlerModule.forRoot({
-			ttl: 60,
-			limit: 60
+			ttl: 30,
+			limit: 90
 		}),
 		CryptoModule,
 		AuthModule

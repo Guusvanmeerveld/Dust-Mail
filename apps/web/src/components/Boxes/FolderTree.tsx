@@ -35,6 +35,7 @@ import MailBox from "@interfaces/box";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useTheme from "@utils/hooks/useTheme";
+import useUser from "@utils/hooks/useUser";
 
 export interface CheckedBoxesStore {
 	checkedBoxes: Record<string, boolean>;
@@ -199,8 +200,10 @@ const Icon: FC<{
 }> = ({ icon, badge, box }) => {
 	const fetcher = useHttpClient();
 
+	const user = useUser();
+
 	const { data } = useQuery<MessageCountResponse>(
-		["unreadCount", box],
+		["unreadCount", box, user?.accessToken?.body],
 		() => fetcher.getMessageCount([box], "unread"),
 		{ enabled: !!badge && badge != 0 }
 	);

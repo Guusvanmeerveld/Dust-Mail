@@ -35,24 +35,23 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 
 import { bearerPrefix } from "@src/constants";
 
+// import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
 import handleError from "@utils/handleError";
 
 import type { Request } from "@auth/interfaces/request.interface";
 import { AccessTokenAuthGuard } from "@auth/jwt-auth.guard";
 import { StringValidationPipe } from "@auth/pipes/string.pipe";
 
-// import { ThrottlerBehindProxyGuard } from "@utils/guards/throttler-proxy.guard";
-
 @Controller("mail")
 @ApiTags("mail")
 @ApiBearerAuth()
+// @UseGuards(ThrottlerBehindProxyGuard)
 export class MailController {
 	constructor(private mailService: MailService) {}
 
 	private readonly bearerPrefix = bearerPrefix;
 
 	@Get("folders")
-	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
 	/**
 	 * Fetch all a users folders/boxes
@@ -64,7 +63,6 @@ export class MailController {
 	}
 
 	@Get("folder")
-	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
 	/**
 	 * Fetch all of the messages in a folder/box.
@@ -185,7 +183,6 @@ export class MailController {
 	}
 
 	@Get("message")
-	// @UseGuards(ThrottlerBehindProxyGuard)
 	@UseGuards(AccessTokenAuthGuard)
 	async fetchMessage(
 		@Req() req: Request,
