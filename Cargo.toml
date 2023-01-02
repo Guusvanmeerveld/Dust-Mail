@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "apps/web/src-tauri",
+    "packages/core",
+    "packages/pop3",
+    "packages/autodiscover-rs",
+]
