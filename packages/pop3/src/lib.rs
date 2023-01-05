@@ -1,9 +1,10 @@
 mod parse;
 mod socket;
-mod types;
+pub mod types;
 
 use std::net::{TcpStream, ToSocketAddrs};
 
+use dotenv::dotenv;
 use either::Either::{self, Left, Right};
 use native_tls::{TlsConnector, TlsStream};
 use parse::{map_native_tls_error, Parser};
@@ -93,9 +94,31 @@ impl Client {
         }
     }
 
-    // pub fn top(&mut self, msg_number: u32, lines: u32) -> types::Result<()> {
+    pub fn top(&mut self, msg_number: u32, lines: u32) -> types::Result<Vec<u8>> {
+        let socket = match self.get_socket_mut() {
+            Ok(socket) => socket,
+            Err(err) => return Err(err),
+        };
 
-    // }
+        let top_command = format!("TOP {} {}", msg_number, lines);
+
+        match socket.send_bytes(top_command.as_bytes()) {
+            Ok(_) => {
+                match socket.read_response() {
+                    Ok(status_message) => status_message,
+                    Err(err) => return Err(err),
+                };
+
+                let mut response: Vec<u8> = Vec::new();
+
+                match socket.read_multi_line(&mut response) {
+                    Ok(_) => Ok(response),
+                    Err(err) => Err(err),
+                }
+            }
+            Err(err) => Err(err),
+        }
+    }
 
     /// Check whether a given message is marked as deleted by the server.
     ///
@@ -474,12 +497,16 @@ mod test {
     }
 
     fn get_env() -> HashMap<String, String> {
+        dotenv().ok();
+
         let mut map = HashMap::new();
 
         let vars = env::vars();
 
         for var in vars {
-            map.insert(var.0, var.1).unwrap();
+            match map.insert(var.0, var.1) {
+                _ => {}
+            };
         }
 
         map
@@ -489,8 +516,8 @@ mod test {
         let envs = get_env();
 
         ClientInfo {
-            server: String::from("localhost"),
-            port: 3110,
+            server: String::from("pop.gmail.com"),
+            port: 995,
             username: envs.get("USERNAME").unwrap().to_owned(),
             password: envs.get("PASSWORD").unwrap().to_owned(),
         }
@@ -615,7 +642,18 @@ mod test {
     fn retr() {
         let mut client = create_logged_in_client();
 
-        let bytes = client.retr(301).unwrap();
+        let bytes = client.retr(1).unwrap();
+
+        println!("{}", String::from_utf8(bytes).unwrap());
+
+        client.logout().unwrap();
+    }
+
+    #[test]
+    fn top() {
+        let mut client = create_logged_in_client();
+
+        let bytes = client.top(1, 0).unwrap();
 
         println!("{}", String::from_utf8(bytes).unwrap());
 
