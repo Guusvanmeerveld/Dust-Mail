@@ -1,6 +1,8 @@
-use std::io::{self, Read, Write};
+use std::io::{Read, Write};
 
 use bufstream::BufStream;
+
+use crate::{parse::map_write_error_to_error, types};
 
 pub const LF: u8 = 0x0a;
 pub const CR: u8 = 0x0d;
@@ -24,7 +26,7 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn send_command(&mut self, command: &[u8]) -> io::Result<Result<String, String>> {
+    pub fn send_command(&mut self, command: &[u8]) -> types::Result<String> {
         match self.send_bytes(command) {
             Ok(_) => match self.read_response() {
                 Ok(response) => Ok(response),
@@ -34,34 +36,34 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn read_response_from_string(
-        &mut self,
-        response: String,
-    ) -> io::Result<Result<String, String>> {
+    pub fn read_response_from_string(&mut self, response: String) -> types::Result<String> {
         if response.len() < OK.len() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
+            return Err(types::Error::new(
+                types::ErrorKind::Read,
                 "Response is too short",
             ));
         };
 
         if response.starts_with(OK) {
-            let left_over = response.get(OK.len() + 1..).unwrap();
+            let left_over = response.get((OK.len() + 1)..).unwrap();
 
-            Ok(Ok(left_over.to_owned()))
+            Ok(left_over.to_owned())
         } else if response.starts_with(ERR) {
-            let left_over = response.get(ERR.len() + 1..).unwrap();
+            let left_over = response.get((ERR.len() + 1)..).unwrap();
 
-            Ok(Err(left_over.to_owned()))
+            Err(types::Error::new(
+                types::ErrorKind::Server,
+                format!("Server error: {}", left_over),
+            ))
         } else {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Response is invalid",
+            Err(types::Error::new(
+                types::ErrorKind::Read,
+                format!("Response is invalid: '{}'", response),
             ))
         }
     }
 
-    pub fn read_response(&mut self) -> io::Result<Result<String, String>> {
+    pub fn read_response(&mut self) -> types::Result<String> {
         let mut response: Vec<u8> = Vec::new();
 
         match self.read_line(&mut response) {
@@ -74,7 +76,7 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn read_multi_line(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
+    pub fn read_multi_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
         let mut total_bytes_read: usize = 0;
 
         loop {
@@ -113,27 +115,42 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn read_line(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
+    pub fn read_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
         use std::io::BufRead;
 
         match self.stream.read_until(LF, buf) {
             Ok(bytes_read) => {
                 if bytes_read == 0 {
-                    return Err(io::Error::new(
-                        io::ErrorKind::ConnectionAborted,
+                    return Err(types::Error::new(
+                        types::ErrorKind::Read,
                         "Server did not send any bytes",
                     ));
                 }
 
                 Ok(bytes_read)
             }
-            Err(err) => Err(err),
+            Err(err) => Err(types::Error::new(
+                types::ErrorKind::Read,
+                format!("Failed to read server response: {}", err.to_string()),
+            )),
         }
     }
 
-    pub fn send_bytes(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.stream.write_all(buf).unwrap();
-        self.stream.write_all(&END_OF_LINE).unwrap();
-        self.stream.flush()
+    pub fn send_bytes(&mut self, buf: &[u8]) -> types::Result<()> {
+        match self.stream.write_all(buf).map_err(map_write_error_to_error) {
+            Ok(_) => {}
+            Err(err) => return Err(err),
+        };
+
+        match self
+            .stream
+            .write_all(&END_OF_LINE)
+            .map_err(map_write_error_to_error)
+        {
+            Ok(_) => {}
+            Err(err) => return Err(err),
+        };
+
+        self.stream.flush().map_err(map_write_error_to_error)
     }
 }
