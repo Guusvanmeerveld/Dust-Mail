@@ -2,18 +2,11 @@ use std::io::{Read, Write};
 
 use bufstream::BufStream;
 
-use crate::{parse::map_write_error_to_error, types};
-
-pub const LF: u8 = 0x0a;
-pub const CR: u8 = 0x0d;
-
-const OK: &str = "+OK";
-const ERR: &str = "-ERR";
-
-const DOT: u8 = 0x2e;
-
-const END_OF_LINE: [u8; 2] = [CR, LF];
-const EOF: [u8; 5] = [CR, LF, DOT, CR, LF];
+use crate::{
+    constants::{DOT, END_OF_LINE, EOF, ERR, LF, OK},
+    parse::map_write_error_to_error,
+    types,
+};
 
 pub struct Socket<T: Read + Write> {
     stream: BufStream<T>,
@@ -92,8 +85,10 @@ impl<T: Read + Write> Socket<T> {
 
             let start_of_line = buf.len().saturating_sub(bytes_read);
 
+            // Get the first three characters of the current line
             match buf.get(start_of_line..start_of_line.saturating_add(3)) {
                 Some(first_three_chars) => {
+                    // If the first character is a DOT and the latter two are not CR and LF, then the line is byte-stuffed and the DOT should be removed
                     if first_three_chars.first().unwrap() == &DOT {
                         let latter_two_chars = &first_three_chars[1..];
 
@@ -108,6 +103,7 @@ impl<T: Read + Write> Socket<T> {
             let last_five_bytes = buf.get(buf.len() - 5..).unwrap();
 
             if last_five_bytes == EOF {
+                // Remove the last 3 bytes which should be `[DOT, CR, LF]` as they are not part of the message
                 buf.truncate(buf.len().saturating_sub(3));
 
                 return Ok(total_bytes_read);

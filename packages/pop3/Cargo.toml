@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 native-tls = "0.2"
 bufstream = "0.1"
-either = "1.8.0"
+either = "1.8"
 
 [dev-dependencies]
-dotenv = "0.15.0"
+dotenv = "0.15"

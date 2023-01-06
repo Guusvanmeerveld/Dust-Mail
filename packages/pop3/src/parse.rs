@@ -1,11 +1,9 @@
 use std::{io, net::TcpStream};
 
 use crate::{
-    socket::LF,
-    types::{self, ListItem, Stats},
+    constants::{LF, SPACE},
+    types::{self, ListItem, Stats, UniqueID},
 };
-
-const SPACE: char = ' ';
 
 /// A simple struct to parse responses from the server
 pub struct Parser {
@@ -47,11 +45,35 @@ impl Parser {
         let split = self.response.split(end_of_line).filter(|s| s.len() != 0);
 
         split
-            .map(|drop| {
-                let (message_index, byte_count) = Self::parse_counts_from_string(drop);
+            .map(|line| {
+                let (message_index, byte_count) = Self::parse_counts_from_string(line);
 
                 ListItem::new(message_index, byte_count)
             })
+            .collect()
+    }
+
+    fn parse_unique_id_from_string(string: &str) -> UniqueID {
+        let mut split = string.split(SPACE);
+
+        let msg_id: u32 = split.next().unwrap().trim().parse().unwrap();
+
+        let unique_id = split.next().unwrap().to_owned();
+
+        (msg_id, unique_id)
+    }
+
+    pub fn to_unique_id(&self) -> UniqueID {
+        Self::parse_unique_id_from_string(&self.response)
+    }
+
+    pub fn to_unique_id_list(&self) -> Vec<UniqueID> {
+        let end_of_line = char::from_u32(LF as u32).unwrap();
+
+        let split = self.response.split(end_of_line).filter(|s| s.len() != 0);
+
+        split
+            .map(|line| Self::parse_unique_id_from_string(line))
             .collect()
     }
 }

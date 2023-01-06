@@ -1,15 +1,17 @@
+mod constants;
 mod parse;
 mod socket;
 pub mod types;
+mod utils;
 
 use std::net::{TcpStream, ToSocketAddrs};
 
-use dotenv::dotenv;
 use either::Either::{self, Left, Right};
 use native_tls::{TlsConnector, TlsStream};
 use parse::{map_native_tls_error, Parser};
 use socket::Socket;
-use types::{ListItem, Stats};
+use types::{ListItem, Stats, UniqueID};
+use utils::create_command;
 
 #[derive(Eq, PartialEq)]
 pub enum ClientState {
@@ -76,7 +78,7 @@ impl Client {
     /// ### Possible Responses:
     /// - OK
     /// # Examples:
-    /// ```no_run
+    /// ```rust,no_run
     /// client.noop().unwrap();
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-9
@@ -94,21 +96,58 @@ impl Client {
         }
     }
 
+    pub fn uidl(
+        &mut self,
+        msg_number: Option<u32>,
+    ) -> types::Result<Either<Vec<UniqueID>, UniqueID>> {
+        let socket = match self.get_socket_mut() {
+            Ok(socket) => socket,
+            Err(err) => return Err(err),
+        };
+
+        let is_single = msg_number.is_some();
+
+        let arguments = Some(vec![msg_number]);
+
+        let command = match create_command("UIDL", arguments) {
+            Ok(command) => command,
+            Err(err) => return Err(err),
+        };
+
+        match socket.send_command(command.as_bytes()) {
+            Ok(response) => {
+                if is_single {
+                    let parser = Parser::new(response);
+
+                    Ok(Right(parser.to_unique_id()))
+                } else {
+                    let mut response: Vec<u8> = Vec::new();
+
+                    match socket.read_multi_line(&mut response) {
+                        Ok(_) => {
+                            let response = String::from_utf8(response).unwrap();
+                            let parser = Parser::new(response);
+
+                            Ok(Left(parser.to_unique_id_list()))
+                        }
+                        Err(err) => Err(err),
+                    }
+                }
+            }
+            Err(err) => Err(err),
+        }
+    }
+
     pub fn top(&mut self, msg_number: u32, lines: u32) -> types::Result<Vec<u8>> {
         let socket = match self.get_socket_mut() {
             Ok(socket) => socket,
             Err(err) => return Err(err),
         };
 
-        let top_command = format!("TOP {} {}", msg_number, lines);
+        let command = format!("TOP {} {}", msg_number, lines);
 
-        match socket.send_bytes(top_command.as_bytes()) {
+        match socket.send_command(command.as_bytes()) {
             Ok(_) => {
-                match socket.read_response() {
-                    Ok(status_message) => status_message,
-                    Err(err) => return Err(err),
-                };
-
                 let mut response: Vec<u8> = Vec::new();
 
                 match socket.read_multi_line(&mut response) {
@@ -124,7 +163,7 @@ impl Client {
     ///
     /// If this function returns true then the message may still not exist.
     /// # Examples:
-    /// ```no_run
+    /// ```rust,no_run
     /// let msg_number: u32 = 8;
     /// let is_deleted = client.is_deleted(msg_number);
     /// assert_eq!(is_deleted, false);
@@ -148,7 +187,7 @@ impl Client {
     /// - OK: message deleted
     /// - ERR: no such message
     /// # Examples
-    /// ```no_run
+    /// ```rust,no_run
     /// let msg_number: u32 = 8;
     /// let is_deleted = client.is_deleted(msg_number);
     ///
@@ -160,9 +199,9 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let dele_command = format!("DELE {}", msg_number);
+        let command = format!("DELE {}", msg_number);
 
-        match socket.send_command(dele_command.as_bytes()) {
+        match socket.send_command(command.as_bytes()) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
@@ -177,7 +216,7 @@ impl Client {
     /// ### Possible Responses:
     /// - +OK
     /// # Examples:
-    /// ```no_run
+    /// ```rust,no_run
     /// client.rset().unwrap();
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-9
@@ -187,9 +226,9 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let rset_command = b"RSET";
+        let command = b"RSET";
 
-        match socket.send_command(rset_command) {
+        match socket.send_command(command) {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
@@ -205,7 +244,7 @@ impl Client {
     /// - OK: message follows
     /// - ERR: no such message
     /// # Examples
-    /// ```no_run
+    /// ```rust,no_run
     /// extern crate mailparse;
     /// use mailparse::parse_mail;
     ///
@@ -216,7 +255,6 @@ impl Client {
     /// let subject = parsed.headers.get_first_value("Subject").unwrap();
     ///
     /// println!("{}", subject);
-    ///
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-8
     pub fn retr(&mut self, msg_number: u32) -> types::Result<Vec<u8>> {
@@ -225,15 +263,15 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let retr_command = format!("RETR {}", msg_number);
+        let arguments = Some(vec![Some(msg_number)]);
 
-        match socket.send_bytes(retr_command.as_bytes()) {
+        let command = match create_command("RETR", arguments) {
+            Ok(command) => command,
+            Err(err) => return Err(err),
+        };
+
+        match socket.send_command(command.as_bytes()) {
             Ok(_) => {
-                match socket.read_response() {
-                    Ok(status_message) => status_message,
-                    Err(err) => return Err(err),
-                };
-
                 let mut response: Vec<u8> = Vec::new();
 
                 match socket.read_multi_line(&mut response) {
@@ -254,34 +292,22 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let mut list_command = String::from("LIST");
+        let is_single = msg_number.is_some();
 
-        let is_single: bool = msg_number.is_some();
+        let arguments = Some(vec![msg_number]);
 
-        if is_single {
-            let number = msg_number.unwrap();
-            list_command = format!("{} {}", list_command, number);
+        let command = match create_command("LIST", arguments) {
+            Ok(command) => command,
+            Err(err) => return Err(err),
         };
 
-        match socket.send_bytes(list_command.as_bytes()) {
-            Ok(_) => {
+        match socket.send_command(command.as_bytes()) {
+            Ok(response) => {
                 if is_single {
-                    let response = socket.read_response();
+                    let parser = Parser::new(response);
 
-                    match response {
-                        Ok(response) => {
-                            let parser = Parser::new(response);
-
-                            Ok(Right(parser.to_list_item()))
-                        }
-                        Err(err) => Err(err),
-                    }
+                    Ok(Right(parser.to_list_item()))
                 } else {
-                    match socket.read_response() {
-                        Ok(status_message) => status_message,
-                        Err(err) => return Err(err),
-                    };
-
                     let mut response: Vec<u8> = Vec::new();
 
                     match socket.read_multi_line(&mut response) {
@@ -306,9 +332,9 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let stat_command = b"STAT";
+        let command = b"STAT";
 
-        match socket.send_command(stat_command) {
+        match socket.send_command(command) {
             Ok(response) => {
                 let parser = Parser::new(response);
 
@@ -338,9 +364,9 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let apop_command = format!("APOP {} {}", name, digest);
+        let command = format!("APOP {} {}", name, digest);
 
-        match socket.send_command(apop_command.as_bytes()) {
+        match socket.send_command(command.as_bytes()) {
             Ok(_) => {
                 self.state = ClientState::Transaction;
                 Ok(())
@@ -367,13 +393,13 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let user_string = format!("USER {}", user);
+        let command = format!("USER {}", user);
 
-        match socket.send_command(user_string.as_bytes()) {
+        match socket.send_command(command.as_bytes()) {
             Ok(_) => {
-                let password_string = format!("PASS {}", password);
+                let command = format!("PASS {}", password);
 
-                match socket.send_command(password_string.as_bytes()) {
+                match socket.send_command(command.as_bytes()) {
                     Ok(_) => {
                         self.state = ClientState::Transaction;
 
@@ -386,7 +412,7 @@ impl Client {
         }
     }
 
-    pub fn logout(&mut self) -> types::Result<()> {
+    pub fn quit(&mut self) -> types::Result<()> {
         let is_correct_state = self.is_correct_state(ClientState::Transaction);
 
         if is_correct_state.is_err() {
@@ -398,9 +424,9 @@ impl Client {
             Err(err) => return Err(err),
         };
 
-        let quit_command = b"QUIT";
+        let command = b"QUIT";
 
-        match socket.send_command(quit_command) {
+        match socket.send_command(command) {
             Ok(_) => {
                 self.state = ClientState::Update;
                 self.socket = None;
@@ -487,7 +513,10 @@ impl Client {
 mod test {
     use std::{collections::HashMap, env};
 
-    use super::*;
+    use dotenv::dotenv;
+    use either::Either::{Left, Right};
+
+    use super::{Client, TlsConnector};
 
     struct ClientInfo {
         server: String,
@@ -586,7 +615,7 @@ mod test {
     fn logout() {
         let mut client = create_logged_in_client();
 
-        client.logout().unwrap();
+        client.quit().unwrap();
     }
 
     #[test]
@@ -595,7 +624,7 @@ mod test {
 
         client.noop().unwrap();
 
-        client.logout().unwrap();
+        client.quit().unwrap();
     }
 
     #[test]
@@ -606,7 +635,7 @@ mod test {
 
         println!("{}", stats.count());
 
-        client.logout().unwrap();
+        client.quit().unwrap();
     }
 
     #[test]
@@ -619,23 +648,19 @@ mod test {
             Right(list_item) => {
                 println!("{}", list_item.size());
             }
-            Left(list) => {
-                println!("{}", list.len());
-            }
-        }
+            _ => {}
+        };
 
         let list = client.list(None).unwrap();
 
         match list {
-            Right(list_item) => {
-                println!("{}", list_item.size());
-            }
             Left(list) => {
                 println!("{}", list.len());
             }
-        }
+            _ => {}
+        };
 
-        client.logout().unwrap();
+        client.quit().unwrap();
     }
 
     #[test]
@@ -646,7 +671,7 @@ mod test {
 
         println!("{}", String::from_utf8(bytes).unwrap());
 
-        client.logout().unwrap();
+        client.quit().unwrap();
     }
 
     #[test]
@@ -657,6 +682,31 @@ mod test {
 
         println!("{}", String::from_utf8(bytes).unwrap());
 
-        client.logout().unwrap();
+        client.quit().unwrap();
+    }
+
+    #[test]
+    fn uidl() {
+        let mut client = create_logged_in_client();
+
+        let uidl = client.uidl(Some(1)).unwrap();
+
+        match uidl {
+            Right(unique_id) => {
+                println!("{}", unique_id.1);
+            }
+            _ => {}
+        };
+
+        let uidl = client.uidl(None).unwrap();
+
+        match uidl {
+            Left(list) => {
+                println!("{}", list.len());
+            }
+            _ => {}
+        };
+
+        client.quit().unwrap();
     }
 }
