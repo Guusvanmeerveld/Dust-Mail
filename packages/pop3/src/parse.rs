@@ -2,7 +2,7 @@ use std::{io, net::TcpStream};
 
 use crate::{
     constants::{LF, SPACE},
-    types::{self, ListItem, Stats, UniqueID},
+    types::{self, Stats, UniqueID},
 };
 
 /// A simple struct to parse responses from the server
@@ -28,29 +28,15 @@ impl Parser {
     }
 
     pub fn to_stats(&self) -> Stats {
-        let (message_count, drop_size) = Self::parse_counts_from_string(&self.response);
-
-        Stats::new(message_count, drop_size)
+        Self::parse_counts_from_string(&self.response)
     }
 
-    pub fn to_list_item(&self) -> ListItem {
-        let (index, byte_count) = Self::parse_counts_from_string(&self.response);
-
-        ListItem::new(index, byte_count)
-    }
-
-    pub fn to_list(&self) -> Vec<ListItem> {
+    pub fn to_stats_list(&self) -> Vec<Stats> {
         let end_of_line = char::from_u32(LF as u32).unwrap();
 
         let split = self.response.split(end_of_line).filter(|s| s.len() != 0);
 
-        split
-            .map(|line| {
-                let (message_index, byte_count) = Self::parse_counts_from_string(line);
-
-                ListItem::new(message_index, byte_count)
-            })
-            .collect()
+        split.map(Self::parse_counts_from_string).collect()
     }
 
     fn parse_unique_id_from_string(string: &str) -> UniqueID {

@@ -10,7 +10,7 @@ use either::Either::{self, Left, Right};
 use native_tls::{TlsConnector, TlsStream};
 use parse::{map_native_tls_error, Parser};
 use socket::Socket;
-use types::{ListItem, Stats, UniqueID};
+use types::{Stats, UniqueID};
 use utils::create_command;
 
 #[derive(Eq, PartialEq)]
@@ -283,10 +283,7 @@ impl Client {
         }
     }
 
-    pub fn list(
-        &mut self,
-        msg_number: Option<u32>,
-    ) -> types::Result<Either<Vec<ListItem>, ListItem>> {
+    pub fn list(&mut self, msg_number: Option<u32>) -> types::Result<Either<Vec<Stats>, Stats>> {
         let socket = match self.get_socket_mut() {
             Ok(socket) => socket,
             Err(err) => return Err(err),
@@ -306,7 +303,7 @@ impl Client {
                 if is_single {
                     let parser = Parser::new(response);
 
-                    Ok(Right(parser.to_list_item()))
+                    Ok(Right(parser.to_stats()))
                 } else {
                     let mut response: Vec<u8> = Vec::new();
 
@@ -316,7 +313,7 @@ impl Client {
 
                             let parser = Parser::new(response);
 
-                            Ok(Left(parser.to_list()))
+                            Ok(Left(parser.to_stats_list()))
                         }
                         Err(err) => Err(err),
                     }
@@ -633,7 +630,7 @@ mod test {
 
         let stats = client.stat().unwrap();
 
-        println!("{}", stats.count());
+        println!("{}", stats.0);
 
         client.quit().unwrap();
     }
@@ -646,7 +643,7 @@ mod test {
 
         match list {
             Right(list_item) => {
-                println!("{}", list_item.size());
+                println!("{}", list_item.0);
             }
             _ => {}
         };

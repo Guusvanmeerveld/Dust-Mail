@@ -38,7 +38,9 @@ impl<T: Read + Write> Socket<T> {
         };
 
         if response.starts_with(OK) {
-            let left_over = response.get((OK.len() + 1)..).unwrap();
+            let ok_size = OK.len() + 1;
+
+            let left_over = response.get(ok_size..).unwrap();
 
             Ok(left_over.to_owned())
         } else if response.starts_with(ERR) {
