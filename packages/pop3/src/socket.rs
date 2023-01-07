@@ -20,13 +20,9 @@ impl<T: Read + Write> Socket<T> {
     }
 
     pub fn send_command(&mut self, command: &[u8]) -> types::Result<String> {
-        match self.send_bytes(command) {
-            Ok(_) => match self.read_response() {
-                Ok(response) => Ok(response),
-                Err(err) => Err(err),
-            },
-            Err(err) => Err(err),
-        }
+        self.send_bytes(command)?;
+
+        self.read_response()
     }
 
     pub fn read_response_from_string(&mut self, response: String) -> types::Result<String> {
@@ -61,27 +57,18 @@ impl<T: Read + Write> Socket<T> {
     pub fn read_response(&mut self) -> types::Result<String> {
         let mut response: Vec<u8> = Vec::new();
 
-        match self.read_line(&mut response) {
-            Ok(_) => {
-                let response_string = String::from_utf8(response).unwrap();
+        self.read_line(&mut response)?;
 
-                self.read_response_from_string(response_string)
-            }
-            Err(err) => Err(err),
-        }
+        let response_string = String::from_utf8(response).unwrap();
+
+        self.read_response_from_string(response_string)
     }
 
     pub fn read_multi_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
         let mut total_bytes_read: usize = 0;
 
         loop {
-            let read_result = self.read_line(buf);
-
-            if read_result.is_err() {
-                return read_result;
-            }
-
-            let bytes_read = read_result.unwrap();
+            let bytes_read = self.read_line(buf)?;
 
             total_bytes_read += bytes_read;
 
@@ -135,19 +122,13 @@ impl<T: Read + Write> Socket<T> {
     }
 
     pub fn send_bytes(&mut self, buf: &[u8]) -> types::Result<()> {
-        match self.stream.write_all(buf).map_err(map_write_error_to_error) {
-            Ok(_) => {}
-            Err(err) => return Err(err),
-        };
+        self.stream
+            .write_all(buf)
+            .map_err(map_write_error_to_error)?;
 
-        match self
-            .stream
+        self.stream
             .write_all(&END_OF_LINE)
-            .map_err(map_write_error_to_error)
-        {
-            Ok(_) => {}
-            Err(err) => return Err(err),
-        };
+            .map_err(map_write_error_to_error)?;
 
         self.stream.flush().map_err(map_write_error_to_error)
     }

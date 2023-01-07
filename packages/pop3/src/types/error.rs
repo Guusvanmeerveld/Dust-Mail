@@ -36,6 +36,12 @@ impl Error {
     }
 }
 
+impl Into<String> for Error {
+    fn into(self) -> String {
+        self.msg
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.msg)
