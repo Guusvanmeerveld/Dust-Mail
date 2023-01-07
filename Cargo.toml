@@ -3,6 +3,12 @@
 members = [
     "apps/web/src-tauri",
     "packages/core",
-    "packages/pop3",
-    "packages/autodiscover-rs",
+    "packages/pop3"
 ]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+strip = true 
+opt-level = "s"
