@@ -1,10 +1,13 @@
+#[cfg(test)]
 use std::{collections::HashMap, env};
 
+#[cfg(test)]
 use dotenv::dotenv;
 use mailparse::MailParseError;
 
 use crate::types;
 
+#[cfg(test)]
 pub fn get_env() -> HashMap<String, String> {
     dotenv().ok();
 

@@ -40,7 +40,7 @@ impl LoginOptions {
     }
 }
 
-pub trait Client {
+pub trait IncomingClient {
     fn login(
         &mut self,
         username: &str,
@@ -61,6 +61,7 @@ pub trait Client {
     fn get_message(&mut self, box_id: &str, id: &str) -> types::Result<Message>;
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum ClientType {
     #[cfg(feature = "imap")]
     Imap,
@@ -71,12 +72,12 @@ pub enum ClientType {
 pub struct ClientConstructor {}
 
 impl ClientConstructor {
-    pub fn new(client_type: ClientType) -> Box<dyn Client> {
+    pub fn new(client_type: ClientType) -> Box<dyn IncomingClient> {
         match client_type {
             #[cfg(feature = "imap")]
             ClientType::Imap => Box::new(ImapClient::new()),
             #[cfg(feature = "pop")]
-            Pop => Box::new(PopClient::new()),
+            ClientType::Pop => Box::new(PopClient::new()),
         }
     }
 }

@@ -7,7 +7,7 @@ use pop3::{
 };
 
 use crate::{
-    client::Client,
+    client::IncomingClient,
     tls::create_tls_connector,
     types::{self, MailBox, Message, Preview},
     LoginOptions,
@@ -17,7 +17,7 @@ use parse::{parse_address, parse_headers};
 
 const MAILBOX_DEFAULT_NAME: &str = "Inbox";
 
-fn map_pop_error(error: pop3::types::Error) -> types::Error {
+pub fn map_pop_error(error: pop3::types::Error) -> types::Error {
     let kind: types::ErrorKind = match error.kind() {
         PopErrorKind::Server => types::ErrorKind::Server,
         PopErrorKind::Connection => types::ErrorKind::Connection,
@@ -27,7 +27,7 @@ fn map_pop_error(error: pop3::types::Error) -> types::Error {
         PopErrorKind::State => types::ErrorKind::UnexpectedBehavior,
     };
 
-    types::Error::new(kind, error.message())
+    types::Error::new(kind, error)
 }
 
 fn map_parse_date_error(error: chrono::ParseError) -> types::Error {
@@ -61,10 +61,7 @@ impl PopClient {
     }
 
     fn get_default_box(&mut self) -> types::Result<MailBox> {
-        let session = match self.get_session_mut() {
-            Ok(session) => session,
-            Err(err) => return Err(err),
-        };
+        let session = self.get_session_mut()?;
 
         let message_count = match session.stat().map_err(map_pop_error) {
             Ok(stats) => Some(stats.0),
@@ -85,7 +82,7 @@ impl PopClient {
     }
 }
 
-impl Client for PopClient {
+impl IncomingClient for PopClient {
     fn login(
         &mut self,
         username: &str,
@@ -102,32 +99,24 @@ impl Client for PopClient {
             }
         };
 
-        let tls = match create_tls_connector() {
-            Ok(tls) => tls,
-            Err(err) => return Err(err),
-        };
+        let tls = create_tls_connector()?;
 
-        let mut client = PopSession::new();
+        let mut client = PopSession::new(None);
 
         let server = options.server();
         let port = *options.port();
 
-        match client
+        client
             .connect((server, port), server, &tls)
-            .map_err(map_pop_error)
-        {
-            Ok(_) => match client
-                .login(username.as_ref(), password.as_ref())
-                .map_err(map_pop_error)
-            {
-                Ok(_) => {
-                    self.pop_session = Some(client);
-                    Ok(())
-                }
-                Err(err) => Err(err),
-            },
-            Err(err) => Err(err),
-        }
+            .map_err(map_pop_error)?;
+
+        client
+            .login(username.as_ref(), password.as_ref())
+            .map_err(map_pop_error)?;
+
+        self.pop_session = Some(client);
+
+        Ok(())
     }
 
     fn is_logged_in(&mut self) -> bool {
@@ -141,33 +130,24 @@ impl Client for PopClient {
         if !self.is_logged_in() {
             Ok(())
         } else {
-            let session = match self.get_session_mut() {
-                Ok(session) => session,
-                Err(err) => return Err(err),
-            };
+            let session = self.get_session_mut()?;
 
-            match session.quit().map_err(map_pop_error) {
-                Ok(_) => {
-                    self.pop_session = None;
-                    Ok(())
-                }
-                Err(err) => Err(err),
-            }
+            session.quit().map_err(map_pop_error)?;
+
+            self.pop_session = None;
+
+            Ok(())
         }
     }
 
     fn box_list(&mut self) -> types::Result<Vec<MailBox>> {
-        match self.get_default_box() {
-            Ok(default_box) => Ok(vec![default_box]),
-            Err(err) => Err(err),
-        }
+        let default_box = self.get_default_box()?;
+
+        Ok(vec![default_box])
     }
 
     fn get(&mut self, box_name: &str) -> types::Result<&MailBox> {
-        self.mailbox = match self.get_default_box() {
-            Ok(mailbox) => Some(mailbox),
-            Err(err) => return Err(err),
-        };
+        self.mailbox = Some(self.get_default_box()?);
 
         let mailbox = self.mailbox.as_ref().unwrap();
 
@@ -182,17 +162,11 @@ impl Client for PopClient {
     }
 
     fn messages(&mut self, _: &str, start: u32, end: u32) -> types::Result<Vec<Preview>> {
-        let mailbox = match self.get_default_box() {
-            Ok(mailbox) => mailbox,
-            Err(err) => return Err(err),
-        };
+        let mailbox = self.get_default_box()?;
 
         let total_messages = mailbox.message_count.unwrap();
 
-        let session = match self.get_session_mut() {
-            Ok(session) => session,
-            Err(err) => return Err(err),
-        };
+        let session = self.get_session_mut()?;
 
         let sequence_start = if total_messages < end {
             0
@@ -219,78 +193,76 @@ impl Client for PopClient {
                 Err(err) => return Err(err),
             };
 
-            match session.top(msg, 0).map_err(map_pop_error) {
-                Ok(bytes) => {
-                    let headers = parse_headers(bytes).unwrap();
+            let bytes = session.top(msg, 0).map_err(map_pop_error)?;
 
-                    let subject = headers.get("Subject").cloned();
+            let headers = parse_headers(bytes)?;
 
-                    let sent = match headers.get("Date") {
-                        Some(date) => {
-                            let datetime = match DateTime::parse_from_rfc2822(date.trim())
-                                .map_err(map_parse_date_error)
-                            {
-                                Ok(datetime) => datetime,
-                                Err(err) => return Err(err),
-                            };
+            let subject = headers.get("Subject").cloned();
 
-                            Some(datetime.timestamp())
-                        }
-                        None => None,
+            let sent = match headers.get("Date") {
+                Some(date) => {
+                    let datetime = match DateTime::parse_from_rfc2822(date.trim())
+                        .map_err(map_parse_date_error)
+                    {
+                        Ok(datetime) => datetime,
+                        Err(err) => return Err(err),
                     };
 
-                    let from = match headers.get("From") {
-                        Some(from) => parse_address(from.clone()),
-                        None => Vec::new(),
-                    };
-
-                    let preview = Preview {
-                        id: unique_id,
-                        subject,
-                        sent,
-                        from,
-                    };
-
-                    previews.push(preview)
+                    Some(datetime.timestamp())
                 }
-                Err(err) => return Err(err),
+                None => None,
             };
+
+            let from = match headers.get("From") {
+                Some(from) => parse_address(from.clone()),
+                None => Vec::new(),
+            };
+
+            let preview = Preview {
+                id: unique_id,
+                subject,
+                sent,
+                from,
+            };
+
+            previews.push(preview)
         }
 
         Ok(previews)
     }
 
     fn get_message(&mut self, _: &str, id: &str) -> types::Result<Message> {
+        let session = self.get_session_mut()?;
         todo!()
     }
 }
 
-// #[cfg(test)]
+#[cfg(test)]
 mod test {
     use std::time::Instant;
 
     use super::PopClient;
 
-    use crate::{
-        client::{Client, ConnectionSecurity, LoginOptions},
-        utils::get_env,
-    };
+    use crate::client::{ConnectionSecurity, IncomingClient, LoginOptions};
+
+    use dotenv::dotenv;
+    use std::env;
 
     fn create_test_client() -> PopClient {
+        dotenv().ok();
+
         let mut client = PopClient::new();
 
-        let envs = get_env();
+        let username = env::var("POP_USERNAME").unwrap();
+        let password = env::var("POP_PASSWORD").unwrap();
 
-        let username = envs.get("POP_USERNAME").unwrap();
-        let password = envs.get("POP_PASSWORD").unwrap();
-
-        let server = envs.get("POP_SERVER").unwrap();
+        let server = env::var("POP_SERVER").unwrap();
         let port: u16 = 995;
         let security = ConnectionSecurity::Tls;
 
-        let options = LoginOptions::new(server, port, security);
+        let options = LoginOptions::new(&server, port, security);
 
-        client.login(username, password, Some(options)).unwrap();
+        client.login(&username, &password, Some(options)).unwrap();
 
         client
     }

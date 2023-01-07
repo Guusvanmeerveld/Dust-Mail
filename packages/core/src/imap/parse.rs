@@ -1,9 +1,8 @@
 use imap::types::Fetch;
-use mailparse::parse_mail;
 
 use crate::{
+    parse::parse_rfc822,
     types::{self, Address, Content, Message, Preview},
-    utils::map_mailparse_error,
 };
 
 const AT_SYMBOL: u8 = 64;
@@ -138,40 +137,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
     };
 
     let content: Content = match fetch.body() {
-        Some(body) => {
-            let parsed = match parse_mail(body).map_err(map_mailparse_error) {
-                Ok(parsed) => parsed,
-                Err(err) => return Err(err),
-            };
-
-            let mut text: Option<String> = None;
-            let mut html: Option<String> = None;
-
-            for part in parsed.parts() {
-                let headers = part.get_headers();
-
-                for header in headers {
-                    let key = header.get_key().to_ascii_lowercase();
-
-                    if key == "content-type" {
-                        let value = header.get_value().to_ascii_lowercase();
-
-                        let body = match part.get_body().map_err(map_mailparse_error) {
-                            Ok(text) => Some(text),
-                            Err(err) => return Err(err),
-                        };
-
-                        if value.starts_with("text/plain") {
-                            text = body
-                        } else if value.starts_with("text/html") {
-                            html = body
-                        }
-                    }
-                }
-            }
-
-            Content { html, text }
-        }
+        Some(body) => parse_rfc822(body)?,
         None => Content {
             html: None,
             text: None,

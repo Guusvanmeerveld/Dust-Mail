@@ -1,5 +1,6 @@
 mod client;
 mod detect;
+mod parse;
 mod tls;
 mod utils;
 
@@ -11,5 +12,5 @@ mod pop;
 
 pub mod types;
 
-pub use client::{ClientConstructor, ClientType, LoginOptions};
+pub use client::{ClientConstructor, ClientType, ConnectionSecurity, LoginOptions};
 pub use detect::ServiceDetector;
