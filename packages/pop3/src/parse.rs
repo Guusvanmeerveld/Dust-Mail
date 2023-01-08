@@ -1,8 +1,8 @@
-use std::{io, net::TcpStream};
+use std::{io, net::TcpStream, time::Duration};
 
 use crate::{
     constants::{LF, SPACE},
-    types::{self, Stats, UniqueID},
+    types::{self, Capabilities, Capability, Stats, UniqueID},
 };
 
 /// A simple struct to parse responses from the server
@@ -12,8 +12,10 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(response: String) -> Self {
-        Self { response }
+    pub fn new<S: Into<String>>(response: S) -> Self {
+        Self {
+            response: response.into(),
+        }
     }
 
     /// Parse the message count and drop size from a given string
@@ -62,6 +64,57 @@ impl Parser {
             .map(|line| Self::parse_unique_id_from_string(line))
             .collect()
     }
+}
+
+pub fn parse_capabilities<S: Into<String>>(response: S) -> Capabilities {
+    let response: String = response.into();
+
+    let end_of_line = char::from_u32(LF as u32).unwrap();
+
+    let split = response.split(end_of_line);
+
+    split
+        .map(|line| {
+            let line = line.trim().to_ascii_uppercase();
+
+            let mut split = line.split(SPACE);
+
+            match split.next().unwrap() {
+                "TOP" => Some(Capability::Top),
+                "USER" => Some(Capability::User),
+                "SASL" => {
+                    let arguments: Vec<String> = split.map(|s| s.to_owned()).collect();
+
+                    Some(Capability::Sasl(arguments))
+                }
+                "RESP-CODES" => Some(Capability::RespCodes),
+                "LOGIN-DELAY" => {
+                    let delay: Duration = match split.next() {
+                        Some(delay) => Duration::from_secs(delay.parse::<u64>().unwrap()),
+                        None => Duration::from_secs(0),
+                    };
+
+                    Some(Capability::LoginDelay(delay))
+                }
+                "PIPELINING" => Some(Capability::Pipelining),
+                "EXPIRE" => {
+                    let expires: Option<Duration> = match split.next() {
+                        Some(expires) => Some(Duration::from_secs(expires.parse::<u64>().unwrap())),
+                        None => None,
+                    };
+
+                    Some(Capability::Expire(expires))
+                }
+                "UIDL" => Some(Capability::Uidl),
+                "IMPLEMENTATION" => {
+                    let arguments: String = split.map(|s| s.to_owned()).collect();
+
+                    Some(Capability::Implementation(arguments))
+                }
+                _ => None,
+            }
+        })
+        .collect::<Capabilities>()
 }
 
 pub fn map_native_tls_error(error: native_tls::HandshakeError<TcpStream>) -> types::Error {

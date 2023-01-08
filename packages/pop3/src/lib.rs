@@ -11,9 +11,9 @@ use std::{
 
 use either::Either::{self, Left, Right};
 use native_tls::{TlsConnector, TlsStream};
-use parse::{map_native_tls_error, Parser};
+use parse::{map_native_tls_error, parse_capabilities, Parser};
 use socket::Socket;
-use types::{Stats, UniqueID};
+use types::{Capabilities, Capability, Stats, UniqueID};
 use utils::create_command;
 
 #[derive(Eq, PartialEq)]
@@ -24,13 +24,9 @@ pub enum ClientState {
     None,
 }
 
-pub enum Capability {
-    Top,
-}
-
 pub struct Client {
     socket: Option<Socket<TlsStream<TcpStream>>>,
-    // capabilities: Vec<Capability>,
+    capabilities: Capabilities,
     connection_timeout: Duration,
     read_greeting: bool,
     marked_as_del: Vec<u32>,
@@ -46,7 +42,7 @@ impl Client {
 
         Self {
             socket: None,
-            // capabilities: Vec::new(),
+            capabilities: Vec::new(),
             connection_timeout,
             read_greeting: false,
             state: ClientState::None,
@@ -112,6 +108,12 @@ impl Client {
         &mut self,
         msg_number: Option<u32>,
     ) -> types::Result<Either<Vec<UniqueID>, UniqueID>> {
+        self.has_capability_else_err(Capability::Uidl)?;
+
+        if msg_number.is_some() {
+            self.is_deleted_else_err(msg_number.as_ref().unwrap())?;
+        }
+
         let socket = self.get_socket_mut()?;
 
         let is_single = msg_number.is_some();
@@ -139,6 +141,10 @@ impl Client {
     }
 
     pub fn top(&mut self, msg_number: u32, lines: u32) -> types::Result<Vec<u8>> {
+        self.is_deleted_else_err(&msg_number)?;
+
+        self.has_capability_else_err(Capability::Top)?;
+
         let socket = self.get_socket_mut()?;
 
         let command = format!("TOP {} {}", msg_number, lines);
@@ -170,6 +176,17 @@ impl Client {
         }
     }
 
+    fn is_deleted_else_err(&mut self, msg_number: &u32) -> types::Result<()> {
+        if self.is_deleted(msg_number) {
+            Err(types::Error::new(
+                types::ErrorKind::Server,
+                "This message has been marked as deleted and cannot be refenced anymore",
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
     /// ## DELE
     /// The POP3 server marks the message as deleted.  Any future reference to the message-number associated with the message in a POP3 command generates an error.  The POP3 server does not actually delete the message until the POP3 session enters the UPDATE state.
     /// ### Arguments:
@@ -187,6 +204,8 @@ impl Client {
     /// println!("{}", is_deleted);
     /// ```
     pub fn dele(&mut self, msg_number: u32) -> types::Result<()> {
+        self.is_deleted_else_err(&msg_number)?;
+
         let socket = self.get_socket_mut()?;
 
         let command = format!("DELE {}", msg_number);
@@ -243,6 +262,8 @@ impl Client {
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-8
     pub fn retr(&mut self, msg_number: u32) -> types::Result<Vec<u8>> {
+        self.is_deleted_else_err(&msg_number)?;
+
         let socket = self.get_socket_mut()?;
 
         let arguments = Some(vec![Some(msg_number)]);
@@ -259,6 +280,10 @@ impl Client {
     }
 
     pub fn list(&mut self, msg_number: Option<u32>) -> types::Result<Either<Vec<Stats>, Stats>> {
+        if msg_number.is_some() {
+            self.is_deleted_else_err(msg_number.as_ref().unwrap())?;
+        }
+
         let socket = self.get_socket_mut()?;
 
         let is_single = msg_number.is_some();
@@ -318,6 +343,8 @@ impl Client {
     pub fn login(&mut self, user: &str, password: &str) -> types::Result<()> {
         self.is_correct_state(ClientState::Authentication)?;
 
+        self.has_capability_else_err(Capability::User)?;
+
         self.has_read_greeting()?;
 
         let socket = self.get_socket_mut()?;
@@ -330,22 +357,17 @@ impl Client {
 
         socket.send_command(command.as_bytes())?;
 
+        self.capabilities = self.capa()?;
+
         self.state = ClientState::Transaction;
 
         Ok(())
     }
 
     pub fn quit(&mut self) -> types::Result<()> {
-        let is_correct_state = self.is_correct_state(ClientState::Transaction);
+        self.is_correct_state(ClientState::Transaction)?;
 
-        if is_correct_state.is_err() {
-            return is_correct_state;
-        };
-
-        let socket = match self.get_socket_mut() {
-            Ok(socket) => socket,
-            Err(err) => return Err(err),
-        };
+        let socket = self.get_socket_mut()?;
 
         let command = b"QUIT";
 
@@ -356,8 +378,49 @@ impl Client {
         self.state = ClientState::None;
 
         self.marked_as_del.clear();
+        self.capabilities.clear();
 
         Ok(())
+    }
+
+    pub fn has_capability(&mut self, capability: Capability) -> bool {
+        self.capabilities.sort();
+
+        match self.capabilities.binary_search(&Some(capability)) {
+            Ok(_) => true,
+            Err(_) => false,
+        }
+    }
+
+    fn has_capability_else_err(&mut self, capability: Capability) -> types::Result<()> {
+        if !self.has_capability(capability) {
+            Err(types::Error::new(
+                types::ErrorKind::Server,
+                "The remote pop server does not support this command/function",
+            ))
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn capabilities(&self) -> &Capabilities {
+        &self.capabilities
+    }
+
+    pub fn capa(&mut self) -> types::Result<Capabilities> {
+        let socket = self.get_socket_mut()?;
+
+        let command = b"CAPA";
+
+        socket.send_command(command)?;
+
+        let mut response: Vec<u8> = Vec::new();
+
+        socket.read_multi_line(&mut response)?;
+
+        let response = String::from_utf8(response).unwrap();
+
+        Ok(parse_capabilities(response))
     }
 
     fn has_read_greeting(&self) -> types::Result<()> {
@@ -427,7 +490,11 @@ impl Client {
 
         self.state = ClientState::Authentication;
 
-        self.read_greeting()
+        let greeting = self.read_greeting()?;
+
+        self.capabilities = self.capa()?;
+
+        Ok(greeting)
     }
 }
 
@@ -437,6 +504,8 @@ mod test {
 
     use dotenv::dotenv;
     use either::Either::{Left, Right};
+
+    use crate::types::Capability;
 
     use super::{Client, TlsConnector};
 
