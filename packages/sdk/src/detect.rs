@@ -2,15 +2,15 @@ use std::net::{TcpStream, ToSocketAddrs};
 
 #[cfg(feature = "imap")]
 use crate::imap::map_imap_error;
+#[cfg(feature = "pop")]
+use crate::parse::map_pop_error;
+
 #[cfg(feature = "imap")]
 use imap;
 
-#[cfg(feature = "pop")]
-use crate::pop::map_pop_error;
-
 use crate::{
     tls::create_tls_connector,
-    types::{self, ClientType, ConnectionSecurity},
+    types::{self, ConnectionSecurity, IncomingClientType},
 };
 
 const AT_SYMBOL: char = '@';
@@ -42,7 +42,7 @@ impl ServiceDetector {
         addr: A,
         domain: S,
         security: ConnectionSecurity,
-    ) -> types::Result<Option<ClientType>> {
+    ) -> types::Result<Option<IncomingClientType>> {
         #[cfg(feature = "imap")]
         {
             match security {
@@ -51,7 +51,7 @@ impl ServiceDetector {
 
                     match imap::connect(addr, domain.into(), &tls).map_err(map_imap_error) {
                         Ok(_) => {
-                            return Ok(Some(ClientType::Imap));
+                            return Ok(Some(IncomingClientType::Imap));
                         }
                         Err(_) => {}
                     };
@@ -62,7 +62,7 @@ impl ServiceDetector {
                     match imap::connect_starttls(addr, domain.into(), &tls).map_err(map_imap_error)
                     {
                         Ok(_) => {
-                            return Ok(Some(ClientType::Imap));
+                            return Ok(Some(IncomingClientType::Imap));
                         }
                         Err(_) => {}
                     };
@@ -74,7 +74,7 @@ impl ServiceDetector {
 
                             match client.read_greeting() {
                                 Ok(_) => {
-                                    return Ok(Some(ClientType::Imap));
+                                    return Ok(Some(IncomingClientType::Imap));
                                 }
                                 Err(_) => {}
                             }
@@ -92,7 +92,7 @@ impl ServiceDetector {
 
                     match pop3::connect(addr, &domain.into(), &tls, None).map_err(map_pop_error) {
                         Ok(_) => {
-                            return Ok(Some(ClientType::Pop));
+                            return Ok(Some(IncomingClientType::Pop));
                         }
                         Err(_) => {}
                     };
@@ -108,7 +108,7 @@ impl ServiceDetector {
 #[cfg(test)]
 mod test {
 
-    use crate::types::{ClientType, ConnectionSecurity};
+    use crate::types::{ConnectionSecurity, IncomingClientType};
 
     use super::ServiceDetector;
 
@@ -117,24 +117,24 @@ mod test {
         #[cfg(feature = "imap")]
         {
             let domain = "outlook.office365.com";
-            let imap_server = (domain, 993);
+            let server = (domain, 993);
 
             assert_eq!(
-                ServiceDetector::detect_client_type(imap_server, domain, ConnectionSecurity::Tls)
+                ServiceDetector::detect_client_type(server, domain, ConnectionSecurity::Tls)
                     .unwrap(),
-                Some(ClientType::Imap),
+                Some(IncomingClientType::Imap),
             );
         }
 
         #[cfg(feature = "pop")]
         {
             let domain = "outlook.office365.com";
-            let imap_server = (domain, 995);
+            let server = (domain, 995);
 
             assert_eq!(
-                ServiceDetector::detect_client_type(imap_server, domain, ConnectionSecurity::Tls)
+                ServiceDetector::detect_client_type(server, domain, ConnectionSecurity::Tls)
                     .unwrap(),
-                Some(ClientType::Pop),
+                Some(IncomingClientType::Pop),
             );
         }
     }

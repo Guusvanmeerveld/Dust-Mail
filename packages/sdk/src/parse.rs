@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 
+#[cfg(feature = "pop")]
+use pop3::types::ErrorKind as PopErrorKind;
+
 use mailparse::parse_mail;
 
 use crate::{
@@ -49,4 +52,25 @@ pub fn parse_headers(response: &[u8]) -> types::Result<Headers> {
     }
 
     Ok(headers)
+}
+
+#[cfg(feature = "pop")]
+pub fn map_pop_error(error: pop3::types::Error) -> types::Error {
+    let kind: types::ErrorKind = match error.kind() {
+        PopErrorKind::Server => types::ErrorKind::Server,
+        PopErrorKind::Connection => types::ErrorKind::Connection,
+        PopErrorKind::Read => types::ErrorKind::Read,
+        PopErrorKind::Write => types::ErrorKind::Write,
+        PopErrorKind::Tls => types::ErrorKind::Security,
+        PopErrorKind::State => types::ErrorKind::UnexpectedBehavior,
+    };
+
+    types::Error::new(kind, error)
+}
+
+pub fn map_parse_date_error(error: chrono::ParseError) -> types::Error {
+    types::Error::new(
+        types::ErrorKind::Read,
+        format!("Error parsing date from message: {}", error),
+    )
 }

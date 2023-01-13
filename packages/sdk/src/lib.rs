@@ -12,5 +12,8 @@ mod pop;
 
 pub mod types;
 
-pub use client::ClientConstructor;
+pub use client::incoming::{
+    ClientConstructor as IncomingClientConstructor, Session as IncomingSession,
+};
+
 pub use detect::ServiceDetector;

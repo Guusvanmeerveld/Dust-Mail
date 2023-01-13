@@ -6,7 +6,7 @@ use std::net::TcpStream;
 use imap::types::Fetch;
 use native_tls::TlsStream;
 
-use crate::client::IncomingSessionTrait as IncomingSession;
+use crate::client::incoming::Session;
 use crate::tls::create_tls_connector;
 use crate::types::{self, LoginOptions, MailBox, Message, Preview};
 
@@ -22,11 +22,11 @@ pub fn map_imap_error(error: imap::Error) -> types::Error {
 }
 
 pub struct ImapClient<S: Read + Write> {
-    imap_client: imap::Client<S>,
+    client: imap::Client<S>,
 }
 
 pub struct ImapSession<S: Read + Write> {
-    imap_session: imap::Session<S>,
+    session: imap::Session<S>,
     selected_box: Option<MailBox>,
 }
 
@@ -38,22 +38,32 @@ pub fn connect(options: LoginOptions) -> types::Result<ImapClient<TlsStream<TcpS
 
     let client = imap::connect((domain, port), domain, &tls).map_err(map_imap_error)?;
 
-    let imap_client = ImapClient {
-        imap_client: client,
-    };
+    let imap_client = ImapClient { client };
 
     Ok(imap_client)
+}
+
+pub fn connect_plain(options: LoginOptions) -> types::Result<ImapClient<TcpStream>> {
+    let domain = options.server();
+    let port = *options.port();
+
+    let stream = TcpStream::connect((domain, port))
+        .map_err(|e| types::Error::new(types::ErrorKind::Connection, e.to_string()))?;
+
+    let client = imap::Client::new(stream);
+
+    Ok(ImapClient { client })
 }
 
 impl<S: Read + Write> ImapClient<S> {
     pub fn login(self, username: &str, password: &str) -> types::Result<ImapSession<S>> {
         let session = self
-            .imap_client
+            .client
             .login(username, password)
             .map_err(|(err, _)| map_imap_error(err))?;
 
         let imap_session = ImapSession {
-            imap_session: session,
+            session,
             selected_box: None,
         };
 
@@ -63,7 +73,7 @@ impl<S: Read + Write> ImapClient<S> {
 
 impl<S: Read + Write> ImapSession<S> {
     fn get_session_mut(&mut self) -> &mut imap::Session<S> {
-        &mut self.imap_session
+        &mut self.session
     }
 
     fn name_from_box_id(id: &str, delimiter: Option<&str>) -> String {
@@ -101,7 +111,7 @@ impl<S: Read + Write> ImapSession<S> {
     }
 }
 
-impl<S: Read + Write> IncomingSession for ImapSession<S> {
+impl<S: Read + Write> Session for ImapSession<S> {
     fn logout(&mut self) -> types::Result<()> {
         let session = self.get_session_mut();
 
@@ -252,7 +262,7 @@ mod tests {
 
     use super::{ImapSession, LoginOptions};
 
-    use crate::{client::IncomingSessionTrait, utils::get_env};
+    use crate::{client::incoming::Session, utils::get_env};
 
     fn create_test_session() -> ImapSession<TlsStream<TcpStream>> {
         let envs = get_env();

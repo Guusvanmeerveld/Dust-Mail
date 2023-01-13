@@ -4,11 +4,11 @@ use std::{collections::HashMap, io::Read, io::Write, net::TcpStream};
 
 use chrono::DateTime;
 use native_tls::TlsStream;
-use pop3::types::{ErrorKind as PopErrorKind, Left, Right};
+use pop3::types::{Left, Right};
 
 use crate::{
-    client::IncomingSessionTrait as IncomingSession,
-    parse::parse_headers,
+    client::incoming::Session,
+    parse::{map_parse_date_error, map_pop_error, parse_headers},
     tls::create_tls_connector,
     types::{self, LoginOptions, MailBox, Message, Preview},
 };
@@ -17,32 +17,16 @@ use parse::parse_address;
 
 const MAILBOX_DEFAULT_NAME: &str = "Inbox";
 
-pub fn map_pop_error(error: pop3::types::Error) -> types::Error {
-    let kind: types::ErrorKind = match error.kind() {
-        PopErrorKind::Server => types::ErrorKind::Server,
-        PopErrorKind::Connection => types::ErrorKind::Connection,
-        PopErrorKind::Read => types::ErrorKind::Read,
-        PopErrorKind::Write => types::ErrorKind::Write,
-        PopErrorKind::Tls => types::ErrorKind::Security,
-        PopErrorKind::State => types::ErrorKind::UnexpectedBehavior,
-    };
-
-    types::Error::new(kind, error)
-}
-
-fn map_parse_date_error(error: chrono::ParseError) -> types::Error {
-    types::Error::new(
-        types::ErrorKind::Read,
-        format!("Error parsing date from message: {}", error),
-    )
+pub struct PopClient<S: Read + Write> {
+    session: pop3::Client<S>,
 }
 
 pub struct PopSession<S: Read + Write> {
-    pop_session: pop3::Client<S>,
+    session: pop3::Client<S>,
     mailbox: Option<MailBox>,
 }
 
-pub fn connect(options: LoginOptions) -> types::Result<PopSession<TlsStream<TcpStream>>> {
+pub fn connect(options: LoginOptions) -> types::Result<PopClient<TlsStream<TcpStream>>> {
     let tls = create_tls_connector()?;
 
     let server = options.server();
@@ -50,33 +34,34 @@ pub fn connect(options: LoginOptions) -> types::Result<PopSession<TlsStream<TcpS
 
     let session = pop3::connect((server, port), server, &tls, None).map_err(map_pop_error)?;
 
-    Ok(PopSession {
-        pop_session: session,
-        mailbox: None,
-    })
+    Ok(PopClient { session })
 }
 
-pub fn connect_plain(options: LoginOptions) -> types::Result<PopSession<TcpStream>> {
+pub fn connect_plain(options: LoginOptions) -> types::Result<PopClient<TcpStream>> {
     let server = options.server();
     let port = *options.port();
 
     let session = pop3::connect_plain((server, port), None).map_err(map_pop_error)?;
 
-    Ok(PopSession {
-        pop_session: session,
-        mailbox: None,
-    })
+    Ok(PopClient { session })
+}
+
+impl<S: Read + Write> PopClient<S> {
+    pub fn login(self, username: &str, password: &str) -> types::Result<PopSession<S>> {
+        let mut session = self.session;
+
+        session.login(username, password).map_err(map_pop_error)?;
+
+        Ok(PopSession {
+            session,
+            mailbox: None,
+        })
+    }
 }
 
 impl<S: Read + Write> PopSession<S> {
-    pub fn login(&mut self, username: &str, password: &str) -> types::Result<()> {
-        let session = self.get_session_mut();
-
-        session.login(username, password).map_err(map_pop_error)
-    }
-
     fn get_session_mut(&mut self) -> &mut pop3::Client<S> {
-        &mut self.pop_session
+        &mut self.session
     }
 
     fn get_default_box(&mut self) -> types::Result<MailBox> {
@@ -101,7 +86,7 @@ impl<S: Read + Write> PopSession<S> {
     }
 }
 
-impl<S: Read + Write> IncomingSession for PopSession<S> {
+impl<S: Read + Write> Session for PopSession<S> {
     fn logout(&mut self) -> types::Result<()> {
         let session = self.get_session_mut();
 
@@ -163,9 +148,9 @@ impl<S: Read + Write> IncomingSession for PopSession<S> {
                 Err(err) => return Err(err),
             };
 
-            let bytes = session.top(msg, 0).map_err(map_pop_error)?;
+            let header_bytes = session.top(msg, 0).map_err(map_pop_error)?;
 
-            let headers = parse_headers(&bytes)?;
+            let headers = parse_headers(&header_bytes)?;
 
             let subject = headers.get("Subject").cloned();
 
@@ -220,7 +205,7 @@ mod test {
 
     use super::PopSession;
 
-    use crate::{client::IncomingSessionTrait, types::LoginOptions};
+    use crate::{client::incoming::Session, types::LoginOptions};
 
     use dotenv::dotenv;
     use native_tls::TlsStream;
@@ -237,11 +222,11 @@ mod test {
 
         let options = LoginOptions::new(&server, port);
 
-        let mut client = super::connect(options).unwrap();
+        let client = super::connect(options).unwrap();
 
-        client.login(&username, &password).unwrap();
+        let session = client.login(&username, &password).unwrap();
 
-        client
+        session
     }
 
     #[test]
@@ -255,6 +240,7 @@ mod test {
         for preview in previews.iter() {
             println!("{}", preview.subject.as_ref().unwrap());
         }
+
         println!("Took {}ms", took);
     }
 }
