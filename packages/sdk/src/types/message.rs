@@ -31,7 +31,9 @@ impl Address {
 
 pub struct Preview {
     pub from: Vec<Address>,
+    /// A strictly unique id, used to fetch more info about the message.
     pub id: String,
+    /// Date in milliseconds since epoch
     pub sent: Option<i64>,
     pub subject: Option<String>,
 }
@@ -46,7 +48,9 @@ pub struct Message {
     pub to: Vec<Address>,
     pub cc: Vec<Address>,
     pub bcc: Vec<Address>,
+    /// A strictly unique id, used to fetch more info about the message.
     pub id: String,
+    /// Date in milliseconds since epoch
     pub sent: Option<i64>,
     pub subject: Option<String>,
     pub content: Content,

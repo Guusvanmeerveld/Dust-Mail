@@ -116,6 +116,18 @@ impl<S: Read + Write> Session for PopSession<S> {
         }
     }
 
+    fn delete(&mut self, _: &str) -> types::Result<()> {
+        todo!()
+    }
+
+    fn rename(&mut self, _: &str, new_name: &str) -> types::Result<()> {
+        todo!()
+    }
+
+    fn create(&mut self, _: &str) -> types::Result<()> {
+        todo!()
+    }
+
     fn messages(&mut self, _: &str, start: u32, end: u32) -> types::Result<Vec<Preview>> {
         let mailbox = self.get_default_box()?;
 

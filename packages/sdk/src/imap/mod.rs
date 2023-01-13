@@ -178,9 +178,56 @@ impl<S: Read + Write> Session for ImapSession<S> {
         Ok(self.selected_box.as_ref().unwrap())
     }
 
+    fn delete(&mut self, box_id: &str) -> types::Result<()> {
+        let session = self.get_session_mut();
+
+        session.delete(box_id).map_err(map_imap_error)
+    }
+
+    fn rename(&mut self, box_id: &str, new_name: &str) -> types::Result<()> {
+        let mailbox = self.get(box_id)?;
+
+        let new_name = match &mailbox.delimiter {
+            Some(delimiter) => {
+                let item_count = box_id.matches(delimiter).count();
+
+                if item_count >= 2 {
+                    let split = box_id.split(delimiter);
+
+                    let mut prefix = split
+                        .take(item_count)
+                        .collect::<Vec<&str>>()
+                        .join(delimiter);
+
+                    prefix.push_str(new_name);
+
+                    prefix
+                } else {
+                    new_name.to_owned()
+                }
+            }
+            None => new_name.to_owned(),
+        };
+
+        let session = self.get_session_mut();
+
+        session.close().map_err(map_imap_error)?;
+
+        session.rename(box_id, new_name).map_err(map_imap_error)
+    }
+
+    fn create(&mut self, box_id: &str) -> types::Result<()> {
+        let session = self.get_session_mut();
+
+        session.create(box_id).map_err(map_imap_error)
+    }
+
     fn messages(&mut self, box_id: &str, start: u32, end: u32) -> types::Result<Vec<Preview>> {
         let total_messages = match self.get(box_id) {
-            Ok(selected_box) => selected_box.message_count.unwrap(),
+            Ok(selected_box) => match selected_box.message_count {
+                Some(message_count) => message_count,
+                None => unreachable!(),
+            },
             Err(err) => return Err(err),
         };
 
@@ -232,7 +279,15 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
         let fetch = Self::get_item_from_fetch_else_err(&fetched)?;
 
-        let headers = parse::fetch_to_headers(fetch)?.unwrap();
+        let headers = match parse::fetch_to_headers(fetch)? {
+            Some(headers) => headers,
+            None => {
+                return Err(types::Error::new(
+                    types::ErrorKind::UnexpectedBehavior,
+                    "Requested just the message headers, but did not get any message headers",
+                ))
+            }
+        };
 
         Ok(headers)
     }
@@ -324,7 +379,7 @@ mod tests {
         let box_list = session.box_list().unwrap();
 
         for mailbox in box_list {
-            println!("{}", mailbox.name);
+            println!("{}", mailbox.id);
         }
 
         session.logout().unwrap();
@@ -353,6 +408,18 @@ mod tests {
         let message = session.get_message(box_id, msg_id).unwrap();
 
         println!("{}", message.content.text.unwrap());
+
+        session.logout().unwrap();
+    }
+
+    #[test]
+    fn rename_box() {
+        let mut session = create_test_session();
+
+        let new_box_name = "Delivery";
+        let box_id = "Test";
+
+        session.rename(box_id, new_box_name).unwrap();
 
         session.logout().unwrap();
     }

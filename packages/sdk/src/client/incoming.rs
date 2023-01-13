@@ -41,16 +41,31 @@ impl<S: Read + Write + 'static> IncomingClient<S> {
 }
 
 pub trait Session {
+    /// Logout of the session, closing the connection with the server if applicable.
     fn logout(&mut self) -> types::Result<()>;
 
+    /// Returns a list of all of the mailboxes that are on the server.
     fn box_list(&mut self) -> types::Result<Vec<MailBox>>;
 
+    /// Returns some basic information about a specified mailbox.
     fn get(&mut self, box_id: &str) -> types::Result<&MailBox>;
 
+    /// Deletes a specified mailbox.
+    fn delete(&mut self, box_id: &str) -> types::Result<()>;
+
+    /// Creates a new mailbox with a specified id.
+    fn create(&mut self, box_id: &str) -> types::Result<()>;
+
+    /// Renames a specified mailbox.
+    fn rename(&mut self, box_id: &str, new_name: &str) -> types::Result<()>;
+
+    /// Returns a list of a specified range of messages from a specified mailbox.
     fn messages(&mut self, box_id: &str, start: u32, end: u32) -> types::Result<Vec<Preview>>;
 
+    /// Returns a map containing all of specified messages headers.
     fn get_headers(&mut self, box_id: &str, msg_id: &str) -> types::Result<Headers>;
 
+    /// Returns all of the relevant data for a specified message.
     fn get_message(&mut self, box_id: &str, msg_id: &str) -> types::Result<Message>;
 }
 
