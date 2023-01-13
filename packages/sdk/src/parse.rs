@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use mailparse::parse_mail;
 
 use crate::{
+    client::Headers,
     types::{self, Content},
     utils::map_mailparse_error,
 };
@@ -32,4 +35,18 @@ pub fn parse_rfc822(body: &[u8]) -> types::Result<Content> {
     }
 
     Ok(Content { html, text })
+}
+
+pub fn parse_headers(response: &[u8]) -> types::Result<Headers> {
+    let (parsed, _) = mailparse::parse_headers(response).map_err(map_mailparse_error)?;
+
+    let mut headers: Headers = HashMap::new();
+
+    for header in parsed.into_iter() {
+        match headers.insert(header.get_key(), header.get_value()) {
+            _ => {}
+        }
+    }
+
+    Ok(headers)
 }

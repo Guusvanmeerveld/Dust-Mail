@@ -1,7 +1,8 @@
 use imap::types::Fetch;
 
 use crate::{
-    parse::parse_rfc822,
+    client::Headers,
+    parse::{parse_headers, parse_rfc822},
     types::{self, Address, Content, Message, Preview},
 };
 
@@ -156,4 +157,11 @@ pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
     };
 
     Ok(message)
+}
+
+pub fn fetch_to_headers(fetch: &Fetch) -> types::Result<Option<Headers>> {
+    match fetch.body() {
+        Some(body) => Ok(Some(parse_headers(body)?)),
+        None => Ok(None),
+    }
 }

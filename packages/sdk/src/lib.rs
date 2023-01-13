@@ -12,5 +12,5 @@ mod pop;
 
 pub mod types;
 
-pub use client::{ClientConstructor, ClientType, ConnectionSecurity, LoginOptions};
+pub use client::ClientConstructor;
 pub use detect::ServiceDetector;

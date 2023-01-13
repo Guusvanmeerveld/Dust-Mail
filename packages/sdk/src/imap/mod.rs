@@ -1,18 +1,18 @@
 mod parse;
-
+use std::collections::HashMap;
+use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use imap::Session;
+use imap::types::Fetch;
 use native_tls::TlsStream;
 
-use crate::client::{ConnectionSecurity, IncomingClient, LoginOptions};
+use crate::client::IncomingSessionTrait as IncomingSession;
 use crate::tls::create_tls_connector;
-use crate::types::{self, MailBox, Message, Preview};
-
-type ImapSession = Session<TlsStream<TcpStream>>;
+use crate::types::{self, LoginOptions, MailBox, Message, Preview};
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
+const QUERY_HEADERS: &str = "(BODY[])";
 
 pub fn map_imap_error(error: imap::Error) -> types::Error {
     types::Error::new(
@@ -21,33 +21,55 @@ pub fn map_imap_error(error: imap::Error) -> types::Error {
     )
 }
 
-pub struct ImapClient {
-    imap_session: Option<ImapSession>,
+pub struct ImapClient<S: Read + Write> {
+    imap_client: imap::Client<S>,
+}
+
+pub struct ImapSession<S: Read + Write> {
+    imap_session: imap::Session<S>,
     selected_box: Option<MailBox>,
 }
 
-impl ImapClient {
-    pub fn new() -> Self {
-        Self {
-            imap_session: None,
-            selected_box: None,
-        }
-    }
+pub fn connect(options: LoginOptions) -> types::Result<ImapClient<TlsStream<TcpStream>>> {
+    let tls = create_tls_connector()?;
 
-    fn get_session_mut(&mut self) -> types::Result<&mut ImapSession> {
-        match self.imap_session.as_mut() {
-            Some(session) => Ok(session),
-            None => Err(types::Error::new(
-                types::ErrorKind::Connection,
-                "Not logged in",
-            )),
-        }
+    let domain = options.server();
+    let port = *options.port();
+
+    let client = imap::connect((domain, port), domain, &tls).map_err(map_imap_error)?;
+
+    let imap_client = ImapClient {
+        imap_client: client,
+    };
+
+    Ok(imap_client)
+}
+
+impl<S: Read + Write> ImapClient<S> {
+    pub fn login(self, username: &str, password: &str) -> types::Result<ImapSession<S>> {
+        let session = self
+            .imap_client
+            .login(username, password)
+            .map_err(|(err, _)| map_imap_error(err))?;
+
+        let imap_session = ImapSession {
+            imap_session: session,
+            selected_box: None,
+        };
+
+        Ok(imap_session)
+    }
+}
+
+impl<S: Read + Write> ImapSession<S> {
+    fn get_session_mut(&mut self) -> &mut imap::Session<S> {
+        &mut self.imap_session
     }
 
     fn name_from_box_id(id: &str, delimiter: Option<&str>) -> String {
         match delimiter {
             Some(delimiter) => {
-                let split = id.split(&delimiter);
+                let split = id.split(delimiter);
 
                 split.last().unwrap().to_owned()
             }
@@ -55,87 +77,41 @@ impl ImapClient {
         }
     }
 
-    // fn select_box_and_return_session(&mut box_id: &str) -> &mut ImapSession {}
+    fn get_item_from_fetch_else_err<'a>(fetched: &'a Vec<Fetch>) -> types::Result<&'a Fetch> {
+        if fetched.len() > 1 {
+            return Err(types::Error::new(
+                types::ErrorKind::UnexpectedBehavior,
+                "Got multiple messages when fetching a single message",
+            ));
+        }
+
+        if fetched.len() == 0 {
+            return Err(types::Error::new(
+                types::ErrorKind::Server,
+                "Could not find a message with that id",
+            ));
+        }
+
+        match fetched.first() {
+            Some(item) => Ok(item),
+            None => {
+                unreachable!()
+            }
+        }
+    }
 }
 
-impl IncomingClient for ImapClient {
-    fn login(
-        &mut self,
-        username: &str,
-        password: &str,
-        options: Option<LoginOptions>,
-    ) -> types::Result<()> {
-        if self.is_logged_in() {
-            self.logout().unwrap();
-
-            self.login(username, password, options)
-        } else {
-            let options = match options {
-                Some(options) => options,
-                None => {
-                    return Err(types::Error::new(
-                        types::ErrorKind::Input,
-                        "Missing login options to connect to IMAP server",
-                    ))
-                }
-            };
-
-            let tls = create_tls_connector()?;
-
-            let domain = options.server();
-            let security = options.security();
-            let port = *options.port();
-
-            let client_result = match security {
-                ConnectionSecurity::StartTls => {
-                    imap::connect_starttls((domain, port), domain, &tls).map_err(map_imap_error)
-                }
-                ConnectionSecurity::Tls => {
-                    imap::connect((domain, port), domain, &tls).map_err(map_imap_error)
-                }
-                _ => Err(types::Error::new(
-                    types::ErrorKind::Unsupported,
-                    "Security protocol is not supported",
-                )),
-            };
-
-            let client = client_result?;
-
-            let session = client
-                .login(username, password)
-                .map_err(|(err, _)| map_imap_error(err))?;
-
-            self.imap_session = Some(session);
-
-            Ok(())
-        }
-    }
-
-    fn is_logged_in(&mut self) -> bool {
-        match self.imap_session {
-            Some(_) => match self.imap_session.as_mut().unwrap().noop() {
-                Ok(_) => true,
-                Err(_) => false,
-            },
-            None => false,
-        }
-    }
-
+impl<S: Read + Write> IncomingSession for ImapSession<S> {
     fn logout(&mut self) -> types::Result<()> {
-        if !self.is_logged_in() {
-            Ok(())
-        } else {
-            let session = self.get_session_mut()?;
+        let session = self.get_session_mut();
 
-            session.logout().map_err(map_imap_error)?;
+        session.logout().map_err(map_imap_error)?;
 
-            self.imap_session = None;
-            Ok(())
-        }
+        Ok(())
     }
 
     fn box_list(&mut self) -> types::Result<Vec<MailBox>> {
-        let session = self.get_session_mut()?;
+        let session = self.get_session_mut();
 
         let names = session.list(None, Some("*")).map_err(map_imap_error)?;
 
@@ -164,7 +140,7 @@ impl IncomingClient for ImapClient {
     }
 
     fn get(&mut self, box_id: &str) -> types::Result<&MailBox> {
-        let session = self.get_session_mut()?;
+        let session = self.get_session_mut();
 
         let mailbox = session.select(&box_id).map_err(map_imap_error)?;
 
@@ -198,7 +174,7 @@ impl IncomingClient for ImapClient {
             Err(err) => return Err(err),
         };
 
-        let session = self.get_session_mut()?;
+        let session = self.get_session_mut();
 
         let sequence_start = if total_messages < end {
             0
@@ -218,45 +194,51 @@ impl IncomingClient for ImapClient {
             .fetch(sequence, QUERY_PREVIEW)
             .map_err(map_imap_error)?;
 
+        session.close().map_err(map_imap_error)?;
+
         let mut previews: Vec<Preview> =
             Vec::with_capacity((sequence_end - sequence_start) as usize);
 
         for fetch in data.iter() {
-            match parse::fetch_to_preview(fetch) {
-                Ok(preview) => {
-                    previews.push(preview);
-                }
-                Err(err) => return Err(err),
-            }
+            let preview = parse::fetch_to_preview(fetch)?;
+            previews.push(preview);
         }
 
         Ok(previews)
     }
 
-    fn get_message(&mut self, box_id: &str, id: &str) -> types::Result<Message> {
+    fn get_headers(
+        &mut self,
+        box_id: &str,
+        msg_id: &str,
+    ) -> types::Result<HashMap<String, String>> {
         self.get(box_id)?;
 
-        let session = self.get_session_mut()?;
+        let session = self.get_session_mut();
 
         let fetched = session
-            .uid_fetch(id, QUERY_FULL_MESSAGE)
+            .uid_fetch(msg_id, QUERY_HEADERS)
             .map_err(map_imap_error)?;
 
-        if fetched.len() > 1 {
-            return Err(types::Error::new(
-                types::ErrorKind::UnexpectedBehavior,
-                "Got multiple messages when fetching a single message",
-            ));
-        }
+        let fetch = Self::get_item_from_fetch_else_err(&fetched)?;
 
-        if fetched.len() == 0 {
-            return Err(types::Error::new(
-                types::ErrorKind::Server,
-                "Could not find a message with that id",
-            ));
-        }
+        let headers = parse::fetch_to_headers(fetch)?.unwrap();
 
-        let fetch = fetched.first().unwrap();
+        Ok(headers)
+    }
+
+    fn get_message(&mut self, box_id: &str, msg_id: &str) -> types::Result<Message> {
+        self.get(box_id)?;
+
+        let session = self.get_session_mut();
+
+        let fetched = session
+            .uid_fetch(msg_id, QUERY_FULL_MESSAGE)
+            .map_err(map_imap_error)?;
+
+        session.close().map_err(map_imap_error)?;
+
+        let fetch = Self::get_item_from_fetch_else_err(&fetched)?;
 
         parse::fetch_to_message(fetch)
     }
@@ -264,13 +246,15 @@ impl IncomingClient for ImapClient {
 
 #[cfg(test)]
 mod tests {
-    use super::{ConnectionSecurity, ImapClient, IncomingClient, LoginOptions};
+    use std::net::TcpStream;
 
-    use crate::utils::get_env;
+    use native_tls::TlsStream;
 
-    fn create_test_client() -> ImapClient {
-        let mut client = ImapClient::new();
+    use super::{ImapSession, LoginOptions};
 
+    use crate::{client::IncomingSessionTrait, utils::get_env};
+
+    fn create_test_session() -> ImapSession<TlsStream<TcpStream>> {
         let envs = get_env();
 
         let username = envs.get("IMAP_USERNAME").unwrap();
@@ -278,76 +262,88 @@ mod tests {
 
         let server = envs.get("IMAP_SERVER").unwrap();
         let port: u16 = 993;
-        let security = ConnectionSecurity::Tls;
 
-        let options = LoginOptions::new(server, port, security);
+        let options = LoginOptions::new(server, port);
 
-        client.login(username, password, Some(options)).unwrap();
+        let client = super::connect(options).unwrap();
 
-        client
+        let session = client.login(username, password).unwrap();
+
+        session
     }
 
     #[test]
     fn login() {
-        let mut client = create_test_client();
+        let mut session = create_test_session();
 
-        assert!(client.is_logged_in());
-
-        client.logout().unwrap();
+        session.logout().unwrap();
     }
 
     #[test]
     fn get_mailbox() {
-        let mut client = create_test_client();
+        let mut session = create_test_session();
 
         let box_name = "INBOX";
 
-        let mailbox = client.get(box_name).unwrap();
+        let mailbox = session.get(box_name).unwrap();
 
         println!("{}", mailbox.message_count.unwrap());
 
-        client.logout().unwrap();
+        session.logout().unwrap();
     }
 
     #[test]
     fn get_messages() {
-        let mut client = create_test_client();
+        let mut session = create_test_session();
 
         let box_name = "INBOX";
 
-        let messages = client.messages(box_name, 0, 10).unwrap();
+        let messages = session.messages(box_name, 0, 10).unwrap();
 
         for preview in messages.into_iter() {
             println!("{}", preview.id);
         }
 
-        client.logout().unwrap();
+        session.logout().unwrap();
     }
 
     #[test]
     fn get_box_list() {
-        let mut client = create_test_client();
+        let mut session = create_test_session();
 
-        let box_list = client.box_list().unwrap();
+        let box_list = session.box_list().unwrap();
 
         for mailbox in box_list {
             println!("{}", mailbox.name);
         }
 
-        client.logout().unwrap();
+        session.logout().unwrap();
+    }
+
+    #[test]
+    fn get_headers() {
+        let mut session = create_test_session();
+
+        let headers = session.get_headers("INBOX", "1117").unwrap();
+
+        for header in headers {
+            println!("{}: {}", header.0, header.1);
+        }
+
+        session.logout().unwrap();
     }
 
     #[test]
     fn get_message() {
-        let mut client = create_test_client();
+        let mut session = create_test_session();
 
         let msg_id = "1114";
         let box_id = "INBOX";
 
-        let message = client.get_message(box_id, msg_id).unwrap();
+        let message = session.get_message(box_id, msg_id).unwrap();
 
         println!("{}", message.content.text.unwrap());
 
-        client.logout().unwrap();
+        session.logout().unwrap();
     }
 }

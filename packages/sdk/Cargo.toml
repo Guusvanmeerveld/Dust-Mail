@@ -17,6 +17,6 @@ mailparse = "0.14.0"
 dotenv = "0.15.0"
 
 [features]
-default = ["imap", "pop"]
+default = ["imap"]
 pop = ["dep:pop3"]
 imap = ["dep:imap", "dep:imap-proto"]

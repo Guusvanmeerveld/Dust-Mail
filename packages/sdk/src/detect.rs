@@ -8,7 +8,10 @@ use imap;
 #[cfg(feature = "pop")]
 use crate::pop::map_pop_error;
 
-use crate::{client::ConnectionSecurity, tls::create_tls_connector, types, ClientType};
+use crate::{
+    tls::create_tls_connector,
+    types::{self, ClientType, ConnectionSecurity},
+};
 
 const AT_SYMBOL: char = '@';
 
@@ -64,7 +67,7 @@ impl ServiceDetector {
                         Err(_) => {}
                     };
                 }
-                ConnectionSecurity::None => {
+                ConnectionSecurity::Plain => {
                     match TcpStream::connect(addr) {
                         Ok(stream) => {
                             let mut client = imap::Client::new(stream);
@@ -87,12 +90,7 @@ impl ServiceDetector {
                 ConnectionSecurity::Tls => {
                     let tls = create_tls_connector()?;
 
-                    let mut client = pop3::Client::new(None);
-
-                    match client
-                        .connect(addr, &domain.into(), &tls)
-                        .map_err(map_pop_error)
-                    {
+                    match pop3::connect(addr, &domain.into(), &tls, None).map_err(map_pop_error) {
                         Ok(_) => {
                             return Ok(Some(ClientType::Pop));
                         }
@@ -107,30 +105,37 @@ impl ServiceDetector {
     }
 }
 
-// #[cfg(test)]
+#[cfg(test)]
 mod test {
-    use crate::{ClientType, ConnectionSecurity};
+
+    use crate::types::{ClientType, ConnectionSecurity};
 
     use super::ServiceDetector;
 
     #[test]
     fn client_type() {
-        let domain = "outlook.office365.com";
-        let imap_server = (domain, 993);
+        #[cfg(feature = "imap")]
+        {
+            let domain = "outlook.office365.com";
+            let imap_server = (domain, 993);
 
-        assert_eq!(
-            ServiceDetector::detect_client_type(imap_server, domain, ConnectionSecurity::Tls)
-                .unwrap(),
-            Some(ClientType::Imap),
-        );
+            assert_eq!(
+                ServiceDetector::detect_client_type(imap_server, domain, ConnectionSecurity::Tls)
+                    .unwrap(),
+                Some(ClientType::Imap),
+            );
+        }
 
-        let domain = "outlook.office365.com";
-        let imap_server = (domain, 995);
+        #[cfg(feature = "pop")]
+        {
+            let domain = "outlook.office365.com";
+            let imap_server = (domain, 995);
 
-        assert_eq!(
-            ServiceDetector::detect_client_type(imap_server, domain, ConnectionSecurity::Tls)
-                .unwrap(),
-            Some(ClientType::Pop),
-        );
+            assert_eq!(
+                ServiceDetector::detect_client_type(imap_server, domain, ConnectionSecurity::Tls)
+                    .unwrap(),
+                Some(ClientType::Pop),
+            );
+        }
     }
 }
