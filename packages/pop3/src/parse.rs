@@ -1,4 +1,8 @@
-use std::{io, net::TcpStream, time::Duration};
+use std::{
+    io,
+    net::{SocketAddr, TcpStream, ToSocketAddrs},
+    time::Duration,
+};
 
 use crate::{
     constants::{LF, SPACE},
@@ -64,6 +68,19 @@ impl Parser {
             .map(|line| Self::parse_unique_id_from_string(line))
             .collect()
     }
+}
+
+pub fn parse_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAddr> {
+    Ok(addr
+        .to_socket_addrs()
+        .map_err(|e| {
+            types::Error::new(
+                types::ErrorKind::Read,
+                format!("Failed to parse given address: {}", e),
+            )
+        })?
+        .next()
+        .unwrap())
 }
 
 pub fn parse_capabilities<S: Into<String>>(response: S) -> Capabilities {

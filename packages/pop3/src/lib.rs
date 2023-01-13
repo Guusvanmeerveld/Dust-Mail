@@ -5,13 +5,14 @@ pub mod types;
 mod utils;
 
 use std::{
+    io::{Read, Write},
     net::{TcpStream, ToSocketAddrs},
     time::Duration,
 };
 
 use either::Either::{self, Left, Right};
 use native_tls::{TlsConnector, TlsStream};
-use parse::{map_native_tls_error, parse_capabilities, Parser};
+use parse::{map_native_tls_error, parse_capabilities, parse_socket_address, Parser};
 use socket::Socket;
 use types::{Capabilities, Capability, Stats, UniqueID};
 use utils::create_command;
@@ -24,33 +25,112 @@ pub enum ClientState {
     None,
 }
 
-pub struct Client {
-    socket: Option<Socket<TlsStream<TcpStream>>>,
+pub struct Client<S: Read + Write> {
+    socket: Option<Socket<S>>,
     capabilities: Capabilities,
-    connection_timeout: Duration,
-    read_greeting: bool,
     marked_as_del: Vec<u32>,
+    greeting: Option<String>,
+    read_greeting: bool,
     pub state: ClientState,
 }
 
-impl Client {
-    pub fn new(connection_timeout: Option<Duration>) -> Client {
-        let connection_timeout = match connection_timeout {
-            Some(timeout) => timeout,
-            None => Duration::from_secs(60),
-        };
-
-        Self {
-            socket: None,
-            capabilities: Vec::new(),
-            connection_timeout,
-            read_greeting: false,
-            state: ClientState::None,
-            marked_as_del: Vec::new(),
-        }
+fn get_connection_timeout(timeout: Option<Duration>) -> Duration {
+    match timeout {
+        Some(timeout) => timeout,
+        None => Duration::from_secs(60),
     }
+}
 
-    fn get_socket_mut(&mut self) -> types::Result<&mut Socket<TlsStream<TcpStream>>> {
+fn create_client_from_socket<S: Read + Write>(socket: Socket<S>) -> types::Result<Client<S>> {
+    let mut client = Client {
+        marked_as_del: Vec::new(),
+        capabilities: Vec::new(),
+        greeting: None,
+        read_greeting: false,
+        socket: Some(socket),
+        state: ClientState::Authentication,
+    };
+
+    client.greeting = Some(client.read_greeting()?);
+
+    client.capabilities = client.capa()?;
+
+    Ok(client)
+}
+
+/// Creates a new pop3 client from an existing stream.
+/// # Examples
+/// ```rust
+/// extern crate pop3;
+/// use std::net::TcpStream;
+///
+/// fn main() {
+///     // Not recommended to use plaintext, just an example.
+///     let stream = TcpStream::connect(("outlook.office365.com", 110)).unwrap();
+///
+///     let mut client = pop3::new(stream).unwrap();
+///
+///     client.quit().unwrap();
+/// }
+/// ```
+pub fn new<S: Read + Write>(stream: S) -> types::Result<Client<S>> {
+    let socket = Socket::new(stream);
+
+    create_client_from_socket(socket)
+}
+
+/// Create a new pop3 client with a tls connection.
+pub fn connect<A: ToSocketAddrs>(
+    addr: A,
+    domain: &str,
+    tls_connector: &TlsConnector,
+    connection_timeout: Option<Duration>,
+) -> types::Result<Client<TlsStream<TcpStream>>> {
+    let connection_timeout = get_connection_timeout(connection_timeout);
+
+    let addr = parse_socket_address(addr)?;
+
+    let tcp_stream = TcpStream::connect_timeout(&addr, connection_timeout).map_err(|e| {
+        types::Error::new(
+            types::ErrorKind::Connection,
+            format!("Failed to connect to server: {}", e.to_string()),
+        )
+    })?;
+
+    let tls_stream = tls_connector
+        .connect(domain, tcp_stream)
+        .map_err(map_native_tls_error)?;
+
+    let socket = Socket::new(tls_stream);
+
+    create_client_from_socket(socket)
+}
+
+/// Creates a new pop3 client using a plain connection.
+///
+/// DO NOT USE in a production environment. Your password will be sent over a plain tcp stream which hackers could intercept.
+pub fn connect_plain<A: ToSocketAddrs>(
+    addr: A,
+    connection_timeout: Option<Duration>,
+) -> types::Result<Client<TcpStream>> {
+    let connection_timeout = get_connection_timeout(connection_timeout);
+
+    let addr = parse_socket_address(addr)?;
+
+    let tcp_stream = TcpStream::connect_timeout(&addr, connection_timeout).map_err(|e| {
+        types::Error::new(
+            types::ErrorKind::Connection,
+            format!("Failed to connect to server: {}", e.to_string()),
+        )
+    })?;
+
+    let socket = Socket::new(tcp_stream);
+
+    create_client_from_socket(socket)
+}
+
+impl<S: Read + Write> Client<S> {
+    fn get_socket_mut(&mut self) -> types::Result<&mut Socket<S>> {
         match self.socket.as_mut() {
             Some(socket) => {
                 if self.state == ClientState::Transaction
@@ -453,59 +533,21 @@ impl Client {
         }
     }
 
-    pub fn connect<A: ToSocketAddrs>(
-        &mut self,
-        addr: A,
-        domain: &str,
-        tls_connector: &TlsConnector,
-    ) -> types::Result<String> {
-        self.is_correct_state(ClientState::None)?;
-
-        let addr = addr
-            .to_socket_addrs()
-            .map_err(|e| {
-                types::Error::new(
-                    types::ErrorKind::Read,
-                    format!("Failed to parse given address: {}", e),
-                )
-            })?
-            .next()
-            .unwrap();
-
-        let tcp_stream =
-            TcpStream::connect_timeout(&addr, self.connection_timeout).map_err(|e| {
-                types::Error::new(
-                    types::ErrorKind::Connection,
-                    format!("Failed to connect to server: {}", e.to_string()),
-                )
-            })?;
-
-        let tls_stream = tls_connector
-            .connect(domain, tcp_stream)
-            .map_err(map_native_tls_error)?;
-
-        let socket = Socket::new(tls_stream);
-
-        self.socket = Some(socket);
-
-        self.state = ClientState::Authentication;
-
-        let greeting = self.read_greeting()?;
-
-        self.capabilities = self.capa()?;
-
-        Ok(greeting)
+    pub fn greeting(&self) -> Option<&str> {
+        match &self.greeting {
+            Some(greeting) => Some(greeting.as_str()),
+            None => None,
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use std::env;
+    use std::{env, net::TcpStream};
 
     use dotenv::dotenv;
     use either::Either::{Left, Right};
-
-    use crate::types::Capability;
+    use native_tls::TlsStream;
 
     use super::{Client, TlsConnector};
 
@@ -527,9 +569,7 @@ mod test {
         }
     }
 
-    fn create_logged_in_client() -> Client {
-        let mut client = Client::new(None);
-
+    fn create_logged_in_client() -> Client<TlsStream<TcpStream>> {
         let client_info = create_client_info();
 
         let server = client_info.server.as_ref();
@@ -540,7 +580,7 @@ mod test {
 
         let tls = TlsConnector::new().unwrap();
 
-        client.connect((server, port), server, &tls).unwrap();
+        let mut client = super::connect((server, port), server, &tls, None).unwrap();
 
         client.login(username, password).unwrap();
 
@@ -549,41 +589,23 @@ mod test {
 
     #[test]
     fn connect() {
-        let mut client = Client::new(None);
-
         let client_info = create_client_info();
 
         let server = client_info.server.as_ref();
         let port = client_info.port;
 
-        let tls_connector = TlsConnector::new().unwrap();
+        let tls = TlsConnector::new().unwrap();
 
-        let greeting = client
-            .connect((server, port), server, &tls_connector)
-            .unwrap();
+        let client = super::connect((server, port), server, &tls, None).unwrap();
+
+        let greeting = client.greeting().unwrap();
 
         println!("{}", greeting);
     }
 
     #[test]
     fn login() {
-        let mut client = Client::new(None);
-
-        let client_info = create_client_info();
-
-        let server = client_info.server.as_ref();
-        let port = client_info.port;
-
-        let username = client_info.username.as_ref();
-        let password = client_info.password.as_ref();
-
-        let tls_connector = TlsConnector::new().unwrap();
-
-        client
-            .connect((server, port), server, &tls_connector)
-            .unwrap();
-
-        client.login(username, password).unwrap();
+        create_logged_in_client();
     }
 
     #[test]
