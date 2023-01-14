@@ -6,15 +6,17 @@ import styles from "./Index.module.scss";
 
 import axios from "axios";
 
+import { Sponsor } from "@interfaces/sponsor";
 import { Asset } from "@interfaces/version";
 
 import Footer from "@components/Footer";
 import Header from "@components/Header";
 import Layout from "@components/Layout";
 
-const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
-	latestVersion
-}) => {
+const Index: NextPage<{
+	latestVersion: { assets: Asset[] };
+	sponsors: Sponsor[];
+}> = ({ latestVersion, sponsors }) => {
 	const badgeScale = 0.4;
 
 	const badgeWidth = 564 * badgeScale;
@@ -150,6 +152,21 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 					<input type="checkbox" checked={false} readOnly />
 					iCal
 				</label>
+				<h2>Sponsors</h2>
+				<p>Thank you to everyone who is/was sponsoring the project &lt;3!</p>
+				{sponsors.map((sponsor) => (
+					<Link key={sponsor.username} href={sponsor.url}>
+						<a style={{ marginRight: ".5rem" }}>
+							<Image
+								alt={sponsor.username}
+								src={sponsor.avatar}
+								width={50}
+								height={50}
+								style={{ borderRadius: "50%" }}
+							/>
+						</a>
+					</Link>
+				))}
 			</main>
 			<Footer />
 		</Layout>
@@ -157,20 +174,35 @@ const Index: NextPage<{ latestVersion: { assets: Asset[] } }> = ({
 };
 
 export const getStaticProps: GetStaticProps = async () => {
-	const { data } = await axios.get<{
+	const { data: assets } = await axios.get<{
 		assets: { name: string; browser_download_url: string }[];
 	}>(
 		`https://api.github.com/repos/${process.env.NEXT_PUBLIC_GITHUB_USERNAME}/${process.env.NEXT_PUBLIC_GITHUB_REPO}/releases/latest`
 	);
 
+	const { data: sponsors } = await axios.get<{
+		sponsors: {
+			handle: string;
+			avatar: string;
+			details: { html_url?: string };
+		}[];
+	}>(
+		`https://ghs.vercel.app/sponsors/${process.env.NEXT_PUBLIC_GITHUB_USERNAME}`
+	);
+
 	return {
 		props: {
 			latestVersion: {
-				assets: data.assets.map((asset) => ({
+				assets: assets.assets.map((asset) => ({
 					url: asset.browser_download_url,
 					name: asset.name
 				}))
-			}
+			},
+			sponsors: sponsors.sponsors.map((sponsor) => ({
+				avatar: sponsor.avatar,
+				username: sponsor.handle,
+				url: sponsor.details.html_url ?? `https://github.com/${sponsor.handle}`
+			}))
 		},
 		revalidate: 10 * 60
 	};

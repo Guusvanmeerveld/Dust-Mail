@@ -2,5 +2,6 @@
  * @type {import('next').NextConfig}
  */
 module.exports = {
-	reactStrictMode: true
+	reactStrictMode: true,
+	images: { domains: ["avatars.githubusercontent.com"] }
 };
