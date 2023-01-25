@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 pub struct LoginOptions {
     server: String,
     port: u16,
@@ -20,7 +22,7 @@ impl LoginOptions {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum ConnectionSecurity {
     Tls,
     StartTls,

@@ -1,9 +1,9 @@
-use imap::types::Fetch;
+use imap::types::{Fetch, Flag as ImapFlag};
 
 use crate::{
     client::Headers,
     parse::{parse_headers, parse_rfc822},
-    types::{self, Address, Content, Message, Preview},
+    types::{self, Address, Content, Flag, Message, Preview},
 };
 
 const AT_SYMBOL: u8 = 64;
@@ -32,8 +32,30 @@ fn parse_uid(uid: Option<u32>) -> types::Result<String> {
     }
 }
 
+///
+fn imap_flags_to_flags(imap_flags: &[ImapFlag]) -> Vec<Flag> {
+    imap_flags
+        .iter()
+        .filter_map(|flag| {
+            let flag = match flag {
+                ImapFlag::Seen => Some(Flag::Read),
+                ImapFlag::Answered => Some(Flag::Answered),
+                ImapFlag::Draft => Some(Flag::Draft),
+                ImapFlag::Flagged => Some(Flag::Flagged),
+                ImapFlag::Deleted => Some(Flag::Deleted),
+                ImapFlag::Custom(value) => Some(Flag::Custom(Some(value.to_string()))),
+                _ => None,
+            };
+
+            flag
+        })
+        .collect()
+}
+
 pub fn fetch_to_preview(fetch: &Fetch) -> types::Result<Preview> {
     let envelope = fetch.envelope().unwrap();
+
+    let flags = imap_flags_to_flags(fetch.flags());
 
     let sent = match fetch.internal_date() {
         Some(date) => Some(date.timestamp()),
@@ -60,13 +82,15 @@ pub fn fetch_to_preview(fetch: &Fetch) -> types::Result<Preview> {
         Err(err) => return Err(err),
     };
 
-    let preview = Preview::new(from, id, sent, subject);
+    let preview = Preview::new(from, flags, id, sent, subject);
 
     Ok(preview)
 }
 
 pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
     let envelope = fetch.envelope().unwrap();
+
+    let flags = imap_flags_to_flags(fetch.flags());
 
     let sent = match fetch.internal_date() {
         Some(date) => Some(date.timestamp()),
@@ -137,7 +161,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
         None => Content::new(None, None),
     };
 
-    let message = Message::new(from, to, cc, bcc, id, sent, subject, content);
+    let message = Message::new(from, to, cc, bcc, flags, id, sent, subject, content);
 
     Ok(message)
 }

@@ -1,3 +1,10 @@
+use serde::Serialize;
+
+use crate::parse;
+
+use super::Flag;
+
+#[derive(Serialize)]
 pub struct Address {
     name: Option<String>,
     address: Option<String>,
@@ -29,8 +36,10 @@ impl Address {
     }
 }
 
+#[derive(Serialize)]
 pub struct Preview {
     from: Vec<Address>,
+    flags: Vec<Flag>,
     id: String,
     sent: Option<i64>,
     subject: Option<String>,
@@ -39,12 +48,14 @@ pub struct Preview {
 impl Preview {
     pub fn new<S: Into<String>>(
         from: Vec<Address>,
+        flags: Vec<Flag>,
         id: S,
         sent: Option<i64>,
         subject: Option<String>,
     ) -> Self {
         Self {
             from,
+            flags,
             id: id.into(),
             sent,
             subject,
@@ -54,6 +65,11 @@ impl Preview {
     /// The sender(s) of the message.
     pub fn from(&self) -> &Vec<Address> {
         &self.from
+    }
+
+    /// The messages flags that indicate whether the message has been read, deleted, etc.
+    pub fn flags(&self) -> &Vec<Flag> {
+        &self.flags
     }
 
     /// A strictly unique id, used to fetch more info about the message.
@@ -73,8 +89,13 @@ impl Preview {
             None => None,
         }
     }
+
+    pub fn to_json(&self) -> super::Result<String> {
+        parse::to_json(self)
+    }
 }
 
+#[derive(Serialize)]
 pub struct Content {
     text: Option<String>,
     html: Option<String>,
@@ -102,11 +123,13 @@ impl Content {
     }
 }
 
+#[derive(Serialize)]
 pub struct Message {
     from: Vec<Address>,
     to: Vec<Address>,
     cc: Vec<Address>,
     bcc: Vec<Address>,
+    flags: Vec<Flag>,
     id: String,
     sent: Option<i64>,
     subject: Option<String>,
@@ -119,6 +142,7 @@ impl Message {
         to: Vec<Address>,
         cc: Vec<Address>,
         bcc: Vec<Address>,
+        flags: Vec<Flag>,
         id: S,
         sent: Option<i64>,
         subject: Option<String>,
@@ -129,6 +153,7 @@ impl Message {
             to,
             cc,
             bcc,
+            flags,
             id: id.into(),
             sent,
             subject,
@@ -152,6 +177,11 @@ impl Message {
         &self.bcc
     }
 
+    /// The messages flags that indicate whether the message has been read, deleted, etc.
+    pub fn flags(&self) -> &Vec<Flag> {
+        &self.flags
+    }
+
     /// A strictly unique id, used to fetch more info about the message.
     pub fn id(&self) -> &str {
         &self.id
@@ -173,5 +203,9 @@ impl Message {
     /// A struct containing info about the message content
     pub fn content(&self) -> &Content {
         &self.content
+    }
+
+    pub fn to_json(&self) -> super::Result<String> {
+        parse::to_json(self)
     }
 }

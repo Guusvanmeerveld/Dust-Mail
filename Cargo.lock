@@ -2542,6 +2542,8 @@ dependencies = [
  "mailparse",
  "native-tls",
  "pop3",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

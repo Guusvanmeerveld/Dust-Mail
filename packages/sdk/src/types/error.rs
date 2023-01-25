@@ -35,6 +35,10 @@ impl Error {
             kind,
         }
     }
+
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
 }
 
 impl fmt::Display for Error {

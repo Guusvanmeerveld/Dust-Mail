@@ -6,14 +6,19 @@ use autoconfig::{
         SecurityType as AutoConfigSecurityType, ServerType as AutoConfigServerType,
     },
 };
+use serde::Serialize;
 
-use crate::types::{self, ConnectionSecurity};
+use crate::{
+    parse,
+    types::{self, ConnectionSecurity},
+};
 
 mod service;
 
 pub use service::from_server;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum MailServerConfig {
     Pop(ServerConfig),
     Imap(ServerConfig),
@@ -21,7 +26,7 @@ pub enum MailServerConfig {
     Exchange(ServerConfig),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct ServerConfig {
     port: u16,
     domain: String,
@@ -47,7 +52,7 @@ impl ServerConfig {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum AuthenticationType {
     ClearText,
     Encrypted,
@@ -56,12 +61,13 @@ pub enum AuthenticationType {
     Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ConfigType {
     MultiServer(Vec<MailServerConfig>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Config {
     config_type: ConfigType,
     provider: String,
@@ -83,13 +89,14 @@ impl Config {
     pub fn display_name(&self) -> &str {
         &self.display_name
     }
+
+    pub fn to_json(&self) -> types::Result<String> {
+        parse::to_json(self)
+    }
 }
 
 #[cfg(feature = "autoconfig")]
 fn autoconfig_to_config(autoconfig: AutoConfig) -> types::Result<Config> {
-    use std::time::Instant;
-
-    let now = Instant::now();
     let provider: String = autoconfig.email_provider().id().into();
     let display_name: String = autoconfig.email_provider().display_name().unwrap().into();
 
@@ -97,7 +104,7 @@ fn autoconfig_to_config(autoconfig: AutoConfig) -> types::Result<Config> {
         .email_provider()
         .servers()
         .iter()
-        .map(|server| {
+        .filter_map(|server| {
             let domain: String = server.hostname()?.to_string();
 
             let port: u16 = *server.port()?;
@@ -143,8 +150,6 @@ fn autoconfig_to_config(autoconfig: AutoConfig) -> types::Result<Config> {
 
             Some(server_type)
         })
-        .filter(|server| server.is_some())
-        .map(|server| server.unwrap())
         .collect();
 
     let config_type = ConfigType::MultiServer(servers);
@@ -154,8 +159,6 @@ fn autoconfig_to_config(autoconfig: AutoConfig) -> types::Result<Config> {
         provider,
         display_name,
     };
-
-    println!("Took: {} micro seconds", now.elapsed().as_micros());
 
     Ok(config)
 }
@@ -197,5 +200,7 @@ mod test {
         let email = "guusvanmeerveld@outlook.com";
 
         let config = super::from_email(email).unwrap();
+
+        println!("{}", config.to_json().unwrap());
     }
 }

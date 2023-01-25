@@ -366,7 +366,7 @@ mod tests {
         let messages = session.messages(box_name, 0, 10).unwrap();
 
         for preview in messages.into_iter() {
-            println!("{}", preview.id());
+            println!("{}", preview.subject().unwrap());
         }
 
         session.logout().unwrap();

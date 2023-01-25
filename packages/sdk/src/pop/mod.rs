@@ -10,7 +10,7 @@ use crate::{
     client::incoming::Session,
     parse::{map_parse_date_error, map_pop_error, parse_headers},
     tls::create_tls_connector,
-    types::{self, Counts, LoginOptions, MailBox, Message, Preview},
+    types::{self, Counts, Flag, LoginOptions, MailBox, Message, Preview},
 };
 
 use parse::parse_address;
@@ -188,7 +188,15 @@ impl<S: Read + Write> Session for PopSession<S> {
                 None => Vec::new(),
             };
 
-            let preview = Preview::new(from, unique_id, sent, subject);
+            // There is also no support for flags in Pop, so we mark every message as read by default.
+            let mut flags = vec![Flag::Read];
+
+            // If we have marked a message as deleted, we will add the corresponding flag
+            if session.is_deleted(&msg) {
+                flags.push(Flag::Deleted)
+            }
+
+            let preview = Preview::new(from, flags, unique_id, sent, subject);
 
             previews.push(preview)
         }

@@ -7,6 +7,7 @@ use std::{
 use pop3::types::ErrorKind as PopErrorKind;
 
 use mailparse::parse_mail;
+use serde::Serialize;
 
 use crate::{
     client::Headers,
@@ -89,4 +90,13 @@ pub fn from_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAdd
         })?
         .next()
         .unwrap())
+}
+
+pub fn to_json<T: ?Sized + Serialize>(value: &T) -> types::Result<String> {
+    serde_json::to_string(value).map_err(|e| {
+        types::Error::new(
+            types::ErrorKind::Read,
+            format!("Failed to serialize message preview to json: {}", e),
+        )
+    })
 }
