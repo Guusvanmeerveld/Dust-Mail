@@ -60,12 +60,7 @@ pub fn fetch_to_preview(fetch: &Fetch) -> types::Result<Preview> {
         Err(err) => return Err(err),
     };
 
-    let preview = Preview {
-        from,
-        id,
-        sent,
-        subject,
-    };
+    let preview = Preview::new(from, id, sent, subject);
 
     Ok(preview)
 }
@@ -139,22 +134,10 @@ pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
 
     let content: Content = match fetch.body() {
         Some(body) => parse_rfc822(body)?,
-        None => Content {
-            html: None,
-            text: None,
-        },
+        None => Content::new(None, None),
     };
 
-    let message = Message {
-        from,
-        to,
-        cc,
-        bcc,
-        id,
-        sent,
-        subject,
-        content,
-    };
+    let message = Message::new(from, to, cc, bcc, id, sent, subject, content);
 
     Ok(message)
 }

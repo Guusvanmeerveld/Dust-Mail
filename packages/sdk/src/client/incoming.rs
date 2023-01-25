@@ -216,7 +216,7 @@ mod tests {
         let list = session.box_list().unwrap();
 
         for mailbox in list {
-            println!("{}", mailbox.message_count.unwrap());
+            println!("{}", mailbox.counts().unwrap().total());
         }
     }
 }

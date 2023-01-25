@@ -10,7 +10,7 @@ use crate::{
     client::incoming::Session,
     parse::{map_parse_date_error, map_pop_error, parse_headers},
     tls::create_tls_connector,
-    types::{self, LoginOptions, MailBox, Message, Preview},
+    types::{self, Counts, LoginOptions, MailBox, Message, Preview},
 };
 
 use parse::parse_address;
@@ -64,6 +64,9 @@ impl<S: Read + Write> PopSession<S> {
         &mut self.session
     }
 
+    /// Fetches the message count from the pop server and creates a new 'fake' mailbox.
+    ///
+    /// We do this because Pop does not support mailboxes.
     fn get_default_box(&mut self) -> types::Result<MailBox> {
         let session = self.get_session_mut();
 
@@ -74,13 +77,12 @@ impl<S: Read + Write> PopSession<S> {
 
         let box_name = MAILBOX_DEFAULT_NAME;
 
-        let mailbox = MailBox {
-            id: box_name.to_owned(),
-            name: box_name.to_owned(),
-            delimiter: None,
-            message_count,
-            unseen_count: None,
+        let counts: Option<Counts> = match message_count {
+            Some(count) => Some(Counts::new(0, count)),
+            None => None,
         };
+
+        let mailbox = MailBox::new(counts, None, box_name, box_name);
 
         Ok(mailbox)
     }
@@ -106,7 +108,8 @@ impl<S: Read + Write> Session for PopSession<S> {
 
         let mailbox = self.mailbox.as_ref().unwrap();
 
-        if box_name != mailbox.name {
+        // If we request anything other than the default mailbox that we've defined, we throw an error saying that Pop does not support mailboxes
+        if box_name != mailbox.name() {
             return Err(types::Error::new(
                 types::ErrorKind::Unsupported,
                 "Mailboxes are unsupported in Pop",
@@ -131,17 +134,17 @@ impl<S: Read + Write> Session for PopSession<S> {
     fn messages(&mut self, _: &str, start: u32, end: u32) -> types::Result<Vec<Preview>> {
         let mailbox = self.get_default_box()?;
 
-        let total_messages = mailbox.message_count.unwrap();
+        let total_messages = mailbox.counts().unwrap().total();
 
         let session = self.get_session_mut();
 
-        let sequence_start = if total_messages < end {
+        let sequence_start = if total_messages < &end {
             0
         } else {
             total_messages.saturating_sub(end)
         };
 
-        let sequence_end = if total_messages < start {
+        let sequence_end = if total_messages < &start {
             0
         } else {
             total_messages.saturating_sub(start)
@@ -185,12 +188,7 @@ impl<S: Read + Write> Session for PopSession<S> {
                 None => Vec::new(),
             };
 
-            let preview = Preview {
-                id: unique_id,
-                subject,
-                sent,
-                from,
-            };
+            let preview = Preview::new(from, unique_id, sent, subject);
 
             previews.push(preview)
         }
@@ -250,7 +248,7 @@ mod test {
         let took = time.elapsed().as_millis();
 
         for preview in previews.iter() {
-            println!("{}", preview.subject.as_ref().unwrap());
+            println!("{}", preview.subject().unwrap());
         }
 
         println!("Took {}ms", took);

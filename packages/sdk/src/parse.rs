@@ -40,7 +40,7 @@ pub fn parse_rfc822(body: &[u8]) -> types::Result<Content> {
         }
     }
 
-    Ok(Content { html, text })
+    Ok(Content::new(html, text))
 }
 
 pub fn parse_headers(response: &[u8]) -> types::Result<Headers> {

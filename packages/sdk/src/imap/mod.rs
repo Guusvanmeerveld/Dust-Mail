@@ -8,7 +8,7 @@ use native_tls::TlsStream;
 
 use crate::client::incoming::Session;
 use crate::tls::create_tls_connector;
-use crate::types::{self, LoginOptions, MailBox, Message, Preview};
+use crate::types::{self, Counts, LoginOptions, MailBox, Message, Preview};
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
@@ -127,21 +127,20 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
         let mut boxes: Vec<MailBox> = Vec::new();
 
-        for data in &names {
-            let delimiter = match data.delimiter() {
+        for box_data in &names {
+            let delimiter = match box_data.delimiter() {
                 Some(delimiter) => Some(delimiter.to_owned()),
                 None => None,
             };
 
-            let id = data.name();
+            let id = box_data.name();
 
-            let mailbox = MailBox {
+            let mailbox = MailBox::new(
+                None,
                 delimiter,
-                id: id.to_owned(),
-                name: Self::name_from_box_id(id, data.delimiter()),
-                message_count: None,
-                unseen_count: None,
-            };
+                id.to_owned(),
+                Self::name_from_box_id(id, box_data.delimiter()),
+            );
 
             boxes.push(mailbox);
         }
@@ -152,7 +151,7 @@ impl<S: Read + Write> Session for ImapSession<S> {
     fn get(&mut self, box_id: &str) -> types::Result<&MailBox> {
         let session = self.get_session_mut();
 
-        let mailbox = session.select(&box_id).map_err(map_imap_error)?;
+        let imap_mailbox = session.select(&box_id).map_err(map_imap_error)?;
 
         let data = session.list(None, Some(box_id)).map_err(map_imap_error)?;
 
@@ -165,13 +164,14 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
         let id = box_data.name();
 
-        let selected_box = MailBox {
+        let counts = Counts::new(imap_mailbox.unseen.unwrap(), imap_mailbox.exists);
+
+        let selected_box = MailBox::new(
+            Some(counts),
             delimiter,
-            id: id.to_owned(),
-            name: Self::name_from_box_id(id, box_data.delimiter()),
-            message_count: Some(mailbox.exists),
-            unseen_count: mailbox.unseen,
-        };
+            id,
+            &Self::name_from_box_id(id, box_data.delimiter()),
+        );
 
         self.selected_box = Some(selected_box);
 
@@ -187,7 +187,7 @@ impl<S: Read + Write> Session for ImapSession<S> {
     fn rename(&mut self, box_id: &str, new_name: &str) -> types::Result<()> {
         let mailbox = self.get(box_id)?;
 
-        let new_name = match &mailbox.delimiter {
+        let new_name = match mailbox.delimiter() {
             Some(delimiter) => {
                 let item_count = box_id.matches(delimiter).count();
 
@@ -224,8 +224,8 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
     fn messages(&mut self, box_id: &str, start: u32, end: u32) -> types::Result<Vec<Preview>> {
         let total_messages = match self.get(box_id) {
-            Ok(selected_box) => match selected_box.message_count {
-                Some(message_count) => message_count,
+            Ok(selected_box) => match selected_box.counts() {
+                Some(counts) => *counts.total(),
                 None => unreachable!(),
             },
             Err(err) => return Err(err),
@@ -352,7 +352,7 @@ mod tests {
 
         let mailbox = session.get(box_name).unwrap();
 
-        println!("{}", mailbox.message_count.unwrap());
+        println!("{}", mailbox.counts().unwrap().total());
 
         session.logout().unwrap();
     }
@@ -366,7 +366,7 @@ mod tests {
         let messages = session.messages(box_name, 0, 10).unwrap();
 
         for preview in messages.into_iter() {
-            println!("{}", preview.id);
+            println!("{}", preview.id());
         }
 
         session.logout().unwrap();
@@ -379,7 +379,7 @@ mod tests {
         let box_list = session.box_list().unwrap();
 
         for mailbox in box_list {
-            println!("{}", mailbox.id);
+            println!("{}", mailbox.id());
         }
 
         session.logout().unwrap();
@@ -407,7 +407,7 @@ mod tests {
 
         let message = session.get_message(box_id, msg_id).unwrap();
 
-        println!("{}", message.content.text.unwrap());
+        println!("{}", message.content().text().unwrap());
 
         session.logout().unwrap();
     }
