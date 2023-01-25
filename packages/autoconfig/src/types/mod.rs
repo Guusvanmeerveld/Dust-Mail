@@ -1,6 +1,4 @@
-mod config;
-
-pub use config::Config;
+pub mod config;
 
 use std::result;
 
@@ -24,6 +22,14 @@ impl Error {
             kind,
             msg: msg.into(),
         }
+    }
+
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
+
+    pub fn message(&self) -> &str {
+        &self.msg
     }
 }
 

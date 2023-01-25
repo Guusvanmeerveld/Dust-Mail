@@ -1,5 +1,5 @@
 use http::Client;
-use types::Config;
+use types::config::Config;
 
 mod http;
 mod parse;
@@ -7,7 +7,7 @@ pub mod types;
 
 const AT_SYMBOL: char = '@';
 
-pub fn from_addr(email_address: &str) -> types::Result<Config> {
+pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
     if !email_address.contains(AT_SYMBOL) {
         return Err(types::Error::new(
             types::ErrorKind::BadInput,
@@ -53,16 +53,14 @@ pub fn from_addr(email_address: &str) -> types::Result<Config> {
         Some(config_unparsed) => {
             let config = parse::from_str(&config_unparsed)?;
 
-            Ok(config)
+            Ok(Some(config))
         }
-        None => Err(types::Error::new(
-            types::ErrorKind::NotFound,
-            format!("Could not find any config related to '{}'", email_address),
-        )),
+        None => Ok(None),
     }
 }
 
 fn request_urls(client: &Client, urls: Vec<String>) -> Option<String> {
+    // Fetch every given url
     for url in urls {
         match client.get(url) {
             Ok(response) => return Some(response),
@@ -70,6 +68,7 @@ fn request_urls(client: &Client, urls: Vec<String>) -> Option<String> {
         }
     }
 
+    // Return nothing if all of the requests failed
     return None;
 }
 
@@ -83,12 +82,12 @@ mod tests {
 
         addresses.insert("guusvanmeerveld@outlook.com", "outlook.com");
         addresses.insert("guusvanmeerveld@gmail.com", "googlemail.com");
-        addresses.insert("guusvanmeerveld@gmail.com", "googlemail.com");
+        addresses.insert("contact@guusvanmeerveld.dev", "guusvanmeerveld.dev");
 
         for (addr, id) in addresses.iter() {
-            let config = super::from_addr(addr).unwrap();
+            let config = super::from_addr(addr).unwrap().unwrap();
 
-            assert_eq!(id, &config.email_provider.id);
+            assert_eq!(id, &config.email_provider().id());
         }
     }
 }

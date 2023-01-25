@@ -1,4 +1,4 @@
-use crate::types::{self, Config};
+use crate::types::{self, config::Config};
 
 use serde_xml_rs;
 
