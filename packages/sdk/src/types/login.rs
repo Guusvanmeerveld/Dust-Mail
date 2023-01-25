@@ -20,6 +20,7 @@ impl LoginOptions {
     }
 }
 
+#[derive(Debug)]
 pub enum ConnectionSecurity {
     Tls,
     StartTls,

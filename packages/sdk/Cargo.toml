@@ -9,6 +9,8 @@ edition = "2021"
 imap = {version = "2.4.1", optional = true }
 imap-proto = { version = "0.16", optional = true }
 pop3 = {version = "0.1", optional = true, path = "../pop3" }
+autoconfig = {version = "0.1", optional = true, path = "../autoconfig" }
+bufstream = {version = "0.1", optional = true}
 chrono = "0.4"
 native-tls = "0.2"
 mailparse = "0.14.0"
@@ -17,6 +19,10 @@ mailparse = "0.14.0"
 dotenv = "0.15.0"
 
 [features]
-default = ["imap", "pop"]
+default = ["imap", "pop", "detect"]
+
+detect = ["autoconfig"]
+autoconfig = ["dep:autoconfig"]
+
 pop = ["dep:pop3"]
-imap = ["dep:imap", "dep:imap-proto"]
+imap = ["dep:imap", "dep:imap-proto", "dep:bufstream"]

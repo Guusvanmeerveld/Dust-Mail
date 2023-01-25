@@ -18,6 +18,8 @@ pub enum ErrorKind {
     Read,
     /// An occurred error sending data to the server
     Write,
+    /// Could not detect a config from the given email address
+    ConfigNotFound,
 }
 
 #[derive(Debug)]

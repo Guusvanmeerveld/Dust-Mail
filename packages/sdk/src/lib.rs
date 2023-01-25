@@ -1,8 +1,10 @@
 mod client;
-mod detect;
 mod parse;
 mod tls;
 mod utils;
+
+#[cfg(feature = "detect")]
+pub mod detect;
 
 #[cfg(feature = "imap")]
 mod imap;
@@ -15,5 +17,3 @@ pub mod types;
 pub use client::incoming::{
     ClientConstructor as IncomingClientConstructor, Session as IncomingSession,
 };
-
-pub use detect::ServiceDetector;

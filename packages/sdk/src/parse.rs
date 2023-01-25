@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    net::{SocketAddr, ToSocketAddrs},
+};
 
 #[cfg(feature = "pop")]
 use pop3::types::ErrorKind as PopErrorKind;
@@ -73,4 +76,17 @@ pub fn map_parse_date_error(error: chrono::ParseError) -> types::Error {
         types::ErrorKind::Read,
         format!("Error parsing date from message: {}", error),
     )
+}
+
+pub fn from_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAddr> {
+    Ok(addr
+        .to_socket_addrs()
+        .map_err(|e| {
+            types::Error::new(
+                types::ErrorKind::Read,
+                format!("Failed to parse given address: {}", e),
+            )
+        })?
+        .next()
+        .unwrap())
 }
