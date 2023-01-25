@@ -187,6 +187,7 @@ pub enum EmailProviderProperty {
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Server {
+    r#type: ServerType,
     #[serde(rename = "$value")]
     properties: Vec<ServerProperty>,
 }
@@ -198,15 +199,8 @@ impl Server {
     }
 
     /// What type of mail server this server is.
-    pub fn server_type(&self) -> Option<&ServerType> {
-        for property in &self.properties {
-            match property {
-                ServerProperty::ServerType(server_type) => return Some(server_type),
-                _ => {}
-            }
-        }
-
-        None
+    pub fn server_type(&self) -> &ServerType {
+        &self.r#type
     }
 
     /// The mail servers domain/ip
@@ -233,8 +227,8 @@ impl Server {
         None
     }
 
-    /// The kind of connection the mail server prefers
-    pub fn socket_type(&self) -> Option<&SocketType> {
+    /// The kind of security the mail server prefers
+    pub fn security_type(&self) -> Option<&SecurityType> {
         for property in &self.properties {
             match property {
                 ServerProperty::SocketType(socket_type) => return Some(socket_type),
@@ -246,17 +240,19 @@ impl Server {
     }
 
     /// The kind of authentication is needed to login to this mail server
-    pub fn authentication_type(&self) -> Option<&AuthenticationType> {
+    pub fn authentication_type(&self) -> Vec<&AuthenticationType> {
+        let mut types: Vec<&AuthenticationType> = Vec::new();
+
         for property in &self.properties {
             match property {
                 ServerProperty::Authentication(authentication_type) => {
-                    return Some(authentication_type)
+                    types.push(authentication_type)
                 }
                 _ => {}
             }
         }
 
-        None
+        types
     }
 
     /// The users username
@@ -287,12 +283,10 @@ impl Server {
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum ServerProperty {
-    #[serde(rename = "type")]
-    ServerType(ServerType),
     Hostname(String),
     Port(u16),
     #[serde(rename = "socketType")]
-    SocketType(SocketType),
+    SocketType(SecurityType),
     Authentication(AuthenticationType),
     OwaURL(String),
     EwsURL(String),
@@ -303,7 +297,7 @@ pub enum ServerProperty {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-pub enum SocketType {
+pub enum SecurityType {
     #[serde(rename = "plain")]
     Plain,
     #[serde(rename = "STARTTLS")]

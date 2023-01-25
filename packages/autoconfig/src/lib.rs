@@ -1,4 +1,5 @@
 use http::Client;
+use regex::Regex;
 use types::config::Config;
 
 mod http;
@@ -7,11 +8,16 @@ pub mod types;
 
 const AT_SYMBOL: char = '@';
 
+const EMAIL_REGEX: &str =
+    r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})";
+
 pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
-    if !email_address.contains(AT_SYMBOL) {
+    let email_regex = Regex::new(EMAIL_REGEX).unwrap();
+
+    if !email_regex.is_match(email_address) {
         return Err(types::Error::new(
             types::ErrorKind::BadInput,
-            "An email address must have an '@' symbol in it",
+            "Given email address is invalid",
         ));
     };
 
