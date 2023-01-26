@@ -75,7 +75,7 @@ pub fn parse_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAd
         .to_socket_addrs()
         .map_err(|e| {
             types::Error::new(
-                types::ErrorKind::Read,
+                types::ErrorKind::ParseServerAddress,
                 format!("Failed to parse given address: {}", e),
             )
         })?
@@ -135,12 +135,12 @@ pub fn parse_capabilities<S: Into<String>>(response: S) -> Capabilities {
 }
 
 pub fn map_native_tls_error(error: native_tls::HandshakeError<TcpStream>) -> types::Error {
-    types::Error::new(types::ErrorKind::Tls, error.to_string())
+    types::Error::new(types::ErrorKind::SecureConnection, error.to_string())
 }
 
 pub fn map_write_error_to_error(write_error: io::Error) -> types::Error {
     types::Error::new(
-        types::ErrorKind::Write,
+        types::ErrorKind::SendCommand,
         format!("Failed to send command: {}", write_error.to_string()),
     )
 }

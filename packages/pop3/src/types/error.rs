@@ -1,16 +1,26 @@
+#[cfg(feature = "json")]
+use serde::Serialize;
+
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum ErrorKind {
-    Connection,
-    Server,
-    State,
-    Read,
-    Write,
-    Tls,
+    Connect,
+    NotConnected,
+    ShouldNotBeConnected,
+    IncorrectStateForCommand,
+    MessageIsDeleted,
+    FeatureUnsupported,
+    ServerFailedToGreet,
+    ParseServerAddress,
+    SecureConnection,
+    SendCommand,
+    InvalidResponse,
+    NoResponse,
+    ServerError,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Debug)]
 pub struct Error {
     msg: String,
     kind: ErrorKind,

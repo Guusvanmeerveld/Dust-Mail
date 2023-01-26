@@ -28,7 +28,7 @@ impl<T: Read + Write> Socket<T> {
     pub fn read_response_from_string(&mut self, response: String) -> types::Result<String> {
         if response.len() < OK.len() {
             return Err(types::Error::new(
-                types::ErrorKind::Read,
+                types::ErrorKind::InvalidResponse,
                 "Response is too short",
             ));
         };
@@ -43,12 +43,12 @@ impl<T: Read + Write> Socket<T> {
             let left_over = response.get((ERR.len() + 1)..).unwrap();
 
             Err(types::Error::new(
-                types::ErrorKind::Server,
+                types::ErrorKind::ServerError,
                 format!("Server error: {}", left_over),
             ))
         } else {
             Err(types::Error::new(
-                types::ErrorKind::Read,
+                types::ErrorKind::InvalidResponse,
                 format!("Response is invalid: '{}'", response),
             ))
         }
@@ -107,7 +107,7 @@ impl<T: Read + Write> Socket<T> {
             Ok(bytes_read) => {
                 if bytes_read == 0 {
                     return Err(types::Error::new(
-                        types::ErrorKind::Read,
+                        types::ErrorKind::NoResponse,
                         "Server did not send any bytes",
                     ));
                 }
@@ -115,7 +115,7 @@ impl<T: Read + Write> Socket<T> {
                 Ok(bytes_read)
             }
             Err(err) => Err(types::Error::new(
-                types::ErrorKind::Read,
+                types::ErrorKind::InvalidResponse,
                 format!("Failed to read server response: {}", err.to_string()),
             )),
         }

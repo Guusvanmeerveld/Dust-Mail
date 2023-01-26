@@ -31,7 +31,7 @@ pub fn create_command<T: Display>(
     match String::from_utf8(bytes) {
         Ok(result) => Ok(result),
         Err(err) => Err(types::Error::new(
-            types::ErrorKind::Read,
+            types::ErrorKind::SendCommand,
             format!("Failed to convert command into string: {}", err),
         )),
     }

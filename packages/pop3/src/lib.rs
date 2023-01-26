@@ -92,7 +92,7 @@ pub fn connect<A: ToSocketAddrs>(
 
     let tcp_stream = TcpStream::connect_timeout(&addr, connection_timeout).map_err(|e| {
         types::Error::new(
-            types::ErrorKind::Connection,
+            types::ErrorKind::Connect,
             format!("Failed to connect to server: {}", e.to_string()),
         )
     })?;
@@ -119,7 +119,7 @@ pub fn connect_plain<A: ToSocketAddrs>(
 
     let tcp_stream = TcpStream::connect_timeout(&addr, connection_timeout).map_err(|e| {
         types::Error::new(
-            types::ErrorKind::Connection,
+            types::ErrorKind::Connect,
             format!("Failed to connect to server: {}", e.to_string()),
         )
     })?;
@@ -139,13 +139,13 @@ impl<S: Read + Write> Client<S> {
                     Ok(socket)
                 } else {
                     Err(types::Error::new(
-                        types::ErrorKind::Connection,
+                        types::ErrorKind::ShouldNotBeConnected,
                         "There is a connection, but our state indicates that we should not be connected",
                     ))
                 }
             }
             None => Err(types::Error::new(
-                types::ErrorKind::Connection,
+                types::ErrorKind::NotConnected,
                 "Not connected to any server",
             )),
         }
@@ -154,7 +154,7 @@ impl<S: Read + Write> Client<S> {
     fn is_correct_state(&self, state: ClientState) -> types::Result<()> {
         if self.state != state {
             Err(types::Error::new(
-                types::ErrorKind::State,
+                types::ErrorKind::IncorrectStateForCommand,
                 "The connection is not the right state to use this command",
             ))
         } else {
@@ -259,7 +259,7 @@ impl<S: Read + Write> Client<S> {
     fn is_deleted_else_err(&mut self, msg_number: &u32) -> types::Result<()> {
         if self.is_deleted(msg_number) {
             Err(types::Error::new(
-                types::ErrorKind::Server,
+                types::ErrorKind::MessageIsDeleted,
                 "This message has been marked as deleted and cannot be refenced anymore",
             ))
         } else {
@@ -475,7 +475,7 @@ impl<S: Read + Write> Client<S> {
     fn has_capability_else_err(&mut self, capability: Capability) -> types::Result<()> {
         if !self.has_capability(capability) {
             Err(types::Error::new(
-                types::ErrorKind::Server,
+                types::ErrorKind::FeatureUnsupported,
                 "The remote pop server does not support this command/function",
             ))
         } else {
@@ -506,7 +506,7 @@ impl<S: Read + Write> Client<S> {
     fn has_read_greeting(&self) -> types::Result<()> {
         if !self.read_greeting {
             Err(types::Error::new(
-                types::ErrorKind::Read,
+                types::ErrorKind::ServerFailedToGreet,
                 "Did not connect to the server correctly, as we did not get a greeting yet",
             ))
         } else {
