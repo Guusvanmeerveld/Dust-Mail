@@ -1,142 +1,84 @@
 #![cfg_attr(
-  all(not(debug_assertions), target_os = "windows"),
-  windows_subsystem = "windows"
+    all(not(debug_assertions), target_os = "windows"),
+    windows_subsystem = "windows"
 )]
 
-use tauri::Manager;
+mod base64;
+mod commands;
+mod cryptography;
+mod menu;
+mod parse;
+mod tray;
+mod types;
 
-use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
-use tauri::{SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use tauri::{Manager, SystemTrayEvent};
+use types::Sessions;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
-  message: String,
-}
-
-#[tauri::command]
-fn oauth_login_token(config: String) -> Result<String, String> {
-  Ok(config.into())
+    message: String,
 }
 
 fn main() {
-  // File menu
-  let file_submenu = Submenu::new(
-    "File",
-    Menu::new()
-      .add_native_item(MenuItem::Hide)
-      .add_native_item(MenuItem::CloseWindow)
-      .add_native_item(MenuItem::Separator)
-      .add_native_item(MenuItem::Quit),
-  );
+    let github_page = "https://github.com/Guusvanmeerveld/Dust-Mail";
 
-  let edit_submenu = Submenu::new(
-    "Edit",
-    Menu::new()
-      .add_native_item(MenuItem::Undo)
-      .add_native_item(MenuItem::Redo)
-      .add_native_item(MenuItem::Separator)
-      .add_native_item(MenuItem::Cut)
-      .add_native_item(MenuItem::Copy)
-      .add_native_item(MenuItem::Paste),
-  );
+    let menu = menu::create_menu();
+    let tray = tray::create_tray();
 
-  // View menu
-  let view_submenu = Submenu::new(
-    "View",
-    Menu::new()
-      .add_native_item(MenuItem::EnterFullScreen)
-      .add_native_item(MenuItem::Zoom),
-  );
+    tauri::Builder::default()
+        .menu(menu)
+        .system_tray(tray)
+        .manage(Sessions::new())
+        .on_menu_event(move |event| match event.menu_item_id() {
+            "repository" => {
+                open::that(github_page).unwrap();
+            }
+            "donate" => {
+                open::that("https://ko-fi.com/Guusvanmeerveld").unwrap();
+            }
+            "report_issue" => {
+                open::that([github_page, "issues"].join("/")).unwrap();
+            }
+            "license" => {
+                open::that([github_page, "blob/main/LICENSE"].join("/")).unwrap();
+            }
+            "about" => {
+                event
+                    .window()
+                    .emit(
+                        "show_about",
+                        Payload {
+                            message: "Show about".into(),
+                        },
+                    )
+                    .unwrap();
+            }
+            _ => {}
+        })
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "hide" => {
+                    let window = app.get_window("main").unwrap();
 
-  // Help menu
-  let repository = CustomMenuItem::new("repository".to_string(), "Repository");
-  let donate = CustomMenuItem::new("donate".to_string(), "Donate");
-  let report_issue = CustomMenuItem::new("report_issue".to_string(), "Report Issue");
-  let license = CustomMenuItem::new("license".to_string(), "License");
-  let about = CustomMenuItem::new("about".to_string(), "About");
+                    window.hide().unwrap();
+                }
+                "show" => {
+                    let window = app.get_window("main").unwrap();
 
-  let help_submenu = Submenu::new(
-    "Help",
-    Menu::new()
-      .add_item(repository)
-      .add_native_item(MenuItem::Separator)
-      .add_item(donate)
-      .add_item(report_issue)
-      .add_item(license)
-      .add_native_item(MenuItem::Separator)
-      .add_item(about),
-  );
-
-  let menu = Menu::new()
-    .add_submenu(file_submenu)
-    .add_submenu(edit_submenu)
-    .add_submenu(view_submenu)
-    .add_submenu(help_submenu);
-
-  let show = CustomMenuItem::new("show".to_string(), "Show");
-  let hide = CustomMenuItem::new("hide".to_string(), "Hide");
-  let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-
-  let tray_menu = SystemTrayMenu::new()
-    .add_item(show)
-    .add_item(hide)
-    .add_native_item(SystemTrayMenuItem::Separator)
-    .add_item(quit);
-
-  let tray = SystemTray::new().with_menu(tray_menu);
-
-  let github_page = "https://github.com/Guusvanmeerveld/Dust-Mail";
-
-  tauri::Builder::default()
-    // .invoke_handler(tauri::generate_handler![oauth_login_token])
-    .menu(menu)
-    .system_tray(tray)
-    .on_menu_event(move |event| match event.menu_item_id() {
-      "repository" => {
-        open::that(github_page).unwrap();
-      }
-      "donate" => {
-        open::that("https://ko-fi.com/Guusvanmeerveld").unwrap();
-      }
-      "report_issue" => {
-        open::that([github_page, "issues"].join("/")).unwrap();
-      }
-      "license" => {
-        open::that([github_page, "blob/main/LICENSE"].join("/")).unwrap();
-      }
-      "about" => {
-        event
-          .window()
-          .emit(
-            "show_about",
-            Payload {
-              message: "Show about".into(),
+                    window.show().unwrap();
+                }
+                "quit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
             },
-          )
-          .unwrap();
-      }
-      _ => {}
-    })
-    .on_system_tray_event(|app, event| match event {
-      SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-        "hide" => {
-          let window = app.get_window("main").unwrap();
-
-          window.hide().unwrap();
-        }
-        "show" => {
-          let window = app.get_window("main").unwrap();
-
-          window.show().unwrap();
-        }
-        "quit" => {
-          std::process::exit(0);
-        }
-        _ => {}
-      },
-      _ => {}
-    })
-    .invoke_handler(tauri::generate_handler![oauth_login_token])
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+            _ => {}
+        })
+        .invoke_handler(tauri::generate_handler![
+            commands::detect_config,
+            commands::login,
+            commands::list
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }

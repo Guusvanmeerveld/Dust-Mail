@@ -12,6 +12,9 @@
 		"version": "../package.json"
 	},
 	"tauri": {
+		"pattern": {
+			"use": "brownfield"
+		},
 		"allowlist": {
 			"all": false,
 			"window": {
@@ -20,9 +23,6 @@
 			},
 			"shell": {
 				"open": true
-			},
-			"http": {
-				"request": true
 			}
 		},
 		"systemTray": {

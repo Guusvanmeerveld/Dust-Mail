@@ -17,15 +17,11 @@ tauri-build = { version = "1.1.1", features = [] }
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.1.1", features = ["devtools", "http-request", "shell-open", "system-tray", "window-close", "window-create"] }
-open = "3.0.2"
-
-[profile.release]
-panic = "abort"
-codegen-units = 1
-lto = true
-strip = true 
-opt-level = "s"
+tauri = { version = "1.2", features = ["devtools", "shell-open", "system-tray", "window-close", "window-create"] }
+sdk = { path = "../../../packages/sdk", version = "0.1" }
+chacha20poly1305 = { version = "0.10", features = ["stream"] }
+open = "3.0"
+base64 = "0.21"
 
 [features]
 # by default Tauri runs in production mode
