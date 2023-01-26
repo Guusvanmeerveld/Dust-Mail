@@ -21,7 +21,7 @@ fn detect_imap_from_stream<S: Read + Write + BufRead>(stream: &mut S) -> types::
 
     stream
         .read_line(&mut response)
-        .map_err(|e| types::Error::new(types::ErrorKind::Read, e.to_string()))?;
+        .map_err(|e| types::Error::new(types::ErrorKind::ImapError, e.to_string()))?;
 
     response.make_ascii_lowercase();
 

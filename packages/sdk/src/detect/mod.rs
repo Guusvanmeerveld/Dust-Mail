@@ -171,7 +171,7 @@ pub fn from_email(email_address: &str) -> types::Result<Config> {
     {
         let detected_autoconfig = autoconfig::from_addr(email_address).map_err(|e| {
             types::Error::new(
-                types::ErrorKind::ConfigNotFound,
+                types::ErrorKind::FetchConfigFailed,
                 format!(
                     "Error when requesting config from email provider: {}",
                     e.message()

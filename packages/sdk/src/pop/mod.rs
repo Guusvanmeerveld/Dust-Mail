@@ -238,7 +238,7 @@ mod test {
         let server = env::var("POP_SERVER").unwrap();
         let port: u16 = 995;
 
-        let options = LoginOptions::new(&server, port);
+        let options = LoginOptions::new(&server, &port);
 
         let client = super::connect(options).unwrap();
 

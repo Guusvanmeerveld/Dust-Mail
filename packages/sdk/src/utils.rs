@@ -33,7 +33,7 @@ pub fn get_env() -> HashMap<String, String> {
 
 pub fn map_mailparse_error(error: MailParseError) -> types::Error {
     types::Error::new(
-        types::ErrorKind::Read,
+        types::ErrorKind::ParseMessage,
         format!("Failed to read message from server: {}", error),
     )
 }
@@ -45,7 +45,7 @@ pub fn create_tcp_stream<A: ToSocketAddrs>(addr: A) -> types::Result<TcpStream> 
 
     TcpStream::connect_timeout(&addr, default_connection_timeout).map_err(|e| {
         types::Error::new(
-            types::ErrorKind::Connection,
+            types::ErrorKind::Connect,
             format!("Failed to connect to server: {}", e.to_string()),
         )
     })
@@ -61,7 +61,7 @@ pub fn create_tls_stream<A: ToSocketAddrs>(
 
     tls.connect(domain, tcp_stream).map_err(|e| {
         types::Error::new(
-            types::ErrorKind::Security,
+            types::ErrorKind::SecureConnection,
             format!("Failed to create a secure connection: {}", e.to_string()),
         )
     })

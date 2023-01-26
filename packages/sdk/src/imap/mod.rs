@@ -7,19 +7,13 @@ use imap::types::Fetch;
 use native_tls::TlsStream;
 
 use crate::client::incoming::Session;
+use crate::parse::map_imap_error;
 use crate::tls::create_tls_connector;
 use crate::types::{self, Counts, LoginOptions, MailBox, Message, Preview};
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
 const QUERY_HEADERS: &str = "(BODY[])";
-
-pub fn map_imap_error(error: imap::Error) -> types::Error {
-    types::Error::new(
-        types::ErrorKind::Server,
-        format!("Error with Imap server: {}", error),
-    )
-}
 
 pub struct ImapClient<S: Read + Write> {
     client: imap::Client<S>,
@@ -48,7 +42,7 @@ pub fn connect_plain(options: LoginOptions) -> types::Result<ImapClient<TcpStrea
     let port = *options.port();
 
     let stream = TcpStream::connect((domain, port))
-        .map_err(|e| types::Error::new(types::ErrorKind::Connection, e.to_string()))?;
+        .map_err(|e| types::Error::new(types::ErrorKind::Connect, e.to_string()))?;
 
     let client = imap::Client::new(stream);
 
@@ -97,7 +91,7 @@ impl<S: Read + Write> ImapSession<S> {
 
         if fetched.len() == 0 {
             return Err(types::Error::new(
-                types::ErrorKind::Server,
+                types::ErrorKind::ImapError,
                 "Could not find a message with that id",
             ));
         }
@@ -328,7 +322,7 @@ mod tests {
         let server = envs.get("IMAP_SERVER").unwrap();
         let port: u16 = 993;
 
-        let options = LoginOptions::new(server, port);
+        let options = LoginOptions::new(server, &port);
 
         let client = super::connect(options).unwrap();
 

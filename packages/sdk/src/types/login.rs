@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub struct LoginOptions {
     server: String,
@@ -6,10 +6,10 @@ pub struct LoginOptions {
 }
 
 impl LoginOptions {
-    pub fn new<S: Into<String>>(server: S, port: u16) -> Self {
+    pub fn new<S: Into<String>>(server: S, port: &u16) -> Self {
         Self {
             server: server.into(),
-            port,
+            port: *port,
         }
     }
 
@@ -22,7 +22,7 @@ impl LoginOptions {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ConnectionSecurity {
     Tls,
     StartTls,

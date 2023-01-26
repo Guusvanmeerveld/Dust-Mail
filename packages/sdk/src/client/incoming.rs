@@ -71,41 +71,42 @@ pub trait Session {
 
 pub struct ClientConstructor;
 
-impl ClientConstructor {
-    fn check_options(
-        client_type: &IncomingClientType,
-        options: &Option<LoginOptions>,
-    ) -> types::Result<()> {
-        match client_type {
-            #[cfg(feature = "imap")]
-            IncomingClientType::Imap => match options {
-                Some(_) => Ok(()),
-                None => {
-                    return Err(types::Error::new(
-                        types::ErrorKind::Unsupported,
-                        "Imap support requires the login options to be specified",
-                    ))
-                }
-            },
-            #[cfg(feature = "pop")]
-            IncomingClientType::Pop => match options {
-                Some(_) => Ok(()),
-                None => {
-                    return Err(types::Error::new(
-                        types::ErrorKind::Unsupported,
-                        "Pop support requires the login options to be specified",
-                    ))
-                }
-            },
-        }
+/// Check whether the options exist if they are needed for a given client type.
+fn check_options(
+    client_type: &IncomingClientType,
+    options: &Option<LoginOptions>,
+) -> types::Result<()> {
+    match client_type {
+        #[cfg(feature = "imap")]
+        IncomingClientType::Imap => match options {
+            Some(_) => Ok(()),
+            None => {
+                return Err(types::Error::new(
+                    types::ErrorKind::Unsupported,
+                    "Imap support requires the login options to be specified",
+                ))
+            }
+        },
+        #[cfg(feature = "pop")]
+        IncomingClientType::Pop => match options {
+            Some(_) => Ok(()),
+            None => {
+                return Err(types::Error::new(
+                    types::ErrorKind::Unsupported,
+                    "Pop support requires the login options to be specified",
+                ))
+            }
+        },
     }
+}
 
+impl ClientConstructor {
     /// Creates a new client over a secure tcp connection.
     pub fn new(
-        client_type: IncomingClientType,
+        client_type: &IncomingClientType,
         options: Option<LoginOptions>,
     ) -> types::Result<IncomingClient<TlsStream<TcpStream>>> {
-        Self::check_options(&client_type, &options)?;
+        check_options(&client_type, &options)?;
 
         let client = match client_type {
             #[cfg(feature = "imap")]
@@ -140,10 +141,10 @@ impl ClientConstructor {
     ///
     /// # Do not use this in a production environment as it will send your credentials to the server without any encryption!
     pub fn new_plain(
-        client_type: IncomingClientType,
+        client_type: &IncomingClientType,
         options: Option<LoginOptions>,
     ) -> types::Result<IncomingClient<TcpStream>> {
-        Self::check_options(&client_type, &options)?;
+        check_options(&client_type, &options)?;
 
         let client = match client_type {
             #[cfg(feature = "imap")]
@@ -193,9 +194,10 @@ mod tests {
         let server = env::var("POP_SERVER").unwrap();
         let port: u16 = 995;
 
-        let options = LoginOptions::new(server, port);
+        let options = LoginOptions::new(server, &port);
 
-        let client = super::ClientConstructor::new(IncomingClientType::Pop, Some(options)).unwrap();
+        let client =
+            super::ClientConstructor::new(&IncomingClientType::Pop, Some(options)).unwrap();
 
         let session = client.login(&username, &password).unwrap();
 

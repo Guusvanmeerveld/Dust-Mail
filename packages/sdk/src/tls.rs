@@ -4,7 +4,7 @@ use crate::types;
 
 fn map_native_tls_error(error: native_tls::Error) -> types::Error {
     types::Error::new(
-        types::ErrorKind::Security,
+        types::ErrorKind::SecureConnection,
         format!("Error creating a secure connection: {}", error),
     )
 }

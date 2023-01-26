@@ -3,9 +3,6 @@ use std::{
     net::{SocketAddr, ToSocketAddrs},
 };
 
-#[cfg(feature = "pop")]
-use pop3::types::ErrorKind as PopErrorKind;
-
 use mailparse::parse_mail;
 use serde::Serialize;
 
@@ -60,21 +57,23 @@ pub fn parse_headers(response: &[u8]) -> types::Result<Headers> {
 
 #[cfg(feature = "pop")]
 pub fn map_pop_error(error: pop3::types::Error) -> types::Error {
-    let kind: types::ErrorKind = match error.kind() {
-        PopErrorKind::Server => types::ErrorKind::Server,
-        PopErrorKind::Connection => types::ErrorKind::Connection,
-        PopErrorKind::Read => types::ErrorKind::Read,
-        PopErrorKind::Write => types::ErrorKind::Write,
-        PopErrorKind::Tls => types::ErrorKind::Security,
-        PopErrorKind::State => types::ErrorKind::UnexpectedBehavior,
-    };
+    types::Error::new(
+        types::ErrorKind::PopError(error),
+        "An error occured with the Pop server",
+    )
+}
 
-    types::Error::new(kind, error)
+#[cfg(feature = "imap")]
+pub fn map_imap_error(error: imap::Error) -> types::Error {
+    types::Error::new(
+        types::ErrorKind::ImapError,
+        format!("Error from Imap server: {}", error),
+    )
 }
 
 pub fn map_parse_date_error(error: chrono::ParseError) -> types::Error {
     types::Error::new(
-        types::ErrorKind::Read,
+        types::ErrorKind::ParseDate,
         format!("Error parsing date from message: {}", error),
     )
 }
@@ -84,7 +83,7 @@ pub fn from_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAdd
         .to_socket_addrs()
         .map_err(|e| {
             types::Error::new(
-                types::ErrorKind::Read,
+                types::ErrorKind::ParseAddress,
                 format!("Failed to parse given address: {}", e),
             )
         })?
@@ -95,8 +94,8 @@ pub fn from_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAdd
 pub fn to_json<T: ?Sized + Serialize>(value: &T) -> types::Result<String> {
     serde_json::to_string(value).map_err(|e| {
         types::Error::new(
-            types::ErrorKind::Read,
-            format!("Failed to serialize message preview to json: {}", e),
+            types::ErrorKind::SerializeJSON,
+            format!("Failed to serialize data to json: {}", e),
         )
     })
 }

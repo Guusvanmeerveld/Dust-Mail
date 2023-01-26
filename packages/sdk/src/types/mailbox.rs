@@ -1,3 +1,6 @@
+use serde::Serialize;
+
+#[derive(Serialize)]
 pub struct MailBox {
     counts: Option<Counts>,
     delimiter: Option<String>,
@@ -5,6 +8,7 @@ pub struct MailBox {
     name: String,
 }
 
+#[derive(Serialize)]
 pub struct Counts {
     unseen: u32,
     total: u32,
@@ -54,7 +58,7 @@ impl MailBox {
         }
     }
 
-    /// The mailbox id. Always be unique.
+    /// A unique id for this mailbox.
     pub fn id(&self) -> &str {
         &self.id
     }

@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 imap = {version = "2.4.1", optional = true }
 imap-proto = { version = "0.16", optional = true }
-pop3 = {version = "0.1", optional = true, path = "../pop3" }
+pop3 = {version = "0.1", optional = true, path = "../pop3", features = ["json"] }
 autoconfig = {version = "0.1", optional = true, path = "../autoconfig" }
 bufstream = {version = "0.1", optional = true}
 serde = {version = "1.0", features = ["derive"] }
