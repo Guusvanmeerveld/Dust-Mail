@@ -1,9 +1,10 @@
+use std::collections::HashMap;
+
 use imap::types::{Fetch, Flag as ImapFlag};
 
 use crate::{
-    client::Headers,
     parse::{parse_headers, parse_rfc822},
-    types::{self, Address, Content, Flag, Message, Preview},
+    types::{self, Address, Content, Flag, Headers, Message, Preview},
 };
 
 const AT_SYMBOL: u8 = 64;
@@ -156,19 +157,19 @@ pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
         Err(err) => return Err(err),
     };
 
-    let content: Content = match fetch.body() {
-        Some(body) => parse_rfc822(body)?,
-        None => Content::new(None, None),
+    let (content, headers): (Content, Headers) = match fetch.body() {
+        Some(body) => {
+            let content = parse_rfc822(body)?;
+            let headers = parse_headers(body)?;
+
+            (content, headers)
+        }
+        None => (Content::new(None, None), HashMap::new()),
     };
 
-    let message = Message::new(from, to, cc, bcc, flags, id, sent, subject, content);
+    let message = Message::new(
+        from, to, cc, bcc, headers, flags, id, sent, subject, content,
+    );
 
     Ok(message)
-}
-
-pub fn fetch_to_headers(fetch: &Fetch) -> types::Result<Option<Headers>> {
-    match fetch.body() {
-        Some(body) => Ok(Some(parse_headers(body)?)),
-        None => Ok(None),
-    }
 }

@@ -37,14 +37,14 @@ pub enum ErrorKind {
 
 #[derive(Debug, Serialize)]
 pub struct Error {
-    msg: String,
+    message: String,
     kind: ErrorKind,
 }
 
 impl Error {
     pub fn new<S: Into<String>>(kind: ErrorKind, msg: S) -> Self {
         Self {
-            msg: msg.into(),
+            message: msg.into(),
             kind,
         }
     }
@@ -56,6 +56,6 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.msg)
+        write!(f, "{}", self.message)
     }
 }

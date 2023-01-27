@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::parse;
 
-use super::Flag;
+use super::{Flag, Headers};
 
 #[derive(Serialize)]
 pub struct Address {
@@ -129,6 +129,7 @@ pub struct Message {
     to: Vec<Address>,
     cc: Vec<Address>,
     bcc: Vec<Address>,
+    headers: Headers,
     flags: Vec<Flag>,
     id: String,
     sent: Option<i64>,
@@ -142,6 +143,7 @@ impl Message {
         to: Vec<Address>,
         cc: Vec<Address>,
         bcc: Vec<Address>,
+        headers: Headers,
         flags: Vec<Flag>,
         id: S,
         sent: Option<i64>,
@@ -153,6 +155,7 @@ impl Message {
             to,
             cc,
             bcc,
+            headers,
             flags,
             id: id.into(),
             sent,
@@ -175,6 +178,11 @@ impl Message {
 
     pub fn bcc(&self) -> &Vec<Address> {
         &self.bcc
+    }
+
+    /// The message's RFC 822 headers.
+    pub fn headers(&self) -> &Headers {
+        &self.headers
     }
 
     /// The messages flags that indicate whether the message has been read, deleted, etc.

@@ -15,8 +15,6 @@ use crate::types::{
     self, IncomingClientType, IncomingClientTypeWithClient, LoginOptions, MailBox, Message, Preview,
 };
 
-use super::Headers;
-
 pub struct IncomingClient<S: Read + Write> {
     client: IncomingClientTypeWithClient<S>,
 }
@@ -61,9 +59,6 @@ pub trait Session {
 
     /// Returns a list of a specified range of messages from a specified mailbox.
     fn messages(&mut self, box_id: &str, start: u32, end: u32) -> types::Result<Vec<Preview>>;
-
-    /// Returns a map containing all of specified messages headers.
-    fn get_headers(&mut self, box_id: &str, msg_id: &str) -> types::Result<Headers>;
 
     /// Returns all of the relevant data for a specified message.
     fn get_message(&mut self, box_id: &str, msg_id: &str) -> types::Result<Message>;

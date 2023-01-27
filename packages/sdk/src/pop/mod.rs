@@ -204,12 +204,6 @@ impl<S: Read + Write> Session for PopSession<S> {
         Ok(previews)
     }
 
-    fn get_headers(&mut self, _: &str, msg_id: &str) -> types::Result<HashMap<String, String>> {
-        let mut session = self.get_session_mut();
-
-        todo!()
-    }
-
     fn get_message(&mut self, _: &str, msg_id: &str) -> types::Result<Message> {
         let mut session = self.get_session_mut();
 

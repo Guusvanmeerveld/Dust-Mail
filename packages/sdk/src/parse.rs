@@ -7,11 +7,11 @@ use mailparse::parse_mail;
 use serde::Serialize;
 
 use crate::{
-    client::Headers,
-    types::{self, Content},
+    types::{self, Content, Headers},
     utils::map_mailparse_error,
 };
 
+/// Parse an RFC 822 body to an appropriate and useful struct.
 pub fn parse_rfc822(body: &[u8]) -> types::Result<Content> {
     let parsed = parse_mail(body).map_err(map_mailparse_error)?;
 
@@ -22,7 +22,7 @@ pub fn parse_rfc822(body: &[u8]) -> types::Result<Content> {
         let headers = part.get_headers();
 
         for header in headers {
-            let key = header.get_key().to_ascii_lowercase();
+            let key = header.get_key_ref().to_ascii_lowercase();
 
             if key == "content-type" {
                 let value = header.get_value().to_ascii_lowercase();
@@ -38,7 +38,7 @@ pub fn parse_rfc822(body: &[u8]) -> types::Result<Content> {
         }
     }
 
-    Ok(Content::new(html, text))
+    Ok(Content::new(text, html))
 }
 
 pub fn parse_headers(response: &[u8]) -> types::Result<Headers> {

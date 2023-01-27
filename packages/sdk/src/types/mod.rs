@@ -5,7 +5,7 @@ mod login;
 mod mailbox;
 mod message;
 
-use std::result;
+use std::{collections::HashMap, result};
 
 pub use client::*;
 pub use error::{Error, ErrorKind};
@@ -15,3 +15,5 @@ pub use mailbox::{Counts, MailBox};
 pub use message::{Address, Content, Message, Preview};
 
 pub type Result<T> = result::Result<T, Error>;
+
+pub type Headers = HashMap<String, String>;

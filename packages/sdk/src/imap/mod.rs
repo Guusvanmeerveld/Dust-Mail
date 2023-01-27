@@ -1,5 +1,4 @@
 mod parse;
-use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
@@ -13,7 +12,6 @@ use crate::types::{self, Counts, LoginOptions, MailBox, Message, Preview};
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
-const QUERY_HEADERS: &str = "(BODY[])";
 
 pub struct ImapClient<S: Read + Write> {
     client: imap::Client<S>,
@@ -258,34 +256,6 @@ impl<S: Read + Write> Session for ImapSession<S> {
         Ok(previews)
     }
 
-    fn get_headers(
-        &mut self,
-        box_id: &str,
-        msg_id: &str,
-    ) -> types::Result<HashMap<String, String>> {
-        self.get(box_id)?;
-
-        let session = self.get_session_mut();
-
-        let fetched = session
-            .uid_fetch(msg_id, QUERY_HEADERS)
-            .map_err(map_imap_error)?;
-
-        let fetch = Self::get_item_from_fetch_else_err(&fetched)?;
-
-        let headers = match parse::fetch_to_headers(fetch)? {
-            Some(headers) => headers,
-            None => {
-                return Err(types::Error::new(
-                    types::ErrorKind::UnexpectedBehavior,
-                    "Requested just the message headers, but did not get any message headers",
-                ))
-            }
-        };
-
-        Ok(headers)
-    }
-
     fn get_message(&mut self, box_id: &str, msg_id: &str) -> types::Result<Message> {
         self.get(box_id)?;
 
@@ -380,23 +350,10 @@ mod tests {
     }
 
     #[test]
-    fn get_headers() {
-        let mut session = create_test_session();
-
-        let headers = session.get_headers("INBOX", "1117").unwrap();
-
-        for header in headers {
-            println!("{}: {}", header.0, header.1);
-        }
-
-        session.logout().unwrap();
-    }
-
-    #[test]
     fn get_message() {
         let mut session = create_test_session();
 
-        let msg_id = "1114";
+        let msg_id = "1113";
         let box_id = "INBOX";
 
         let message = session.get_message(box_id, msg_id).unwrap();
