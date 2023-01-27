@@ -18,7 +18,6 @@ mod service;
 pub use service::from_server;
 
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
 pub enum MailServerConfig {
     Pop(ServerConfig),
     Imap(ServerConfig),
@@ -27,6 +26,7 @@ pub enum MailServerConfig {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ServerConfig {
     port: u16,
     domain: String,
@@ -62,14 +62,15 @@ pub enum AuthenticationType {
 }
 
 #[derive(Debug, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum ConfigType {
     MultiServer(Vec<MailServerConfig>),
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
-    config_type: ConfigType,
+    r#type: ConfigType,
     provider: String,
     display_name: String,
 }
@@ -77,7 +78,7 @@ pub struct Config {
 impl Config {
     /// The kind of config
     pub fn config_type(&self) -> &ConfigType {
-        &self.config_type
+        &self.r#type
     }
 
     /// The email provider name
@@ -155,7 +156,7 @@ fn autoconfig_to_config(autoconfig: AutoConfig) -> types::Result<Config> {
     let config_type = ConfigType::MultiServer(servers);
 
     let config = Config {
-        config_type,
+        r#type: config_type,
         provider,
         display_name,
     };

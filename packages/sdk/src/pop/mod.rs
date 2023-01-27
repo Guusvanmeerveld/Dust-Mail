@@ -23,7 +23,6 @@ pub struct PopClient<S: Read + Write> {
 
 pub struct PopSession<S: Read + Write> {
     session: pop3::Client<S>,
-    mailbox: Option<MailBox>,
 }
 
 pub fn connect(options: LoginOptions) -> types::Result<PopClient<TlsStream<TcpStream>>> {
@@ -52,10 +51,7 @@ impl<S: Read + Write> PopClient<S> {
 
         session.login(username, password).map_err(map_pop_error)?;
 
-        Ok(PopSession {
-            session,
-            mailbox: None,
-        })
+        Ok(PopSession { session })
     }
 }
 
@@ -103,10 +99,8 @@ impl<S: Read + Write> Session for PopSession<S> {
         Ok(vec![default_box])
     }
 
-    fn get(&mut self, box_name: &str) -> types::Result<&MailBox> {
-        self.mailbox = Some(self.get_default_box()?);
-
-        let mailbox = self.mailbox.as_ref().unwrap();
+    fn get(&mut self, box_name: &str) -> types::Result<MailBox> {
+        let mailbox = self.get_default_box()?;
 
         // If we request anything other than the default mailbox that we've defined, we throw an error saying that Pop does not support mailboxes
         if box_name != mailbox.name() {

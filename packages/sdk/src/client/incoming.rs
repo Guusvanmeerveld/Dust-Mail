@@ -46,7 +46,7 @@ pub trait Session {
     fn box_list(&mut self) -> types::Result<Vec<MailBox>>;
 
     /// Returns some basic information about a specified mailbox.
-    fn get(&mut self, box_id: &str) -> types::Result<&MailBox>;
+    fn get(&mut self, box_id: &str) -> types::Result<MailBox>;
 
     /// Deletes a specified mailbox.
     fn delete(&mut self, box_id: &str) -> types::Result<()>;

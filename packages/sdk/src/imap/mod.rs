@@ -19,7 +19,6 @@ pub struct ImapClient<S: Read + Write> {
 
 pub struct ImapSession<S: Read + Write> {
     session: imap::Session<S>,
-    selected_box: Option<MailBox>,
 }
 
 pub fn connect(options: LoginOptions) -> types::Result<ImapClient<TlsStream<TcpStream>>> {
@@ -54,10 +53,7 @@ impl<S: Read + Write> ImapClient<S> {
             .login(username, password)
             .map_err(|(err, _)| map_imap_error(err))?;
 
-        let imap_session = ImapSession {
-            session,
-            selected_box: None,
-        };
+        let imap_session = ImapSession { session };
 
         Ok(imap_session)
     }
@@ -140,7 +136,7 @@ impl<S: Read + Write> Session for ImapSession<S> {
         Ok(boxes)
     }
 
-    fn get(&mut self, box_id: &str) -> types::Result<&MailBox> {
+    fn get(&mut self, box_id: &str) -> types::Result<MailBox> {
         let session = self.get_session_mut();
 
         let imap_mailbox = session.select(&box_id).map_err(map_imap_error)?;
@@ -165,9 +161,7 @@ impl<S: Read + Write> Session for ImapSession<S> {
             &Self::name_from_box_id(id, box_data.delimiter()),
         );
 
-        self.selected_box = Some(selected_box);
-
-        Ok(self.selected_box.as_ref().unwrap())
+        Ok(selected_box)
     }
 
     fn delete(&mut self, box_id: &str) -> types::Result<()> {
