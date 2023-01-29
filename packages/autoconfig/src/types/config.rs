@@ -119,7 +119,7 @@ impl EmailProvider {
     }
 
     /// An array containing info about all of an email providers incoming mail servers
-    pub fn incoming_server(&self) -> Vec<&Server> {
+    pub fn incoming_servers(&self) -> Vec<&Server> {
         let mut servers: Vec<&Server> = Vec::new();
 
         for property in &self.properties {
@@ -133,7 +133,7 @@ impl EmailProvider {
     }
 
     /// An array containing info about all of an email providers outgoing mail servers
-    pub fn outgoing_server(&self) -> Vec<&Server> {
+    pub fn outgoing_servers(&self) -> Vec<&Server> {
         let mut servers: Vec<&Server> = Vec::new();
 
         for property in &self.properties {
