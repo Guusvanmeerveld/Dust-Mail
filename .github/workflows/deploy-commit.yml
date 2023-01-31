@@ -16,6 +16,38 @@ on:
       - packages/**
 
 jobs:
+  test-pop: 
+    name: Test Pop3 Package
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - name: Setup
+        uses: actions/checkout@v2
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.61
+          default: true
+          override: true
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: ./packages/pop3
+
+      - name: Fetch crates
+        working-directory: ./packages/pop3
+        run: cargo fetch --locked
+
+      - name: Start Greenmail
+        run: docker-compose -f packages/pop3/docker-compose.test.yml up -d
+
+      - name: Test package
+        working-directory: ./packages/pop3
+        run: cargo test
+
   test:
     name: Test apps
     runs-on: ubuntu-latest

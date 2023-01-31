@@ -1,4 +1,3 @@
-#[cfg(feature = "json")]
 use serde::Serialize;
 
 use std::fmt;

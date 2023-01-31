@@ -38,7 +38,7 @@ impl<T: Read + Write> Socket<T> {
 
             let left_over = response.get(ok_size..).unwrap();
 
-            Ok(left_over.to_owned())
+            Ok(left_over.trim().to_owned())
         } else if response.starts_with(ERR) {
             let left_over = response.get((ERR.len() + 1)..).unwrap();
 
@@ -89,9 +89,9 @@ impl<T: Read + Write> Socket<T> {
                 None => {}
             };
 
-            let last_five_bytes = buf.get(buf.len() - 5..).unwrap();
+            let last_three_bytes = buf.get(buf.len().saturating_sub(3)..).unwrap();
 
-            if last_five_bytes == EOF {
+            if last_three_bytes == EOF {
                 // Remove the last 3 bytes which should be `[DOT, CR, LF]` as they are not part of the message
                 buf.truncate(buf.len().saturating_sub(3));
 

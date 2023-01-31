@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-#[derive(Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Eq, PartialEq, PartialOrd, Ord, Debug)]
 pub enum Capability {
     Top,
     User,
@@ -13,4 +13,4 @@ pub enum Capability {
     Implementation(String),
 }
 
-pub type Capabilities = Vec<Option<Capability>>;
+pub type Capabilities = Vec<Capability>;

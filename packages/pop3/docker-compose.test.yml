@@ -2,11 +2,10 @@ version: '3.3'
 
 services:
     standalone:
-        ports:
-            - '3025:3025'
-            - '3110:3110'
-            - '3143:3143'
-            - '3465:3465'
-            - '3993:3993'
-            - '3995:3995'
+        container_name: greenmail
         image: 'greenmail/standalone:1.6.12'
+        ports:
+            - '3110:3110'
+        environment:
+            GREENMAIL_OPTS: "-Dgreenmail.verbose -Dgreenmail.setup.test.pop3 -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=test:localhost"
+            JAVA_OPTS: "-Djava.net.preferIPv4Stack=true -Xmx512m"

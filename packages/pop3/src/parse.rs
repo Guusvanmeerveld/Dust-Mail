@@ -23,7 +23,7 @@ impl Parser {
     }
 
     /// Parse the message count and drop size from a given string
-    fn parse_counts_from_string(string: &str) -> (u32, u64) {
+    fn parse_counts_from_string(string: &str) -> Stats {
         let mut split = string.split(SPACE);
 
         let message_count: u32 = split.next().unwrap().trim().parse().unwrap();
@@ -83,52 +83,63 @@ pub fn parse_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAd
         .unwrap())
 }
 
-pub fn parse_capabilities<S: Into<String>>(response: S) -> Capabilities {
-    let response: String = response.into();
-
+pub fn parse_capabilities(response: &str) -> Capabilities {
     let end_of_line = char::from_u32(LF as u32).unwrap();
 
     let split = response.split(end_of_line);
 
     split
-        .map(|line| {
+        .filter_map(|line| {
             let line = line.trim().to_ascii_uppercase();
 
             let mut split = line.split(SPACE);
 
-            match split.next().unwrap() {
-                "TOP" => Some(Capability::Top),
-                "USER" => Some(Capability::User),
-                "SASL" => {
-                    let arguments: Vec<String> = split.map(|s| s.to_owned()).collect();
+            match split.next() {
+                Some(capability) => {
+                    let capability_enum = match capability {
+                        "TOP" => Some(Capability::Top),
+                        "USER" => Some(Capability::User),
+                        "SASL" => {
+                            let arguments: Vec<String> = split.map(|s| s.to_owned()).collect();
 
-                    Some(Capability::Sasl(arguments))
-                }
-                "RESP-CODES" => Some(Capability::RespCodes),
-                "LOGIN-DELAY" => {
-                    let delay: Duration = match split.next() {
-                        Some(delay) => Duration::from_secs(delay.parse::<u64>().unwrap()),
-                        None => Duration::from_secs(0),
+                            Some(Capability::Sasl(arguments))
+                        }
+                        "RESP-CODES" => Some(Capability::RespCodes),
+                        "LOGIN-DELAY" => {
+                            let delay: Duration = match split.next() {
+                                Some(delay) => Duration::from_secs(delay.parse::<u64>().unwrap()),
+                                None => Duration::from_secs(0),
+                            };
+
+                            Some(Capability::LoginDelay(delay))
+                        }
+                        "PIPELINING" => Some(Capability::Pipelining),
+                        "EXPIRE" => {
+                            let expires: Option<Duration> = match split.next() {
+                                Some(expires) => {
+                                    Some(Duration::from_secs(expires.parse::<u64>().unwrap()))
+                                }
+                                None => None,
+                            };
+
+                            Some(Capability::Expire(expires))
+                        }
+                        "UIDL" => Some(Capability::Uidl),
+                        "IMPLEMENTATION" => {
+                            let arguments: String = split.map(|s| s.to_owned()).collect();
+
+                            Some(Capability::Implementation(arguments))
+                        }
+                        _ => {
+                            // println!("{:?}", capability);
+
+                            None
+                        }
                     };
 
-                    Some(Capability::LoginDelay(delay))
+                    capability_enum
                 }
-                "PIPELINING" => Some(Capability::Pipelining),
-                "EXPIRE" => {
-                    let expires: Option<Duration> = match split.next() {
-                        Some(expires) => Some(Duration::from_secs(expires.parse::<u64>().unwrap())),
-                        None => None,
-                    };
-
-                    Some(Capability::Expire(expires))
-                }
-                "UIDL" => Some(Capability::Uidl),
-                "IMPLEMENTATION" => {
-                    let arguments: String = split.map(|s| s.to_owned()).collect();
-
-                    Some(Capability::Implementation(arguments))
-                }
-                _ => None,
+                None => None,
             }
         })
         .collect::<Capabilities>()
@@ -143,4 +154,28 @@ pub fn map_write_error_to_error(write_error: io::Error) -> types::Error {
         types::ErrorKind::SendCommand,
         format!("Failed to send command: {}", write_error.to_string()),
     )
+}
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+
+    use crate::types::Capability;
+
+    use super::parse_capabilities;
+
+    #[test]
+    fn test_parse_capabilities() {
+        let to_parse = "USER\r\nuidl\r\nLOGIN-DELAY 30\r\n";
+
+        let to_match: Vec<Capability> = vec![
+            Capability::User,
+            Capability::Uidl,
+            Capability::LoginDelay(Duration::from_secs(30)),
+        ];
+
+        let parsed_capabilities = parse_capabilities(to_parse);
+
+        assert_eq!(parsed_capabilities, to_match);
+    }
 }
