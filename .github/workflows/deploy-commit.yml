@@ -21,7 +21,6 @@ jobs:
     name: Test Pop3 Package
     runs-on: ubuntu-latest
 
-
     steps:
       - name: Setup
         uses: actions/checkout@v2
@@ -40,7 +39,7 @@ jobs:
 
       - name: Fetch crates
         working-directory: ./packages/pop3
-        run: cargo fetch --locked
+        run: cargo fetch --offline
 
       - name: Start Greenmail
         run: docker-compose -f packages/pop3/docker-compose.test.yml up -d
