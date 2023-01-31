@@ -9,6 +9,7 @@ on:
       - Dockerfile
       - entrypoint.sh
       - pnpm-lock.yaml
+      - Cargo.lock
       - nginx/**
       - .dockerignore
       - apps/web/**
