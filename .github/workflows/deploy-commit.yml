@@ -47,6 +47,11 @@ jobs:
       - name: Test package
         working-directory: ./packages/pop3
         run: cargo test
+        env:
+          USERNAME: test
+          PASSWORD: localhost
+          PORT: 3110
+          SERVER: localhost
 
   test:
     name: Test apps
