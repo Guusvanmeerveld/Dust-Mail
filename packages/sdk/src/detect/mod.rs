@@ -1,33 +1,30 @@
-#[cfg(feature = "autoconfig")]
-use autoconfig::{
-    self,
-    types::config::{
-        AuthenticationType as AutoConfigAuthenticationType, Config as AutoConfig,
-        SecurityType as AutoConfigSecurityType, ServerType as AutoConfigServerType,
-    },
-};
 use serde::Serialize;
 
 use crate::{
-    parse,
-    types::{self, ConnectionSecurity},
+    parse::to_json,
+    types::{self, ConnectionSecurity, ErrorKind},
 };
 
+mod parse;
 mod service;
 
-pub use service::from_server;
+#[cfg(feature = "autoconfig")]
+use parse::AutoConfigParser;
+
+const AT_SYMBOL: &str = "@";
 
 #[derive(Debug, Serialize)]
-pub enum MailServerConfig {
-    Pop(ServerConfig),
-    Imap(ServerConfig),
-    Smtp(ServerConfig),
-    Exchange(ServerConfig),
+pub enum ServerConfigType {
+    Imap,
+    Pop,
+    Smtp,
+    Exchange,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerConfig {
+    r#type: ServerConfigType,
     port: u16,
     domain: String,
     security: ConnectionSecurity,
@@ -64,7 +61,10 @@ pub enum AuthenticationType {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConfigType {
-    MultiServer(Vec<MailServerConfig>),
+    MultiServer {
+        incoming: Vec<ServerConfig>,
+        outgoing: Vec<ServerConfig>,
+    },
 }
 
 #[derive(Debug, Serialize)]
@@ -92,85 +92,24 @@ impl Config {
     }
 
     pub fn to_json(&self) -> types::Result<String> {
-        parse::to_json(self)
+        to_json(self)
     }
-}
-
-#[cfg(feature = "autoconfig")]
-fn autoconfig_to_config(autoconfig: AutoConfig) -> types::Result<Config> {
-    let provider: String = autoconfig.email_provider().id().into();
-    let display_name: String = autoconfig.email_provider().display_name().unwrap().into();
-
-    let servers: Vec<MailServerConfig> = autoconfig
-        .email_provider()
-        .servers()
-        .iter()
-        .filter_map(|server| {
-            let domain: String = server.hostname()?.to_string();
-
-            let port: u16 = *server.port()?;
-
-            let security: ConnectionSecurity = match server.security_type() {
-                Some(security) => match security {
-                    AutoConfigSecurityType::Plain => ConnectionSecurity::Plain,
-                    AutoConfigSecurityType::Starttls => ConnectionSecurity::StartTls,
-                    AutoConfigSecurityType::Tls => ConnectionSecurity::Tls,
-                },
-                None => return None,
-            };
-
-            let auth_type: Vec<AuthenticationType> = server
-                .authentication_type()
-                .iter()
-                .map(|authentication_type| match authentication_type {
-                    AutoConfigAuthenticationType::None => AuthenticationType::None,
-                    AutoConfigAuthenticationType::PasswordCleartext => {
-                        AuthenticationType::ClearText
-                    }
-                    AutoConfigAuthenticationType::PasswordEncrypted => {
-                        AuthenticationType::Encrypted
-                    }
-                    AutoConfigAuthenticationType::OAuth2 => AuthenticationType::OAuth2,
-                    _ => AuthenticationType::Unknown,
-                })
-                .collect();
-
-            let server_config = ServerConfig {
-                domain,
-                port,
-                security,
-                auth_type,
-            };
-
-            let server_type = match server.server_type() {
-                AutoConfigServerType::Imap => MailServerConfig::Imap(server_config),
-                AutoConfigServerType::Pop3 => MailServerConfig::Pop(server_config),
-                AutoConfigServerType::Smtp => MailServerConfig::Smtp(server_config),
-                AutoConfigServerType::Exchange => MailServerConfig::Exchange(server_config),
-            };
-
-            Some(server_type)
-        })
-        .collect();
-
-    let config_type = ConfigType::MultiServer(servers);
-
-    let config = Config {
-        r#type: config_type,
-        provider,
-        display_name,
-    };
-
-    Ok(config)
 }
 
 /// Automatically detect an email providers config for a given email address
 pub fn from_email(email_address: &str) -> types::Result<Config> {
     let mut config: Option<Config> = None;
 
+    let mut split = email_address.split(AT_SYMBOL);
+
+    // Skip the prefix
+    split.next();
+
+    let domain = split.next().unwrap();
+
     #[cfg(feature = "autoconfig")]
     {
-        let detected_autoconfig = autoconfig::from_addr(email_address).map_err(|e| {
+        let detected_autoconfig = autoconfig::from_domain(domain).map_err(|e| {
             types::Error::new(
                 types::ErrorKind::FetchConfigFailed,
                 format!(
@@ -181,8 +120,88 @@ pub fn from_email(email_address: &str) -> types::Result<Config> {
         })?;
 
         match detected_autoconfig {
-            Some(detected_autoconfig) => config = Some(autoconfig_to_config(detected_autoconfig)?),
+            Some(detected_autoconfig) => {
+                config = Some(AutoConfigParser::parse(detected_autoconfig)?)
+            }
             None => {}
+        }
+    }
+    // TODO: Check for domains such mail.domain.com, imap.domain.com etc.
+    if config.is_none() {
+        let mail_domain = format!("mail.{}", domain);
+
+        let mut incoming_configs: Vec<ServerConfig> = Vec::new();
+        let mut outgoing_configs: Vec<ServerConfig> = Vec::new();
+
+        #[cfg(feature = "imap")]
+        {
+            let secure_imap_port: u16 = 993;
+            let imap_port: u16 = 143;
+
+            let imap_domain = format!("imap.{}", domain);
+
+            let addresses_to_check: Vec<(&str, u16, ConnectionSecurity)> = vec![
+                (
+                    mail_domain.as_str(),
+                    secure_imap_port,
+                    ConnectionSecurity::Tls,
+                ),
+                (
+                    imap_domain.as_str(),
+                    secure_imap_port,
+                    ConnectionSecurity::Tls,
+                ),
+                // (mail_domain.as_str(), imap_port, ConnectionSecurity::Plain),
+                // (imap_domain.as_str(), imap_port, ConnectionSecurity::Plain),
+            ];
+
+            // Check mail.domain.tld and imap.domain.tld on the default secure imap port
+            let working_addresses: Vec<(&&str, &u16)> = addresses_to_check
+                .iter()
+                .filter_map(|(domain, port, security)| {
+                    match service::from_server(domain, *port, security) {
+                        Ok(_) => Some((domain, port)),
+                        Err(error) => match error.kind() {
+                            ErrorKind::Connect => None,
+                            _ => None,
+                        },
+                    }
+                })
+                .collect();
+
+            if working_addresses.len() > 0 {
+                let address_to_use = match working_addresses.first() {
+                    Some(address) => address,
+                    // We know the array is larger than 0 items
+                    None => unreachable!(),
+                };
+
+                let config: ServerConfig = ServerConfig {
+                    r#type: ServerConfigType::Imap,
+                    port: *address_to_use.1,
+                    domain: address_to_use.0.to_string(),
+                    security: ConnectionSecurity::Tls,
+                    auth_type: vec![AuthenticationType::ClearText],
+                };
+
+                incoming_configs.push(config);
+            }
+        }
+
+        #[cfg(feature = "pop")]
+        {
+            // let mail_domain_pop = service::from_server(&mail_domain, 995, ConnectionSecurity::Tls);
+        }
+
+        if incoming_configs.len() > 0 || outgoing_configs.len() > 0 {
+            config = Some(Config {
+                display_name: domain.to_string(),
+                provider: domain.to_string(),
+                r#type: ConfigType::MultiServer {
+                    incoming: incoming_configs,
+                    outgoing: outgoing_configs,
+                },
+            })
         }
     }
 
@@ -198,7 +217,7 @@ pub fn from_email(email_address: &str) -> types::Result<Config> {
 mod test {
     #[test]
     fn from_email() {
-        let email = "guusvanmeerveld@outlook.com";
+        let email = "mail@samtaen.nl";
 
         let config = super::from_email(email).unwrap();
 

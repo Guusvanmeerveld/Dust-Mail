@@ -1,14 +1,15 @@
 use serde::Serialize;
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MailBox {
     counts: Option<Counts>,
     delimiter: Option<String>,
+    children: Vec<MailBox>,
     id: String,
     name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Counts {
     unseen: u32,
     total: u32,
@@ -34,12 +35,14 @@ impl MailBox {
     pub fn new<S: Into<String>>(
         counts: Option<Counts>,
         delimiter: Option<String>,
+        children: Vec<MailBox>,
         id: S,
         name: S,
     ) -> Self {
         Self {
             counts,
             delimiter,
+            children,
             id: id.into(),
             name: name.into(),
         }
@@ -56,6 +59,14 @@ impl MailBox {
             Some(delimiter) => Some(delimiter),
             None => None,
         }
+    }
+
+    pub fn children(&self) -> &Vec<MailBox> {
+        &self.children
+    }
+
+    pub fn children_mut(&mut self) -> &mut Vec<MailBox> {
+        &mut self.children
     }
 
     /// A unique id for this mailbox.

@@ -1,6 +1,6 @@
 mod parse;
 
-use std::{collections::HashMap, io::Read, io::Write, net::TcpStream};
+use std::{io::Read, io::Write, net::TcpStream};
 
 use chrono::DateTime;
 use native_tls::TlsStream;
@@ -78,7 +78,7 @@ impl<S: Read + Write> PopSession<S> {
             None => None,
         };
 
-        let mailbox = MailBox::new(counts, None, box_name, box_name);
+        let mailbox = MailBox::new(counts, None, Vec::new(), box_name, box_name);
 
         Ok(mailbox)
     }
@@ -133,13 +133,13 @@ impl<S: Read + Write> Session for PopSession<S> {
         let session = self.get_session_mut();
 
         let sequence_start = if total_messages < &end {
-            0
+            1
         } else {
             total_messages.saturating_sub(end)
         };
 
         let sequence_end = if total_messages < &start {
-            0
+            1
         } else {
             total_messages.saturating_sub(start)
         };
@@ -148,7 +148,7 @@ impl<S: Read + Write> Session for PopSession<S> {
 
         let mut previews: Vec<Preview> = Vec::with_capacity(msg_count);
 
-        for msg in sequence_start..sequence_end {
+        for msg in start..end {
             let unique_id = match session.uidl(Some(msg)).map_err(map_pop_error) {
                 Ok(response) => match response {
                     Left(all_messages) => all_messages.first().cloned().unwrap().1,

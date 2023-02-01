@@ -1,4 +1,7 @@
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    time::Duration,
+};
 
 #[cfg(feature = "imap")]
 use {bufstream::BufStream, std::io::BufRead};
@@ -44,22 +47,24 @@ fn detect_imap_from_stream<S: Read + Write + BufRead>(stream: &mut S) -> types::
 pub fn from_server(
     domain: &str,
     port: u16,
-    security: ConnectionSecurity,
+    security: &ConnectionSecurity,
 ) -> types::Result<Option<IncomingClientType>> {
     let addr = (domain, port);
+
+    let connect_timeout = Some(Duration::from_secs(5));
 
     #[cfg(feature = "imap")]
     {
         let is_imap = match security {
             ConnectionSecurity::Tls => {
-                let tls_stream = create_tls_stream(addr, domain)?;
+                let tls_stream = create_tls_stream(addr, domain, connect_timeout)?;
 
                 let mut bufstream = BufStream::new(tls_stream);
 
                 detect_imap_from_stream(&mut bufstream)?
             }
             _ => {
-                let tcp_stream = create_tcp_stream(addr)?;
+                let tcp_stream = create_tcp_stream(addr, connect_timeout)?;
 
                 let mut bufstream = BufStream::new(tcp_stream);
 
@@ -103,18 +108,18 @@ mod test {
     #[test]
     fn client_type() {
         let domain = "outlook.office365.com";
-        let imap_port = 143;
-        let pop_port = 110;
+        let imap_port = 993;
+        let pop_port = 995;
 
         #[cfg(feature = "imap")]
         {
             assert_eq!(
-                from_server(domain, imap_port, ConnectionSecurity::Plain).unwrap(),
+                from_server(domain, imap_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Imap),
             );
 
             assert_ne!(
-                from_server(domain, pop_port, ConnectionSecurity::Plain).unwrap(),
+                from_server(domain, pop_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Imap),
             );
         }
@@ -122,12 +127,12 @@ mod test {
         #[cfg(feature = "pop")]
         {
             assert_eq!(
-                from_server(domain, pop_port, ConnectionSecurity::Plain).unwrap(),
+                from_server(domain, pop_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Pop),
             );
 
             assert_ne!(
-                from_server(domain, imap_port, ConnectionSecurity::Plain).unwrap(),
+                from_server(domain, imap_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Pop),
             );
         }
