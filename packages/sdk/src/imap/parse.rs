@@ -4,7 +4,7 @@ use imap::types::{Fetch, Flag as ImapFlag};
 
 use crate::{
     parse::{parse_headers, parse_rfc822},
-    types::{self, Address, Content, Flag, Headers, Message, Preview},
+    types::{Address, Content, Error, ErrorKind, Flag, Headers, Message, Preview, Result},
 };
 
 const AT_SYMBOL: u8 = 64;
@@ -23,17 +23,16 @@ fn address_to_string(mailbox: Option<&[u8]>, host: Option<&[u8]>) -> Option<Stri
         .collect()
 }
 
-fn parse_uid(uid: Option<u32>) -> types::Result<String> {
+fn parse_uid(uid: Option<u32>) -> Result<String> {
     match uid {
         Some(id) => Ok(id.to_string()),
-        None => Err(types::Error::new(
-            types::ErrorKind::Unsupported,
+        None => Err(Error::new(
+            ErrorKind::Unsupported,
             "Message must have a unique identifier",
         )),
     }
 }
 
-///
 fn imap_flags_to_flags(imap_flags: &[ImapFlag]) -> Vec<Flag> {
     imap_flags
         .iter()
@@ -53,8 +52,21 @@ fn imap_flags_to_flags(imap_flags: &[ImapFlag]) -> Vec<Flag> {
         .collect()
 }
 
-pub fn fetch_to_preview(fetch: &Fetch) -> types::Result<Preview> {
-    let envelope = fetch.envelope().unwrap();
+pub fn fetch_to_preview(fetch: &Fetch) -> Result<Preview> {
+    let id = match parse_uid(fetch.uid) {
+        Ok(uid) => uid,
+        Err(err) => return Err(err),
+    };
+
+    let envelope = match fetch.envelope() {
+        Some(envelope) => envelope,
+        None => {
+            return Err(Error::new(
+                ErrorKind::ParseMessage,
+                format!("Message with id '{}' does not contain an envelope", id),
+            ))
+        }
+    };
 
     let flags = imap_flags_to_flags(fetch.flags());
 
@@ -78,17 +90,12 @@ pub fn fetch_to_preview(fetch: &Fetch) -> types::Result<Preview> {
 
     let subject = bytes_to_string(&envelope.subject);
 
-    let id = match parse_uid(fetch.uid) {
-        Ok(uid) => uid,
-        Err(err) => return Err(err),
-    };
-
     let preview = Preview::new(from, flags, id, sent, subject);
 
     Ok(preview)
 }
 
-pub fn fetch_to_message(fetch: &Fetch) -> types::Result<Message> {
+pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
     let envelope = fetch.envelope().unwrap();
 
     let flags = imap_flags_to_flags(fetch.flags());

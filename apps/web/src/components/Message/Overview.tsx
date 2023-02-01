@@ -1,8 +1,9 @@
 import useLocalStorageState from "use-local-storage-state";
+import z from "zod";
 
 import { useEffect, useRef, useState, memo, FC, MouseEvent } from "react";
 
-import { Address, Attachment } from "@dust-mail/typings";
+import { Attachment } from "@dust-mail/typings";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -29,6 +30,8 @@ import BrowserIcon from "@mui/icons-material/Language";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
 
+import { Address } from "@models/address";
+
 import scrollbarStyles from "@styles/scrollbar";
 
 import useAvatar from "@utils/hooks/useAvatar";
@@ -37,16 +40,17 @@ import useSelectedMessage, {
 	useSetSelectedMessage
 } from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
+import { errorToString } from "@utils/parseError";
 
-const AddressListItem: FC<{ email: string; displayName: string }> = ({
-	email,
-	displayName
+const AddressListItem: FC<{ address: string | null; name: string | null }> = ({
+	address,
+	name
 }) => {
 	const theme = useTheme();
 
-	const avatar = useAvatar(email);
+	const avatar = useAvatar(address);
 
-	const name = displayName || email;
+	const displayName = name || address || "Unknown";
 
 	return (
 		<Chip
@@ -62,12 +66,14 @@ const AddressListItem: FC<{ email: string; displayName: string }> = ({
 						bgcolor: !avatar ? theme.palette.secondary.main : null
 					}}
 					src={avatar?.data}
-					alt={name.charAt(0).toUpperCase()}
+					alt={displayName.charAt(0).toUpperCase()}
 				>
-					{!avatar?.data && name.charAt(0).toLocaleUpperCase()}
+					{!avatar?.data && displayName.charAt(0).toLocaleUpperCase()}
 				</Avatar>
 			}
-			label={name == email ? name : `${name} <${email}>`}
+			label={
+				displayName == address ? displayName : `${displayName} <${address}>`
+			}
 		/>
 	);
 };
@@ -75,7 +81,7 @@ const AddressListItem: FC<{ email: string; displayName: string }> = ({
 const ADDRESSES_TO_SHOW = 3;
 
 const AddressList: FC<{
-	data: Address[];
+	data: z.infer<typeof Address>[];
 	prefixText: string;
 }> = ({ data, prefixText }) => {
 	const [showMore, setShowMore] = useState(false);
@@ -87,7 +93,7 @@ const AddressList: FC<{
 				data
 					.slice(0, showMore ? data.length : ADDRESSES_TO_SHOW)
 					.map((address, i) => (
-						<AddressListItem {...address} key={address.email + i} />
+						<AddressListItem {...address} key={address.address ?? "" + i} />
 					))}
 			{data && data.length > ADDRESSES_TO_SHOW && (
 				<Link
@@ -215,7 +221,7 @@ const UnMemoizedMessageOverview: FC = () => {
 							<>
 								{error && (
 									<Stack direction="column" sx={{ flex: 1 }} spacing={2}>
-										{error.response?.data?.message ?? "Unknown error"}
+										{errorToString(error)}
 									</Stack>
 								)}
 								{data && !error && (
@@ -238,9 +244,9 @@ const UnMemoizedMessageOverview: FC = () => {
 													<Skeleton />
 												) : (
 													`${new Date(
-														data.date
+														data.sent ?? 0
 													).toLocaleDateString()} - ${new Date(
-														data.date
+														data.sent ?? 0
 													).toLocaleTimeString()}`
 												)}
 											</Typography>
@@ -262,9 +268,9 @@ const UnMemoizedMessageOverview: FC = () => {
 											{data?.bcc && data?.bcc.length != 0 && (
 												<AddressList data={data.bcc} prefixText="BCC:" />
 											)}
-											{data?.attachments && data.attachments.length != 0 && (
+											{/* {data?.attachments && data.attachments.length != 0 && (
 												<AttachmentList attachments={data.attachments} />
-											)}
+											)} */}
 										</Stack>
 									</Stack>
 								)}
@@ -321,9 +327,10 @@ const UnMemoizedMessageOverview: FC = () => {
 										<MenuItem
 											onClick={() => {
 												setMessageActionsAnchor(null);
+
 												const webview = window.open(
 													"",
-													data.subject,
+													data.subject ?? "(No subject)",
 													"height=200,width=150"
 												);
 
@@ -356,7 +363,7 @@ const UnMemoizedMessageOverview: FC = () => {
 						sx={{
 							...scrollbarStyles(theme),
 							overflowY: "scroll",
-							p: data?.content?.type == "text" ? 2 : 0,
+							p: data?.content?.text && !data.content.html ? 2 : 0,
 							flexGrow: 1
 						}}
 					>
@@ -370,20 +377,16 @@ const UnMemoizedMessageOverview: FC = () => {
 						{!isFetching && data?.content && (
 							<>
 								{data.content.html && (
-									<>
-										{data.content.type == "text" && (
-											<Box
-												dangerouslySetInnerHTML={{
-													__html: data.content.html
-												}}
-											/>
-										)}
-										{data.content.type == "html" && (
-											<MessageDisplay content={data.content.html} />
-										)}
-									</>
+									<MessageDisplay content={data.content.html} />
 								)}
-								{!data.content.html && (
+								{!data.content.html && data.content.text && (
+									<Box
+										dangerouslySetInnerHTML={{
+											__html: data.content.text
+										}}
+									/>
+								)}
+								{!(data.content.html || data.content.text) && (
 									<Typography sx={{ m: 1 }}>No message content</Typography>
 								)}
 							</>

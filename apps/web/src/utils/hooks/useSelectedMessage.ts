@@ -1,22 +1,22 @@
-import useLocalStorageState from "use-local-storage-state";
+// import useLocalStorageState from "use-local-storage-state";
+import z from "zod";
 
+import useMailClient from "./useMailClient";
 import useSelectedStore from "./useSelected";
 import useUser from "./useUser";
 
 import { useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery } from "react-query";
 
-import { AxiosError } from "axios";
+import { Error } from "@models/error";
+import { Message } from "@models/message";
 
-import { ErrorResponse, FullIncomingMessage } from "@dust-mail/typings";
-
-import useFetch from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
 
 interface UseSelectedMessage {
-	selectedMessage: FullIncomingMessage | undefined;
-	selectedMessageError: AxiosError<ErrorResponse> | null;
+	selectedMessage: z.infer<typeof Message> | undefined;
+	selectedMessageError: z.infer<typeof Error> | null;
 	selectedMessageFetching: boolean;
 }
 
@@ -28,41 +28,51 @@ export const useSetSelectedMessage = (): ((id?: string) => void) => {
 	return setSelectedMessage;
 };
 
+const defaultMessage: (messageId: string) => z.infer<typeof Message> = (
+	messageId
+) => ({
+	id: messageId,
+	bcc: [],
+	cc: [],
+	to: [],
+	headers: {},
+	subject: null,
+	content: { html: null, text: null },
+	sent: Date.now(),
+	flags: ["Read"],
+	from: []
+});
+
 const useSelectedMessage = (): UseSelectedMessage => {
 	const { box: selectedBox } = useSelectedBox();
 
-	const fetcher = useFetch();
+	const mailClient = useMailClient();
 
 	const setFetching = useStore((state) => state.setFetching);
 
 	const user = useUser();
 
-	const [darkMode] = useLocalStorageState<boolean>("messageDarkMode", {
-		defaultValue: false
-	});
+	// const [darkMode] = useLocalStorageState<boolean>("messageDarkMode", {
+	// 	defaultValue: false
+	// });
 
-	const [showImages] = useLocalStorageState<boolean>("showImages", {
-		defaultValue: false
-	});
+	// const [showImages] = useLocalStorageState<boolean>("showImages", {
+	// 	defaultValue: false
+	// });
 
-	const messageID = useSelectedStore((state) => state.selectedMessage);
+	const messageId = useSelectedStore((state) => state.selectedMessage);
 
 	const { data, isFetching, error } = useQuery<
-		FullIncomingMessage | undefined,
-		AxiosError<ErrorResponse>
+		z.infer<typeof Message>,
+		z.infer<typeof Error>
 	>(
-		["message", messageID, selectedBox?.id, showImages, darkMode, user?.token],
+		["message", messageId, selectedBox?.id],
 		() => {
-			return fetcher.getMessage(
-				!showImages,
-				darkMode,
-				messageID,
-				selectedBox?.id
-			);
+			return mailClient.getMessage(messageId, selectedBox?.id);
 		},
 		{
 			enabled:
-				messageID != undefined &&
+				messageId != undefined &&
 				selectedBox?.id != undefined &&
 				user?.token != undefined
 		}
@@ -70,25 +80,16 @@ const useSelectedMessage = (): UseSelectedMessage => {
 
 	useEffect(() => setFetching(isFetching), [isFetching]);
 
-	const returnable = useMemo(
+	return useMemo(
 		() => ({
-			selectedMessage: messageID
-				? data ?? {
-						id: messageID,
-						box: { id: "" },
-						content: {},
-						date: new Date(),
-						flags: { seen: false },
-						from: []
-				  }
+			selectedMessage: messageId
+				? data ?? defaultMessage(messageId)
 				: undefined,
 			selectedMessageError: error,
 			selectedMessageFetching: isFetching
 		}),
 		[data, error, isFetching]
 	);
-
-	return returnable;
 };
 
 export default useSelectedMessage;

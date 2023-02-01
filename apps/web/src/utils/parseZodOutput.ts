@@ -4,12 +4,8 @@ const parseZodOutput = <T>(output: z.SafeParseReturnType<T, T>): T => {
 	if (!output.success) {
 		const errorList = output.error.format();
 
-		console.error(errorList);
-
 		throw {
-			message: `Error parsing server response: ${JSON.stringify(
-				errorList
-			).slice(0, 100)}...`,
+			message: `Error parsing server response: ${JSON.stringify(errorList)}`,
 			kind: "ZodError"
 		};
 	} else {

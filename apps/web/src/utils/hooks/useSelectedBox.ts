@@ -26,18 +26,26 @@ export const useSetSelectedBox = (): ((id?: string) => void) => {
 	return setSelectedBox;
 };
 
+const defaultBox: (boxId: string) => Box = (boxId) => ({
+	children: [],
+	counts: null,
+	delimiter: null,
+	id: boxId,
+	name: ""
+});
+
 const useSelectedBox = (): UseSelectedBox => {
 	const setSelectedBox = useSetSelectedBox();
 
-	const boxID = useSelectedStore((state) => state.selectedBox);
+	const boxId = useSelectedStore((state) => state.selectedBox);
 
 	const mailClient = useMailClient();
 
 	const { data, error } = useQuery<
 		z.infer<typeof MailBox>,
 		z.infer<typeof Error>
-	>(["box", boxID], () => mailClient.get(boxID), {
-		enabled: boxID != undefined
+	>(["box", boxId], () => mailClient.get(boxId), {
+		enabled: boxId != undefined
 	});
 
 	const selectedBox: UseSelectedBox = useMemo(() => {
@@ -46,7 +54,11 @@ const useSelectedBox = (): UseSelectedBox => {
 			: undefined;
 
 		return {
-			box: data ? { ...data, icon: primaryBoxData?.icon } : undefined,
+			box: boxId
+				? data
+					? { ...data, icon: primaryBoxData?.icon }
+					: defaultBox(boxId)
+				: undefined,
 			error: error ? errorToString(error) : undefined,
 			setSelectedBox
 		};

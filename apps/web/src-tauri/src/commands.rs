@@ -13,6 +13,8 @@ use crate::{
     },
 };
 
+use futures::future::join_all;
+
 use crate::{base64, files::CacheFile};
 
 use tauri::{async_runtime::spawn_blocking, State};
@@ -35,30 +37,47 @@ pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>)
     }
 
     // Try to get a session for all of the given login options
+    let mut login_threads = Vec::new();
+
     for option in options.clone() {
         let login_thread = spawn_blocking(move || try_login(&option));
 
-        login_thread.await.unwrap()?
+        login_threads.push(login_thread);
     }
 
-    // Serialize the given options to json
-    let options_json = parse::to_json(&options)?;
+    let login_results = join_all(login_threads).await;
 
-    // Generate a key and nonce to sign the options
-    let key = cryptography::generate_key();
-    let nonce = cryptography::generate_nonce();
+    for result in login_results {
+        match result.unwrap() {
+            Ok(_) => {}
+            Err(err) => return Err(err),
+        }
+    }
 
-    // Crypographically sign the login options.
-    let encrypted = cryptography::encrypt(&options_json, &key, &nonce)?;
+    let generate_token = spawn_blocking(move || {
+        // Serialize the given options to json
+        let options_json = parse::to_json(&options)?;
 
-    // Convert the key and nonce to base64
-    let nonce_base64 = base64::encode(&nonce);
-    let key_base64 = base64::encode(&key);
+        // Generate a key and nonce to sign the options
+        let key = cryptography::generate_key();
+        let nonce = cryptography::generate_nonce();
 
-    let cache = CacheFile::from_session_name(&nonce_base64);
+        // Crypographically sign the login options.
+        let encrypted = cryptography::encrypt(&options_json, &key, &nonce)?;
 
-    // Write to file cache so the credentials are still available when the program restarts.
-    cache.write(&encrypted)?;
+        // Convert the key and nonce to base64
+        let nonce_base64 = base64::encode(&nonce);
+        let key_base64 = base64::encode(&key);
+
+        let cache = CacheFile::from_session_name(&nonce_base64);
+
+        // Write to file cache so the credentials are still available when the program restarts.
+        cache.write(&encrypted)?;
+
+        Ok((nonce_base64, key_base64, encrypted))
+    });
+
+    let (nonce_base64, key_base64, encrypted) = generate_token.await.unwrap()?;
 
     // Get a mutable lock on the sessions
     let mut sessions_lock = sessions.map().lock().unwrap();
@@ -66,8 +85,10 @@ pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>)
     // Insert the encrypted options into memory using the nonce as an identifier so we can retrieve it later.
     sessions_lock.insert(nonce_base64.clone(), encrypted);
 
+    let token = format!("{}:{}", nonce_base64, key_base64);
+
     // Return the key and nonce to the frontend so it can verify its session later.
-    Ok(format!("{}:{}", nonce_base64, key_base64))
+    Ok(token)
 }
 
 #[tauri::command(async)]

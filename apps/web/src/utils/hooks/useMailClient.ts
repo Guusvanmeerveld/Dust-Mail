@@ -9,6 +9,7 @@ import { MailConfig } from "@models/config";
 import { Error } from "@models/error";
 import { LoginOptions } from "@models/login";
 import { MailBox, MailBoxList } from "@models/mailbox";
+import { Message } from "@models/message";
 import { Preview } from "@models/preview";
 
 import MailClient from "@interfaces/client";
@@ -100,15 +101,11 @@ const useMailClient = (): MailClient => {
 			if (isTauri) {
 				return invoke("get", { token, boxId })
 					.catch((error: unknown) => {
-						console.log(error);
-
 						const output = Error.safeParse(error);
 
 						throw parseZodOutput(output);
 					})
 					.then((data: unknown) => {
-						console.log(data);
-
 						const output = MailBox.safeParse(data);
 
 						return parseZodOutput(output);
@@ -151,6 +148,8 @@ const useMailClient = (): MailClient => {
 			if (isTauri) {
 				return invoke("messages", { token, boxId, start, end })
 					.catch((error: unknown) => {
+						console.error(error);
+
 						const output = Error.safeParse(error);
 
 						throw parseZodOutput(output);
@@ -159,6 +158,30 @@ const useMailClient = (): MailClient => {
 						console.log(data);
 
 						const output = Preview.array().safeParse(data);
+
+						return parseZodOutput(output);
+					});
+			}
+
+			throw NotImplemented;
+		},
+		async getMessage(messageId, boxId) {
+			const token = user?.token;
+
+			if (!token) throw NotLoggedIn;
+
+			if (!boxId || !messageId) throw MissingRequiredParam;
+
+			if (isTauri) {
+				return invoke("get_message", { token, boxId, messageId })
+					.catch((error: unknown) => {
+						console.log(error);
+						const output = Error.safeParse(error);
+
+						throw parseZodOutput(output);
+					})
+					.then((data: unknown) => {
+						const output = Message.safeParse(data);
 
 						return parseZodOutput(output);
 					});

@@ -111,12 +111,12 @@ impl<S: Read + Write> ImapSession<S> {
 
     /// Given an array of fetches that is expected to have length 1, return that one fetch and error if it has more or less than 1 items.
     fn get_item_from_fetch_else_err<'a>(fetched: &'a Vec<Fetch>) -> types::Result<&'a Fetch> {
-        if fetched.len() > 1 {
-            return Err(types::Error::new(
-                types::ErrorKind::UnexpectedBehavior,
-                "Got multiple messages when fetching a single message",
-            ));
-        }
+        // if fetched.len() > 1 {
+        //     return Err(types::Error::new(
+        //         types::ErrorKind::UnexpectedBehavior,
+        //         "Got multiple messages when fetching a single message",
+        //     ));
+        // }
 
         if fetched.len() == 0 {
             return Err(types::Error::new(
@@ -422,7 +422,7 @@ mod tests {
         let box_list = session.box_list().unwrap();
 
         for mailbox in box_list {
-            println!("{}", mailbox.name());
+            println!("{}", mailbox.id());
         }
 
         session.logout().unwrap();

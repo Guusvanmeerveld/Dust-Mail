@@ -125,7 +125,7 @@ const UnMemoizedAvatar: FC = () => {
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
 
-	const avatar = useAvatar(user?.username);
+	const avatar = useAvatar(user?.username ?? null);
 
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer

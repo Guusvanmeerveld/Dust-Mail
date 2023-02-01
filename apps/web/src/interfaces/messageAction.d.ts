@@ -1,7 +1,9 @@
-import { IncomingMessage } from "@dust-mail/typings";
+import z from "zod";
+
+import { Message } from "@models/message";
 
 export default interface MessageAction {
 	name: string;
 	icon: JSX.Element;
-	handler: (message: IncomingMessage) => void;
+	handler: (message: z.infer<typeof Message>) => void;
 }

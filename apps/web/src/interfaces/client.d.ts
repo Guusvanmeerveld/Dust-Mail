@@ -19,6 +19,6 @@ export default interface MailClient {
 	) => Promise<z.infer<typeof Preview>>;
 	getMessage: (
 		messageId?: string,
-		boxId: string
+		boxId?: string
 	) => Promise<z.infer<typeof Message>>;
 }
