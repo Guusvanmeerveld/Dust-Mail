@@ -39,7 +39,7 @@ jobs:
 
       - name: Fetch crates
         working-directory: ./packages/pop3
-        run: cargo fetch --offline
+        run: cargo fetch --locked
 
       - name: Start Greenmail
         run: docker-compose -f packages/pop3/docker-compose.test.yml up -d
