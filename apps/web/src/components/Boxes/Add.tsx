@@ -24,11 +24,12 @@ import MailBox from "@interfaces/box";
 import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
 
+import useBoxes from "@utils/hooks/useBoxes";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import useUser, { useAddBox } from "@utils/hooks/useUser";
+import useUser from "@utils/hooks/useUser";
 
 import FolderTree, {
 	CheckedBoxesContext,
@@ -65,7 +66,7 @@ const UnMemoizedAddBox: FC = () => {
 	const theme = useTheme();
 
 	const user = useUser();
-	const addBox = useAddBox();
+	// const addBox = useAddBox();
 
 	const showSnackbar = useSnackbar();
 
@@ -75,9 +76,10 @@ const UnMemoizedAddBox: FC = () => {
 	const setFetching = useStore((state) => state.setFetching);
 
 	const unifiedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
-	const addUnifiedBox = checkedBoxesStore((state) => state.setChecked);
 
 	const fetcher = useHttpClient();
+
+	const { boxes, error: boxesError, findBox } = useBoxes();
 
 	const [error, setError] = useState<string>();
 
@@ -106,6 +108,10 @@ const UnMemoizedAddBox: FC = () => {
 	);
 
 	useEffect(() => {
+		if (boxesError) setError(boxesError);
+	}, [boxesError]);
+
+	useEffect(() => {
 		if (!showAddBox) {
 			setFolderType("none");
 			setParentFolder(undefined);
@@ -120,32 +126,28 @@ const UnMemoizedAddBox: FC = () => {
 
 	const checkAllBoxes = (checked: boolean): void => {
 		if (!user) return;
-
-		const ids = user?.boxes.flattened.map((box) => box.id);
-
-		ids.forEach((id) => addUnifiedBox(id, checked));
 	};
 
 	const createBox = async (box: MailBox): Promise<void> => {
-		addBox(box);
+		// addBox(box);
 
-		if (!box.unifies) {
-			setFetching(true);
+		// if (!box.unifies) {
+		setFetching(true);
 
-			await fetcher
-				.createBox(box.id)
-				.then(() => {
-					showSnackbar(`Folder '${box.name}' created`);
-					setShowAddBox(false);
-				})
-				.catch((error: AxiosError<{ message: string }>) => {
-					const message = error.response?.data.message;
+		await fetcher
+			.createBox(box.id)
+			.then(() => {
+				showSnackbar(`Folder '${box.name}' created`);
+				setShowAddBox(false);
+			})
+			.catch((error: AxiosError<{ message: string }>) => {
+				const message = error.response?.data.message;
 
-					if (message) setError(message);
-				});
+				if (message) setError(message);
+			});
 
-			setFetching(false);
-		}
+		setFetching(false);
+		// }
 	};
 
 	return (
@@ -161,154 +163,157 @@ const UnMemoizedAddBox: FC = () => {
 						overflowY: "scroll"
 					}}
 				>
-					<Typography gutterBottom variant="h4">
-						Create a new folder
-					</Typography>
+					<>
+						<Typography gutterBottom variant="h4">
+							Create a new folder
+						</Typography>
 
-					<FormControl fullWidth>
-						<InputLabel id="folder-type-label">Folder type</InputLabel>
-						<Select
-							labelId="folder-type-label"
-							id="folder-type"
-							value={folderType}
-							label="Folder type"
-							onChange={(e) => setFolderType(e.target.value as FolderType)}
-						>
-							<MenuItem value="none">None</MenuItem>
-							<MenuItem value="unified">
-								Unified
-								<Typography
-									sx={{
-										ml: 2,
-										display: "inline",
-										color: theme.palette.text.secondary
-									}}
-								>
-									Create a (local) folder that unifies multiple folders
-								</Typography>
-							</MenuItem>
-							<MenuItem value="normal">
-								Normal
-								<Typography
-									sx={{
-										ml: 2,
-										display: "inline",
-										color: theme.palette.text.secondary
-									}}
-								>
-									Create a new folder on the server
-								</Typography>
-							</MenuItem>
-						</Select>
-					</FormControl>
-
-					{folderType != "none" && (
-						<TextField
-							fullWidth
-							value={folderName}
-							onChange={(e) => setFolderName(e.target.value)}
-							label="Folder name"
-						/>
-					)}
-
-					{folderType != "none" && (
 						<FormControl fullWidth>
-							<InputLabel id="parent-folder-label">Parent folder</InputLabel>
+							<InputLabel id="folder-type-label">Folder type</InputLabel>
 							<Select
-								labelId="parent-folder-label"
-								id="parent-folder"
-								value={parentFolder?.id ?? "none"}
-								label="Parent folder"
-								onChange={(e) => {
-									const parentFolder = user?.boxes.flattened.find(
-										(box) => box.id == e.target.value
-									);
-
-									setParentFolder(parentFolder);
-								}}
-								MenuProps={{
-									sx: {
-										maxHeight: 300
-									}
-								}}
+								labelId="folder-type-label"
+								id="folder-type"
+								value={folderType}
+								label="Folder type"
+								onChange={(e) => setFolderType(e.target.value as FolderType)}
 							>
 								<MenuItem value="none">None</MenuItem>
-								<MenuItem value="root">Top level</MenuItem>
-								{user?.boxes.flattened.map((box, i) => (
+								<MenuItem value="unified">
+									Unified
+									<Typography
+										sx={{
+											ml: 2,
+											display: "inline",
+											color: theme.palette.text.secondary
+										}}
+									>
+										Create a (local) folder that unifies multiple folders
+									</Typography>
+								</MenuItem>
+								<MenuItem value="normal">
+									Normal
+									<Typography
+										sx={{
+											ml: 2,
+											display: "inline",
+											color: theme.palette.text.secondary
+										}}
+									>
+										Create a new folder on the server
+									</Typography>
+								</MenuItem>
+							</Select>
+						</FormControl>
+
+						{folderType != "none" && (
+							<TextField
+								fullWidth
+								value={folderName}
+								onChange={(e) => setFolderName(e.target.value)}
+								label="Folder name"
+							/>
+						)}
+
+						{folderType != "none" && (
+							<FormControl fullWidth>
+								<InputLabel id="parent-folder-label">Parent folder</InputLabel>
+								<Select
+									labelId="parent-folder-label"
+									id="parent-folder"
+									value={parentFolder?.id ?? "none"}
+									label="Parent folder"
+									onChange={(e) => {
+										const parentFolder = findBox(e.target.value);
+
+										setParentFolder(parentFolder ?? undefined);
+									}}
+									MenuProps={{
+										sx: {
+											maxHeight: 300
+										}
+									}}
+								>
+									<MenuItem value="none">None</MenuItem>
+									<MenuItem value="root">Top level</MenuItem>
+									{/* TODO: Fix this */}
+									{/* {user?.boxes.flattened.map((box, i) => (
 									<MenuItem key={box.id + i} value={box.id}>
 										{box.id.split(box.delimiter).join(" / ")}
 									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
-					)}
+								))} */}
+								</Select>
+							</FormControl>
+						)}
 
-					{folderType == "unified" && user?.boxes.nested && (
-						<>
-							<Stack direction="column" justifyContent="left" spacing={2}>
-								<Typography variant="h5">
-									Select the folders you want to be unified
-								</Typography>
+						{folderType == "unified" && boxes && (
+							<>
+								<Stack direction="column" justifyContent="left" spacing={2}>
+									<Typography variant="h5">
+										Select the folders you want to be unified
+									</Typography>
 
-								<Stack direction="row" alignItems="center" spacing={2}>
-									<Button
-										onClick={() => checkAllBoxes(true)}
-										variant="outlined"
-										startIcon={<SelectAllIcon />}
-									>
-										Select all folders
-									</Button>
+									<Stack direction="row" alignItems="center" spacing={2}>
+										<Button
+											onClick={() => checkAllBoxes(true)}
+											variant="outlined"
+											startIcon={<SelectAllIcon />}
+										>
+											Select all folders
+										</Button>
 
-									<Button
-										onClick={() => checkAllBoxes(false)}
-										variant="outlined"
-										startIcon={<DeselectAllIcon />}
-									>
-										Deselect all folders
-									</Button>
+										<Button
+											onClick={() => checkAllBoxes(false)}
+											variant="outlined"
+											startIcon={<DeselectAllIcon />}
+										>
+											Deselect all folders
+										</Button>
+									</Stack>
 								</Stack>
-							</Stack>
-							<Box
-								sx={{
-									...scrollbarSx,
-									maxHeight: "15rem",
-									overflowY: "scroll"
-								}}
-							>
-								<CheckedBoxesContext.Provider value={checkedBoxesStore}>
-									<FolderTree showCheckBox boxes={user.boxes.nested} />
-								</CheckedBoxesContext.Provider>
-							</Box>
-						</>
-					)}
+								<Box
+									sx={{
+										...scrollbarSx,
+										maxHeight: "15rem",
+										overflowY: "scroll"
+									}}
+								>
+									<CheckedBoxesContext.Provider value={checkedBoxesStore}>
+										<FolderTree showCheckBox boxes={boxes} />
+									</CheckedBoxesContext.Provider>
+								</Box>
+							</>
+						)}
 
-					<Button
-						disabled={
-							folderType == "none" ||
-							folderName == "" ||
-							(folderType == "unified" && checkedBoxes.length == 0)
-						}
-						onClick={() =>
-							createBox({
-								name: folderName,
-								id:
-									(parentFolder
-										? parentFolder.id + parentFolder.delimiter
-										: "") + folderName,
-								delimiter: parentFolder?.delimiter ?? ".",
-								unreadCount: 0,
-								unifies:
-									folderType == "unified"
-										? checkedBoxes.map((box) => box[0])
-										: undefined
-							})
-						}
-						variant="contained"
-					>
-						Create
-					</Button>
+						<Button
+							disabled={
+								folderType == "none" ||
+								folderName == "" ||
+								(folderType == "unified" && checkedBoxes.length == 0)
+							}
+							onClick={() =>
+								createBox({
+									name: folderName,
+									id:
+										(parentFolder
+											? parentFolder.id + parentFolder.delimiter
+											: "") + folderName,
+									delimiter: parentFolder?.delimiter ?? ".",
+									children: [],
+									counts: null
+									// TODO: Look at unified mailboxes
+									// unifies:
+									// 	folderType == "unified"
+									// 		? checkedBoxes.map((box) => box[0])
+									// 		: undefined
+								})
+							}
+							variant="contained"
+						>
+							Create
+						</Button>
 
-					{error && <Alert severity="error">{error}</Alert>}
+						{error && <Alert severity="error">{error}</Alert>}
+					</>
 				</Stack>
 			</Modal>
 		</>

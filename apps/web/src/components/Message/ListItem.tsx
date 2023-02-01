@@ -1,13 +1,13 @@
-import create from "zustand";
+import z from "zod";
 
 import { FC, memo, MouseEvent, useMemo, useState } from "react";
-
-import { IncomingMessage } from "@dust-mail/typings";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
+
+import { Preview } from "@models/preview";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import { useSetSelectedMessage } from "@utils/hooks/useSelectedMessage";
@@ -36,7 +36,7 @@ import useTheme from "@utils/hooks/useTheme";
 // }));
 
 const UnMemoizedMessageListItem: FC<{
-	message: IncomingMessage;
+	message: z.infer<typeof Preview>;
 	selectedMessage: boolean;
 	setRightClickMenuAnchor: (anchor: {
 		x: number;
@@ -48,16 +48,14 @@ const UnMemoizedMessageListItem: FC<{
 
 	const setSelectedMessage = useSetSelectedMessage();
 
-	const [unSeen, setUnSeen] = useState(!message.flags.seen);
+	const [unSeen, setUnSeen] = useState(!message.flags.includes("Read"));
 
 	const from = useMemo(
-		() => message.from.map((from) => from.displayName || from.email).join(", "),
+		() => message.from.map((from) => from.name || from.address).join(", "),
 		[message]
 	);
 
-	const avatar = useAvatar(
-		from.length != 0 ? message.from[0].email : undefined
-	);
+	const avatar = useAvatar(from.length != 0 ? message.from[0].address : null);
 
 	const handleClick = useMemo(
 		() => (): void => {
@@ -132,14 +130,14 @@ const UnMemoizedMessageListItem: FC<{
 					<Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
 						<Typography noWrap textOverflow="ellipsis" variant="body2">
 							{from || "(Unknown sender)"} •{" "}
-							{new Date(message.date).toLocaleDateString()}
+							{new Date((message.sent ?? 0) * 1000).toLocaleDateString()}
 						</Typography>
 
 						<Typography
 							noWrap
 							textOverflow="ellipsis"
 							variant="h6"
-							sx={{ fontWeight: !message.flags.seen ? "bold" : null }}
+							sx={{ fontWeight: unSeen ? "bold" : null }}
 						>
 							{!message.subject ||
 							(message.subject && message.subject.length == 0)

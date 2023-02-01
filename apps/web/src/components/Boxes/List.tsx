@@ -2,6 +2,7 @@ import create from "zustand";
 
 import { useEffect, useMemo, memo, FC, useState, MouseEvent } from "react";
 
+import Box from "@mui/material/Box";
 // import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -11,22 +12,24 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 
 import AddIcon from "@mui/icons-material/Add";
 import CheckBoxIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import MarkAsReadIcon from "@mui/icons-material/DoneAll";
 import RenameIcon from "@mui/icons-material/TextFields";
 
 import MailBox from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
 import useAddBox from "@utils/hooks/useAddBox";
+import useBoxes from "@utils/hooks/useBoxes";
 import useDeleteBox from "@utils/hooks/useDeleteBox";
 import useRenameBox from "@utils/hooks/useRenameBox";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
-import useUser from "@utils/hooks/useUser";
 
 import FolderTree, {
 	FolderTreeProps,
@@ -162,6 +165,11 @@ const UnMemoizedActionBar: FC<{
 			)}
 			{showSelector && (
 				<>
+					<IconButton onClick={() => setShowSelector(false)}>
+						<Tooltip title="Mark as read">
+							<MarkAsReadIcon />
+						</Tooltip>
+					</IconButton>
 					<IconButton
 						onClick={() => {
 							if (selectedBoxesArray.length > 0) {
@@ -189,9 +197,13 @@ const ActionBar = memo(UnMemoizedActionBar);
 const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	clickOnBox
 }) => {
-	const user = useUser();
+	const {
+		box: selectedBox,
+		error: selectedBoxError,
+		setSelectedBox
+	} = useSelectedBox();
 
-	const [selectedBox, setSelectedBox] = useSelectedBox();
+	const { boxes, error: boxesError } = useBoxes();
 
 	const [showSelector, setShowSelector] = useState(false);
 
@@ -236,25 +248,24 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 	// Find all of the primary boxes and sort them alphabetically
 	const primaryBoxes: MailBox[] | undefined = useMemo(
 		() =>
-			user?.boxes.nested
-				?.filter((box) => findBoxInPrimaryBoxesList(box.id))
-				.sort((a, b) => a.id.localeCompare(b.id))
+			boxes
+				?.filter((box) => !!findBoxInPrimaryBoxesList(box.id))
 				.map((box) => {
 					const found = findBoxInPrimaryBoxesList(box.id);
 
-					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-					return { ...box, ...found! };
-				}),
-		[user?.boxes.nested]
+					return { ...box, ...found };
+				})
+				.sort((a, b) => a.id.localeCompare(b.id)),
+		[boxes]
 	);
 
 	// Find all of the other boxes and sort them alphabetically
 	const otherBoxes: MailBox[] | undefined = useMemo(
 		() =>
-			user?.boxes.nested
+			boxes
 				?.filter((box) => !findBoxInPrimaryBoxesList(box.id))
 				.sort((a, b) => a.id.localeCompare(b.id)),
-		[user?.boxes.nested]
+		[boxes]
 	);
 
 	return (
@@ -268,6 +279,19 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 				showSelector={showSelector}
 				setShowSelector={setShowSelector}
 			/>
+			{(boxesError || selectedBoxError) && (
+				<>
+					<Divider />
+					<Box sx={{ ml: 2, mt: 2 }}>
+						<>
+							{boxesError && <Typography variant="h6">{boxesError}</Typography>}
+							{selectedBoxError && (
+								<Typography variant="h6">{selectedBoxError}</Typography>
+							)}
+						</>
+					</Box>
+				</>
+			)}
 			<CheckedBoxesContext.Provider value={checkedBoxesStore}>
 				{(primaryBoxes || otherBoxes) && <Divider />}
 				{primaryBoxes && (
@@ -277,6 +301,7 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 						boxes={primaryBoxes}
 					/>
 				)}
+
 				{primaryBoxes && otherBoxes && otherBoxes.length != 0 && <Divider />}
 				{otherBoxes && otherBoxes.length != 0 && (
 					<FolderTree

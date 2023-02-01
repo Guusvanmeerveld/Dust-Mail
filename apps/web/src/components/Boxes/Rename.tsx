@@ -19,7 +19,6 @@ import Box from "@interfaces/box";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
-import { useModifyBox } from "@utils/hooks/useUser";
 
 interface RenameBoxStore {
 	boxToRename: Box | undefined;
@@ -36,8 +35,6 @@ const UnMemoizedRenameBox: FC = () => {
 	const setShowRenameBoxDialog = useStore(
 		(state) => state.setShowRenameBoxDialog
 	);
-
-	const modifyBox = useModifyBox();
 
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -60,13 +57,17 @@ const UnMemoizedRenameBox: FC = () => {
 	const renameBox = async (): Promise<void> => {
 		if (!boxToRename || !newName) return;
 
-		const prefix = boxToRename.id.split(boxToRename.delimiter);
+		const prefix = boxToRename.delimiter
+			? boxToRename.id.split(boxToRename.delimiter)
+			: [boxToRename.id];
 
 		prefix.pop();
 
 		prefix.push(newName);
 
-		const newBoxID = prefix.join(boxToRename.delimiter);
+		const newBoxID = boxToRename.delimiter
+			? prefix.join(boxToRename.delimiter)
+			: prefix[0];
 
 		setFetching(true);
 
@@ -75,9 +76,9 @@ const UnMemoizedRenameBox: FC = () => {
 			.then(() => {
 				openSnackbar(`Folder '${boxToRename.name}' renamed to '${newName}'`);
 
-				const newBox: Box = { ...boxToRename, id: newBoxID, name: newName };
+				// const newBox: Box = { ...boxToRename, id: newBoxID, name: newName };
 
-				modifyBox(boxToRename.id, newBox);
+				// modifyBox(boxToRename.id, newBox);
 
 				handleClose();
 			})

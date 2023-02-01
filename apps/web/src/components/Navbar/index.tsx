@@ -12,10 +12,10 @@ import Typography from "@mui/material/Typography";
 import MenuIcon from "@mui/icons-material/Menu";
 import NavigateNext from "@mui/icons-material/NavigateNext";
 
+import useBoxes from "@utils/hooks/useBoxes";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import useUser from "@utils/hooks/useUser";
 
 import Avatar from "@components/Navbar/Avatar";
 import Drawer from "@components/Navbar/Drawer";
@@ -23,7 +23,9 @@ import Drawer from "@components/Navbar/Drawer";
 const UnMemoizedBreadCrumbs: FC = () => {
 	const theme = useTheme();
 
-	const [selectedBox, setSelectedBox] = useSelectedBox();
+	const { box: selectedBox, setSelectedBox } = useSelectedBox();
+
+	const { boxes, findBox } = useBoxes();
 
 	const secondaryColor = useMemo(
 		() =>
@@ -41,18 +43,21 @@ const UnMemoizedBreadCrumbs: FC = () => {
 		[theme.palette]
 	);
 
-	const user = useUser();
-
 	const breadcrumbs = useMemo(() => {
-		const boxIDSplit = selectedBox?.id.split(selectedBox.delimiter);
+		if (!selectedBox) return <></>;
 
-		return boxIDSplit?.map((crumb, i) => {
-			const boxID = boxIDSplit.slice(0, i + 1).join(selectedBox?.delimiter);
-			const boxName = user?.boxes.flattened?.find(
-				(box) => box.id == boxID
-			)?.name;
+		const boxIDSplit = selectedBox.delimiter
+			? selectedBox.id.split(selectedBox.delimiter)
+			: [selectedBox.id];
 
-			const isSelectedBox = boxID == selectedBox?.id;
+		return boxIDSplit.map((crumb, i) => {
+			const boxID: string = selectedBox?.delimiter
+				? boxIDSplit.slice(0, i + 1).join(selectedBox.delimiter)
+				: boxIDSplit[0];
+
+			const boxName = boxes ? findBox(boxID)?.name : undefined;
+
+			const isSelectedBox = boxID == selectedBox.id;
 
 			return (
 				<Typography

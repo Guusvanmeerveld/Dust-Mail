@@ -29,11 +29,9 @@ export const useSetSelectedMessage = (): ((id?: string) => void) => {
 };
 
 const useSelectedMessage = (): UseSelectedMessage => {
-	const [selectedBox] = useSelectedBox();
+	const { box: selectedBox } = useSelectedBox();
 
 	const fetcher = useFetch();
-
-	const queryClient = useQueryClient();
 
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -53,29 +51,20 @@ const useSelectedMessage = (): UseSelectedMessage => {
 		FullIncomingMessage | undefined,
 		AxiosError<ErrorResponse>
 	>(
-		[
-			"message",
-			messageID,
-			selectedBox?.id,
-			showImages,
-			darkMode,
-			user?.accessToken?.body
-		],
+		["message", messageID, selectedBox?.id, showImages, darkMode, user?.token],
 		() => {
-			if (!user?.accessToken?.body) return undefined;
-			else
-				return fetcher.getMessage(
-					!showImages,
-					darkMode,
-					messageID,
-					selectedBox?.id
-				);
+			return fetcher.getMessage(
+				!showImages,
+				darkMode,
+				messageID,
+				selectedBox?.id
+			);
 		},
 		{
-			enabled: messageID != undefined,
-			onSuccess: (data) => {
-				queryClient.invalidateQueries(["unreadCount", data?.box.id]);
-			}
+			enabled:
+				messageID != undefined &&
+				selectedBox?.id != undefined &&
+				user?.token != undefined
 		}
 	);
 

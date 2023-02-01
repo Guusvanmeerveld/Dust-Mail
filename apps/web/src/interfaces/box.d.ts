@@ -1,9 +1,7 @@
-import { BoxResponse } from "@dust-mail/typings";
+import z from "zod";
 
-export default interface Box extends BoxResponse {
-	icon?: JSX.Element;
-	children?: Box[];
-	unifies?: string[];
-	unreadCount: number;
-	delimiter: string;
-}
+import { MailBox as MailBoxModel } from "@models/mailbox";
+
+type MailBox = z.infer<typeof MailBoxModel> & { icon?: JSX.Element };
+
+export default MailBox;

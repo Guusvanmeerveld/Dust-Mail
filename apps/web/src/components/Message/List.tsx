@@ -1,3 +1,5 @@
+import z from "zod";
+
 import {
 	useEffect,
 	useRef,
@@ -9,9 +11,7 @@ import {
 } from "react";
 import { useInfiniteQuery } from "react-query";
 
-import { AxiosError } from "axios";
-
-import { IncomingMessage, ErrorResponse } from "@dust-mail/typings";
+import { IncomingMessage } from "@dust-mail/typings";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -36,12 +36,16 @@ import SearchIcon from "@mui/icons-material/Search";
 
 import { messageCountForPage } from "@src/constants";
 
-import useFetch from "@utils/hooks/useFetch";
+import { Error } from "@models/error";
+import { Preview } from "@models/preview";
+
+import useMailClient from "@utils/hooks/useMailClient";
 import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 import useUser from "@utils/hooks/useUser";
+import { errorToString } from "@utils/parseError";
 
 import MessageListItem from "@components/Message/ListItem";
 
@@ -143,7 +147,7 @@ const UnMemoizedActionBar: FC<{
 const ActionBar = memo(UnMemoizedActionBar);
 
 const UnMemoizedMessageListItems: FC<{
-	data?: IncomingMessage[][];
+	data?: z.infer<typeof Preview>[][];
 	selectedMessageID?: string;
 	setRightClickMenuAnchor: (anchor: RightClickMenuAnchor) => void;
 }> = ({ data, selectedMessageID, setRightClickMenuAnchor }) => {
@@ -171,13 +175,13 @@ const UnMemoizedMessageListItems: FC<{
 const MessageListItems = memo(UnMemoizedMessageListItems);
 
 const UnMemoizedMessageList: FC = () => {
-	const fetcher = useFetch();
+	const mailClient = useMailClient();
 
 	const setFetching = useStore((state) => state.setFetching);
 
 	const [filter, setFilter] = useState("");
 
-	const [selectedBox] = useSelectedBox();
+	const { box: selectedBox } = useSelectedBox();
 	const { selectedMessage } = useSelectedMessage();
 
 	const user = useUser();
@@ -190,16 +194,16 @@ const UnMemoizedMessageList: FC = () => {
 		isFetching,
 		isFetchingNextPage,
 		refetch
-	} = useInfiniteQuery<IncomingMessage[], AxiosError<ErrorResponse>>(
-		["box", selectedBox?.id, filter, user?.accessToken?.body],
+	} = useInfiniteQuery<z.infer<typeof Preview>[], z.infer<typeof Error>>(
+		["box", selectedBox?.id, filter],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];
 			}
 
-			if (!selectedBox?.id || !user?.accessToken?.body) return [];
+			if (!selectedBox?.id) return [];
 
-			return fetcher.getBox(selectedBox.id, pageParam, filter);
+			return mailClient.messageList(pageParam, selectedBox.id);
 		},
 		{
 			getNextPageParam: (lastPage, pages) => {
@@ -209,7 +213,7 @@ const UnMemoizedMessageList: FC = () => {
 
 				return pages.length;
 			},
-			enabled: selectedBox?.id != undefined
+			enabled: selectedBox?.id != undefined && user?.token != undefined
 		}
 	);
 
@@ -307,9 +311,9 @@ const UnMemoizedMessageList: FC = () => {
 				</Typography>
 			)}
 
-			{error && error.response?.data && (
+			{error && (
 				<Box sx={{ textAlign: "center", mt: 1, mx: 1 }}>
-					<Typography variant="h6">{error.response.data.message}</Typography>
+					<Typography variant="h6">{errorToString(error)}</Typography>
 
 					<Button onClick={() => refetch()}>Retry</Button>
 				</Box>

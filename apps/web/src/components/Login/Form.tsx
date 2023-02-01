@@ -1,4 +1,4 @@
-import create from "zustand";
+import z from "zod";
 
 import React, {
 	useEffect,
@@ -7,10 +7,9 @@ import React, {
 	memo,
 	FormEvent,
 	useMemo,
-	FormEventHandler
+	FormEventHandler,
+	useCallback
 } from "react";
-
-import { ErrorResponse, GatewayError } from "@dust-mail/typings";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -26,6 +25,8 @@ import Modal from "@mui/material/Modal";
 import OutlinedInput from "@mui/material/OutlinedInput";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -33,62 +34,41 @@ import Typography from "@mui/material/Typography";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import AdvancedLogin, { SecurityType, ServerType } from "@interfaces/login";
+import { Error as ErrorModel } from "@models/error";
+import {
+	incomingMailServerTypeList,
+	LoginOptions,
+	outgoingMailServerTypeList
+} from "@models/login";
+
+import MultiServerLoginOptions, {
+	ConnectionSecurity,
+	IncomingMailServerType,
+	MailServerType,
+	OutgoingMailServerType,
+	ServerType
+} from "@interfaces/login";
 
 import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
 
-import detectProviderFromEmail from "@utils/detectProviderFromEmail";
 import { useMailLogin } from "@utils/hooks/useLogin";
-import {
-	useGoogleOAuthLink,
-	useTauriOAuth,
-	useWebOAuth
-} from "@utils/hooks/useOAuth";
+import useMailClient from "@utils/hooks/useMailClient";
+import useMultiServerLoginStore from "@utils/hooks/useMultiServerLoginStore";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
+import { errorIsOfErrorKind, errorToString } from "@utils/parseError";
 
-type Store = Record<ServerType, AdvancedLogin & { error?: ErrorResponse }> & {
-	setProperty: (
-		type: ServerType
-	) => (
-		property: keyof (AdvancedLogin & { error?: ErrorResponse })
-	) => (newValue?: string | number | SecurityType | ErrorResponse) => void;
-};
-
-const defaultSettings: AdvancedLogin & { error?: ErrorResponse } = {
-	security: "TLS",
-	password: "",
-	username: "",
-	server: ""
-};
-
-const createLoginSettingsStore = create<Store>((set) => ({
-	incoming: defaultSettings,
-	outgoing: defaultSettings,
-	setProperty: (type) => (property) => (newValue) =>
-		set((state) => ({ [type]: { ...state[type], [property]: newValue } }))
-}));
-
-/**
- * Creates two input fields for the username and password
- */
 const Credentials: FC<{
-	error?: ErrorResponse;
-	required?: boolean;
+	setError: (error?: string) => void;
 	identifier: string;
-	setError: (error?: ErrorResponse) => void;
 	password: string;
-	showPasswordField?: boolean;
 	setPassword: (password: string) => void;
 	username: string;
 	setUsername: (username: string) => void;
 }> = ({
 	identifier,
-	error,
-	required,
 	setError,
-	showPasswordField,
 	setPassword,
 	password,
 	setUsername,
@@ -99,88 +79,113 @@ const Credentials: FC<{
 	return (
 		<>
 			<TextField
-				required={required}
+				required
 				onChange={(e) => {
 					setError(undefined);
 					setUsername(e.currentTarget.value);
 				}}
 				id={"username-" + identifier}
-				error={error && error.code == GatewayError.Credentials}
-				helperText={
-					error && error.code == GatewayError.Credentials && error.message
-				}
 				value={username}
 				label="Username"
 				variant="outlined"
 				type="email"
 			/>
 
-			{showPasswordField !== false && (
-				<FormControl
-					error={error && error.code == GatewayError.Credentials}
-					required={required}
-					variant="outlined"
-				>
-					<InputLabel htmlFor="password">Password</InputLabel>
-					<OutlinedInput
-						required={required}
-						onChange={(e) => {
-							setError(undefined);
-							setPassword(e.currentTarget.value);
-						}}
-						endAdornment={
-							<InputAdornment position="end">
-								<Tooltip title={`${showPassword ? "Hide" : "Show"} password`}>
-									<IconButton
-										aria-label="toggle password visibility"
-										onClick={() => setShowPassword((state) => !state)}
-										onMouseDown={() => setShowPassword((state) => !state)}
-										edge="end"
-									>
-										{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-									</IconButton>
-								</Tooltip>
-							</InputAdornment>
-						}
-						value={password}
-						id={"password-" + identifier}
-						label="Password"
-						type={showPassword ? "text" : "password"}
-					/>
-				</FormControl>
-			)}
+			<FormControl required variant="outlined">
+				<InputLabel htmlFor="password">Password</InputLabel>
+				<OutlinedInput
+					required
+					onChange={(e) => {
+						setError(undefined);
+						setPassword(e.currentTarget.value);
+					}}
+					endAdornment={
+						<InputAdornment position="end">
+							<Tooltip title={`${showPassword ? "Hide" : "Show"} password`}>
+								<IconButton
+									aria-label="toggle password visibility"
+									onClick={() => setShowPassword((state) => !state)}
+									onMouseDown={() => setShowPassword((state) => !state)}
+									edge="end"
+								>
+									{showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+								</IconButton>
+							</Tooltip>
+						</InputAdornment>
+					}
+					value={password}
+					id={"password-" + identifier}
+					label="Password"
+					type={showPassword ? "text" : "password"}
+				/>
+			</FormControl>
 		</>
 	);
 };
 
-const UnMemoizedServerPropertiesColumn: FC<{
+const UnMemoizedServerConfigColumn: FC<{
 	type: ServerType;
-}> = ({ type }) => {
-	const setSetting = createLoginSettingsStore((state) => state.setProperty);
-
-	const username = createLoginSettingsStore((state) => state[type].username);
-	const password = createLoginSettingsStore((state) => state[type].password);
-	const security = createLoginSettingsStore((state) => state[type].security);
-	const port = createLoginSettingsStore((state) => state[type].port);
-	const server = createLoginSettingsStore((state) => state[type].server);
-
-	const error = createLoginSettingsStore((state) => state[type].error);
-
-	useEffect(
-		() => setSetting("incoming")("error")(undefined),
-		[username, password, security, port, server]
+	selectedMailServerType: MailServerType;
+	security: ConnectionSecurity;
+	port: number;
+	server: string;
+	password: string;
+	username: string;
+}> = ({
+	type,
+	selectedMailServerType,
+	port,
+	security,
+	server,
+	username,
+	password
+}) => {
+	const setSetting = useMultiServerLoginStore(
+		(state) => state.setLoginOptionsProperty
 	);
+
+	const setSelectedMailServerType = useMultiServerLoginStore(
+		(state) => state.setSelectedMailServerType
+	);
+
+	const setError = useMultiServerLoginStore((state) => state.setError);
+
+	useEffect(() => setError(undefined), [security, port, server]);
+
+	const mailServerTypeList = useMemo(() => {
+		switch (type) {
+			case "incoming":
+				return incomingMailServerTypeList;
+
+			case "outgoing":
+				return outgoingMailServerTypeList;
+		}
+	}, []);
 
 	return (
 		<Grid item xs={12} md={6}>
 			<Stack direction="column" spacing={2}>
-				<Typography variant="h6" textAlign="center">
-					{type == "incoming" ? "IMAP / POP3" : "SMTP"}
-				</Typography>
+				<Tabs
+					value={selectedMailServerType}
+					aria-label="mail-server-type-tabs"
+					onChange={(event: React.SyntheticEvent, newValue: MailServerType) => {
+						setSelectedMailServerType(type, newValue);
+					}}
+					centered
+				>
+					{mailServerTypeList.map((item) => (
+						<Tab id={`tab-${item}`} label={item} value={item} key={item} />
+					))}
+				</Tabs>
 				<TextField
 					fullWidth
 					id={`${type}-server`}
-					onChange={(e) => setSetting(type)("server")(e.currentTarget.value)}
+					required
+					onChange={(e) =>
+						setSetting(type, selectedMailServerType)("domain")(
+							e.currentTarget.value
+						)
+					}
 					value={server}
 					label="Server url/ip"
 					variant="outlined"
@@ -192,31 +197,47 @@ const UnMemoizedServerPropertiesColumn: FC<{
 					<Select
 						labelId={`${type}-server-security-label`}
 						id={`${type}-server-security`}
+						required
 						label="Security"
 						value={security}
 						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						onChange={(e: any) => setSetting(type)("security")(e.target?.value)}
+						onChange={(e: any) => {
+							if (
+								"target" in e &&
+								"value" in e.target &&
+								typeof e.target.value == "string"
+							) {
+								setSetting(type, selectedMailServerType)("security")(
+									e.target.value
+								);
+							}
+						}}
 					>
-						<MenuItem value="NONE">None (Not secure)</MenuItem>
-						<MenuItem value="STARTTLS">STARTTLS (Upgrades to secure)</MenuItem>
-						<MenuItem value="TLS">TLS (Secure)</MenuItem>
+						<MenuItem value="Plain">None (Not secure)</MenuItem>
+						<MenuItem value="StartTls">STARTTLS (Upgrades to secure)</MenuItem>
+						<MenuItem value="Tls">TLS (Secure)</MenuItem>
 					</Select>
 				</FormControl>
 
 				<TextField
 					fullWidth
 					id={`${type}-server-port`}
-					onChange={(e) => setSetting(type)("port")(e.currentTarget.value)}
+					required
+					onChange={(e) =>
+						setSetting(type, selectedMailServerType)("port")(
+							e.currentTarget.value
+						)
+					}
 					value={port}
 					label="Port"
 					helperText={`Default: ${
 						type == "incoming"
-							? security == "STARTTLS" || security == "TLS"
+							? security == "StartTls" || security == "Tls"
 								? 993
 								: 143
-							: security == "STARTTLS"
+							: security == "StartTls"
 							? 587
-							: security == "TLS"
+							: security == "Tls"
 							? 465
 							: 25
 					}`}
@@ -225,23 +246,21 @@ const UnMemoizedServerPropertiesColumn: FC<{
 				/>
 
 				<Credentials
-					error={error}
 					identifier={type}
-					required={type == "incoming"}
-					setError={setSetting(type)("error")}
-					setPassword={setSetting(type)("password")}
-					password={password ?? ""}
-					setUsername={setSetting(type)("username")}
-					username={username ?? ""}
+					username={username}
+					password={password}
+					setError={setError}
+					setUsername={setSetting(type, selectedMailServerType)("username")}
+					setPassword={setSetting(type, selectedMailServerType)("password")}
 				/>
 			</Stack>
 		</Grid>
 	);
 };
 
-const ServerPropertiesColumn = memo(UnMemoizedServerPropertiesColumn);
+const ServerConfigColumn = memo(UnMemoizedServerConfigColumn);
 
-const AdvancedLoginMenu: FC = () => {
+const LoginOptionsMenu: FC = () => {
 	const theme = useTheme();
 
 	const [modalSx, scrollBarSx] = useMemo(
@@ -249,51 +268,75 @@ const AdvancedLoginMenu: FC = () => {
 		[theme]
 	);
 
-	const [isOpen, setOpen] = useState(false);
-
 	const login = useMailLogin();
 
-	const setProperty = createLoginSettingsStore((state) => state.setProperty);
+	const isOpen = useMultiServerLoginStore((state) => state.showMenu);
+	const setOpen = useMultiServerLoginStore((state) => state.setShowMenu);
+
+	const setError = useMultiServerLoginStore((state) => state.setError);
+	const error = useMultiServerLoginStore((state) => state.error);
 
 	const fetching = useStore((state) => state.fetching);
 
-	const error = createLoginSettingsStore((state) => state.incoming.error);
+	const selectedMailServerTypes = useMultiServerLoginStore(
+		(state) => state.selectedMailServerType
+	);
 
-	const incoming = createLoginSettingsStore((state) => state.incoming);
-	const outgoing = createLoginSettingsStore((state) => state.outgoing);
+	const provider = useMultiServerLoginStore((state) => state.provider);
+
+	const incoming = useMultiServerLoginStore(
+		(state) => state.incoming[selectedMailServerTypes.incoming]
+	);
+	const outgoing = useMultiServerLoginStore(
+		(state) => state.outgoing[selectedMailServerTypes.outgoing]
+	);
+
+	const resetToDefaults = useMultiServerLoginStore(
+		(state) => state.resetToDefaults
+	);
+
+	const onClose = useCallback(() => {
+		resetToDefaults();
+		setOpen(false);
+	}, [resetToDefaults, setOpen]);
 
 	const missingFields = useMemo(() => {
 		return !incoming.username || !incoming.password;
 	}, [incoming.username, incoming.password]);
 
-	const serverTypes = useMemo(
-		() => ["incoming", "outgoing"] as ServerType[],
-		[]
-	);
-
 	const onSubmit: FormEventHandler = async (e): Promise<void> => {
 		e.preventDefault();
 
 		if (missingFields) {
-			setProperty("incoming")("error")({
-				message: "Missing required fields",
-				code: GatewayError.Misc
-			});
+			setError("Missing required fields");
 
 			return;
 		}
 
-		await login({ incoming, outgoing }).catch((e) => {
-			setProperty("incoming")("error")(e);
+		const options: z.infer<typeof LoginOptions> = [
+			{
+				...incoming,
+				clientType: { incoming: selectedMailServerTypes.incoming }
+			},
+			{
+				...outgoing,
+				clientType: { outgoing: selectedMailServerTypes.outgoing }
+			}
+		];
+
+		await login(options).catch((error: z.infer<typeof ErrorModel>) => {
+			const message = errorToString(error);
+
+			setError(message);
 		});
+		// .then(() => {
+		// 	onClose();
+		// });
 	};
 
 	return (
 		<>
-			<Button variant="text" onClick={() => setOpen((state) => !state)}>
-				Advanced login
-			</Button>
-			<Modal open={isOpen} onClose={() => setOpen(false)}>
+			<Modal open={isOpen} onClose={onClose}>
 				<Box
 					sx={{
 						...modalSx,
@@ -304,32 +347,47 @@ const AdvancedLoginMenu: FC = () => {
 				>
 					<form onSubmit={onSubmit}>
 						<Typography variant="h5" textAlign="center">
-							Custom mail server settings
+							Login to {provider ?? "an unknown mail server"}
 						</Typography>
 						<Typography variant="subtitle1" textAlign="center">
-							Customize which mail servers that you want to connect to.
+							You can customize which mail servers that you want to connect to
+							before actually logging in.
+						</Typography>
+						<Typography variant="subtitle1" textAlign="center">
+							Don&apos;t know what any of this means? For most larger mail
+							providers such as Google or Microsoft this will information will
+							already be correct and you can just click on login.
 						</Typography>
 						<br />
 						<Grid container spacing={2}>
-							{serverTypes.map((type) => (
-								<ServerPropertiesColumn key={type} type={type} />
-							))}
+							<ServerConfigColumn
+								type="incoming"
+								port={incoming.port}
+								security={incoming.security}
+								server={incoming.domain}
+								username={incoming.username}
+								password={incoming.password}
+								selectedMailServerType={selectedMailServerTypes.incoming}
+							/>
+							<ServerConfigColumn
+								type="outgoing"
+								port={outgoing.port}
+								security={outgoing.security}
+								server={outgoing.domain}
+								username={outgoing.username}
+								password={outgoing.password}
+								selectedMailServerType={selectedMailServerTypes.outgoing}
+							/>
 						</Grid>
 
 						<br />
 
-						{error &&
-							(error.code == GatewayError.Timeout ||
-								error.code == GatewayError.Misc ||
-								error.code == GatewayError.Network) && (
-								<>
-									<Alert sx={{ textAlign: "left" }} severity="error">
-										<AlertTitle>Error</AlertTitle>
-										{error.message}
-									</Alert>
-									<br />
-								</>
-							)}
+						{error && (
+							<Alert sx={{ textAlign: "left", mb: 2 }} severity="error">
+								<AlertTitle>Error</AlertTitle>
+								{error}
+							</Alert>
+						)}
 
 						<Button
 							disabled={missingFields || fetching}
@@ -351,18 +409,28 @@ const LoginForm: FC<{
 	trailing?: React.ReactNode;
 }> = ({ children, trailing }) => {
 	const fetching = useStore((state) => state.fetching);
+	const setFetching = useStore((state) => state.setFetching);
 
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 
-	const handleWebOAuth = useWebOAuth();
-	const handleTauriOAuth = useTauriOAuth();
+	const setLoginOptions = useMultiServerLoginStore(
+		(state) => state.setLoginOptions
+	);
 
-	const googleOAuthLink = useGoogleOAuthLink(username);
+	const setProvider = useMultiServerLoginStore((state) => state.setProvider);
 
-	const [error, setError] = useState<ErrorResponse>();
+	const setShowLoginOptionsMenu = useMultiServerLoginStore(
+		(state) => state.setShowMenu
+	);
 
-	const login = useMailLogin();
+	const setMultiServerLoginError = useMultiServerLoginStore(
+		(state) => state.setError
+	);
+
+	const [error, setError] = useState<string>();
+
+	const mailClient = useMailClient();
 
 	useEffect(() => setError(undefined), [username, password]);
 
@@ -370,24 +438,7 @@ const LoginForm: FC<{
 		document.title = `${import.meta.env.VITE_APP_NAME} - Login`;
 	}, []);
 
-	const emailProvider = useMemo(
-		() => detectProviderFromEmail(username),
-		[username]
-	);
-
-	useEffect(() => {
-		if (!googleOAuthLink && emailProvider == "google")
-			setError({
-				code: GatewayError.Misc,
-				message: "Google login is not supported on this Dust-Mail instance."
-			});
-	}, [emailProvider]);
-
-	const missingFields =
-		!username ||
-		((emailProvider != "google" ||
-			(emailProvider == "google" && !googleOAuthLink)) &&
-			!password);
+	const missingFields = !username || !password;
 
 	/**
 	 * Runs when the form should be submitted to the server
@@ -397,29 +448,71 @@ const LoginForm: FC<{
 
 		// Reject the form if there any fields empty
 		if (missingFields) {
-			setError({ message: "Missing required fields", code: GatewayError.Misc });
+			setError("Missing required fields");
 			return;
 		}
 
-		switch (emailProvider) {
-			case "google":
-				if (googleOAuthLink)
-					if ("__TAURI_METADATA__" in window) handleTauriOAuth(googleOAuthLink);
-					else if ("open" in window) handleWebOAuth(googleOAuthLink);
-				break;
+		setFetching(true);
 
-			case "protonmail":
-				setError({
-					code: GatewayError.Misc,
-					message: "No support for Protonmail yet"
-				});
-				break;
+		const config = await mailClient
+			.detectConfig(username)
+			.catch((error: z.infer<typeof ErrorModel>) => {
+				console.log(error);
 
-			default:
-				await login({ incoming: { username, password } }).catch((e) =>
-					setError(e)
-				);
-				break;
+				if (errorIsOfErrorKind(error, "ConfigNotFound")) {
+					setMultiServerLoginError(
+						"Could not automagically detect your login servers, please fill the information in manually or try again."
+					);
+					setShowLoginOptionsMenu(true);
+				} else {
+					const message = errorToString(error);
+
+					setError(message);
+				}
+			});
+
+		setFetching(false);
+
+		if (!config) return;
+
+		if (
+			typeof config.type != "string" &&
+			config.type.multiServer?.incoming &&
+			config.type.multiServer.outgoing
+		) {
+			const incomingConfigs: (MultiServerLoginOptions & {
+				type: IncomingMailServerType;
+			})[] = config.type.multiServer.incoming.map(
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				({ authType, ...config }) => ({
+					...config,
+					username,
+					password
+				})
+			);
+
+			const outgoingConfigs: (MultiServerLoginOptions & {
+				type: OutgoingMailServerType;
+			})[] = config.type.multiServer.outgoing.map(
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				({ authType, ...config }) => ({
+					...config,
+					username,
+					password
+				})
+			);
+
+			setProvider(config.displayName);
+
+			incomingConfigs.forEach(({ type, ...incomingConfig }) =>
+				setLoginOptions("incoming", type, incomingConfig)
+			);
+
+			outgoingConfigs.forEach(({ type, ...outgoingConfig }) =>
+				setLoginOptions("outgoing", type, outgoingConfig)
+			);
+
+			setShowLoginOptionsMenu(true);
 		}
 	};
 
@@ -430,15 +523,12 @@ const LoginForm: FC<{
 					{children}
 
 					<Credentials
-						error={error}
-						identifier="default"
-						setError={setError}
-						required
-						showPasswordField={emailProvider != "google"}
-						setPassword={setPassword}
+						identifier="initial-login"
 						password={password}
-						setUsername={setUsername}
 						username={username}
+						setError={setError}
+						setPassword={setPassword}
+						setUsername={setUsername}
 					/>
 
 					<Button
@@ -449,19 +539,15 @@ const LoginForm: FC<{
 					>
 						Login
 					</Button>
-
-					{error &&
-						(error.code == GatewayError.Timeout ||
-							error.code == GatewayError.Misc ||
-							error.code == GatewayError.Network) && (
-							<Alert sx={{ textAlign: "left" }} severity="error">
-								<AlertTitle>Error</AlertTitle>
-								{error.message}
-							</Alert>
-						)}
+					{error && (
+						<Alert sx={{ textAlign: "left" }} severity="error">
+							<AlertTitle>Error</AlertTitle>
+							{error}
+						</Alert>
+					)}
+					<LoginOptionsMenu />
 				</Stack>
 			</form>
-			<AdvancedLoginMenu />
 			{trailing}
 		</Stack>
 	);

@@ -1,10 +1,10 @@
 use std::result;
 
-mod session;
+pub mod credentials;
 
-pub use session::Sessions;
+pub use credentials::Credentials;
 
-use sdk::types::{ConnectionSecurity, IncomingClientType};
+use sdk::types::{ConnectionSecurity, IncomingClientType, OutgoingClientType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -25,6 +25,8 @@ impl Error {
 #[derive(Serialize)]
 pub enum ErrorKind {
     MailError(sdk::types::Error),
+    IoError,
+    NoCacheDir,
     InvalidInput,
     NotLoggedIn,
     DecodeBase64,
@@ -36,26 +38,27 @@ pub enum ErrorKind {
 
 pub type Result<T> = result::Result<T, Error>;
 
-#[derive(Deserialize, Serialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum ClientType {
     Incoming(IncomingClientType),
-    // Outgoing(OutgoingClientType)
+    Outgoing(OutgoingClientType),
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct LoginOptions {
     username: String,
     password: String,
-    server: String,
+    domain: String,
     port: u16,
     client_type: ClientType,
     security: ConnectionSecurity,
 }
 
 impl LoginOptions {
-    pub fn server(&self) -> &str {
-        &self.server
+    pub fn domain(&self) -> &str {
+        &self.domain
     }
 
     pub fn port(&self) -> &u16 {

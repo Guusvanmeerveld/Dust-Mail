@@ -10,6 +10,7 @@
 			"@components/*": ["components/*"],
 			"@interfaces/*": ["interfaces/*"],
 			"@styles/*": ["styles/*"],
+			"@models/*": ["models/*"],
 			"@src/*": ["./*"]
 		}
 	},

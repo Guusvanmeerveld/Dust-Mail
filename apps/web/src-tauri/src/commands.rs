@@ -1,26 +1,32 @@
 use sdk::{
     detect::{self, Config},
-    types::{ConnectionSecurity, LoginOptions as ClientLoginOptions, MailBox},
-    IncomingClientConstructor,
+    types::{MailBox, Message, Preview},
 };
 
 use crate::{
     cryptography,
+    login::try_login,
     parse::{self, parse_sdk_error},
-    types::{ClientType, Error, ErrorKind, LoginOptions, Result, Sessions},
+    types::{
+        credentials::{self, get_incoming_session_from_login_options},
+        Credentials, Error, ErrorKind, LoginOptions, Result,
+    },
 };
 
-use crate::base64;
+use crate::{base64, files::CacheFile};
 
-use tauri::State;
+use tauri::{async_runtime::spawn_blocking, State};
 
-#[tauri::command]
-pub fn detect_config(email_address: &str) -> Result<Config> {
-    detect::from_email(email_address).map_err(parse_sdk_error)
+#[tauri::command(async)]
+pub async fn detect_config(email_address: String) -> Result<Config> {
+    let blocking_task =
+        spawn_blocking(move || detect::from_email(&email_address).map_err(parse_sdk_error));
+
+    blocking_task.await.unwrap()
 }
 
-#[tauri::command]
-pub fn login(options: Vec<LoginOptions>, sessions: State<'_, Sessions>) -> Result<String> {
+#[tauri::command(async)]
+pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>) -> Result<String> {
     if options.len() < 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -29,37 +35,10 @@ pub fn login(options: Vec<LoginOptions>, sessions: State<'_, Sessions>) -> Resul
     }
 
     // Try to get a session for all of the given login options
-    for option in &options {
-        match option.client_type() {
-            ClientType::Incoming(client_type) => {
-                let options = ClientLoginOptions::new(option.server(), option.port());
+    for option in options.clone() {
+        let login_thread = spawn_blocking(move || try_login(&option));
 
-                let mut session = match option.security() {
-                    ConnectionSecurity::Tls => {
-                        let client = IncomingClientConstructor::new(client_type, Some(options))
-                            .map_err(parse_sdk_error)?;
-
-                        client
-                            .login(option.username(), option.password())
-                            .map_err(parse_sdk_error)?
-                    }
-                    ConnectionSecurity::Plain => {
-                        let client =
-                            IncomingClientConstructor::new_plain(client_type, Some(options))
-                                .map_err(parse_sdk_error)?;
-
-                        client
-                            .login(option.username(), option.password())
-                            .map_err(parse_sdk_error)?
-                    }
-                    _ => {
-                        todo!()
-                    }
-                };
-
-                session.logout().map_err(parse_sdk_error)?;
-            }
-        };
+        login_thread.await.unwrap()?
     }
 
     // Serialize the given options to json
@@ -70,14 +49,19 @@ pub fn login(options: Vec<LoginOptions>, sessions: State<'_, Sessions>) -> Resul
     let nonce = cryptography::generate_nonce();
 
     // Crypographically sign the login options.
-    let encrypted = cryptography::encrypt(options_json.as_bytes(), &key, &nonce)?;
+    let encrypted = cryptography::encrypt(&options_json, &key, &nonce)?;
 
     // Convert the key and nonce to base64
     let nonce_base64 = base64::encode(&nonce);
     let key_base64 = base64::encode(&key);
 
+    let cache = CacheFile::from_session_name(&nonce_base64);
+
+    // Write to file cache so the credentials are still available when the program restarts.
+    cache.write(&encrypted)?;
+
     // Get a mutable lock on the sessions
-    let mut sessions_lock = sessions.0.lock().unwrap();
+    let mut sessions_lock = sessions.map().lock().unwrap();
 
     // Insert the encrypted options into memory using the nonce as an identifier so we can retrieve it later.
     sessions_lock.insert(nonce_base64.clone(), encrypted);
@@ -86,14 +70,105 @@ pub fn login(options: Vec<LoginOptions>, sessions: State<'_, Sessions>) -> Resul
     Ok(format!("{}:{}", nonce_base64, key_base64))
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Gets a list of all of the mail boxes in the currently logged in account.
-pub fn list(token: String, sessions: State<'_, Sessions>) -> Result<Vec<MailBox>> {
-    let mut session = sessions.get_incoming_session(&token)?;
+pub async fn list(token: String, sessions: State<'_, Credentials>) -> Result<Vec<MailBox>> {
+    let login_options = sessions.get_login_options(token)?;
 
-    let list = session.box_list().map_err(parse_sdk_error)?;
+    let fetch_box_list = spawn_blocking(move || {
+        let mut session = get_incoming_session_from_login_options(login_options)?;
 
-    session.logout().map_err(parse_sdk_error)?;
+        let list = session.box_list().map_err(parse_sdk_error);
 
-    Ok(list)
+        session.logout().map_err(parse_sdk_error)?;
+
+        list
+    });
+
+    fetch_box_list.await.unwrap()
+}
+
+#[tauri::command(async)]
+/// Gets a mailbox by its box id.
+pub async fn get(
+    token: String,
+    box_id: String,
+    sessions: State<'_, Credentials>,
+) -> Result<MailBox> {
+    let login_options = sessions.get_login_options(token)?;
+
+    let fetch_box = spawn_blocking(move || {
+        let mut session = get_incoming_session_from_login_options(login_options)?;
+
+        let mailbox = session.get(&box_id).map_err(parse_sdk_error);
+
+        session.logout().map_err(parse_sdk_error)?;
+
+        mailbox
+    });
+
+    fetch_box.await.unwrap()
+}
+
+#[tauri::command(async)]
+/// Gets a list of 'previews' from a mailbox. This preview contains some basic data about a message such as the subject and the sender.
+pub async fn messages(
+    token: String,
+    box_id: String,
+    start: u32,
+    end: u32,
+    sessions: State<'_, Credentials>,
+) -> Result<Vec<Preview>> {
+    let login_options = sessions.get_login_options(token)?;
+
+    let fetch_message_list = spawn_blocking(move || {
+        let mut session = get_incoming_session_from_login_options(login_options)?;
+
+        let message_list = session
+            .messages(&box_id, start, end)
+            .map_err(parse_sdk_error);
+
+        session.logout().map_err(parse_sdk_error)?;
+
+        message_list
+    });
+
+    fetch_message_list.await.unwrap()
+}
+
+#[tauri::command(async)]
+/// Gets the full message data from a given mailbox and a given message id.
+pub async fn get_message(
+    token: String,
+    box_id: String,
+    message_id: String,
+    sessions: State<'_, Credentials>,
+) -> Result<Message> {
+    let login_options = sessions.get_login_options(token)?;
+
+    let fetch_message = spawn_blocking(move || {
+        let mut session = get_incoming_session_from_login_options(login_options)?;
+
+        let message = session
+            .get_message(&box_id, &message_id)
+            .map_err(parse_sdk_error);
+
+        session.logout().map_err(parse_sdk_error)?;
+
+        message
+    });
+
+    fetch_message.await.unwrap()
+}
+
+#[tauri::command]
+/// Log out of the currently logged in account.
+pub fn logout(token: String, sessions: State<'_, Credentials>) -> Result<()> {
+    let (_, nonce) = credentials::get_nonce_and_key_from_token(&token)?;
+
+    let cache = CacheFile::from_session_name(nonce);
+
+    cache.delete()?;
+
+    Ok(())
 }

@@ -17,7 +17,7 @@ export default interface HttpClient {
 	getBoxes: (token?: string) => Promise<BoxResponse[]>;
 	getPublicOAuthTokens: () => Promise<PublicTokensResponse>;
 	getChangelog: () => Promise<string>;
-	getAvatar: (address?: string) => Promise<string | undefined>;
+	getAvatar: (address: string | null) => Promise<string | undefined>;
 	getBox: (
 		boxID: string,
 		pageParam: number,

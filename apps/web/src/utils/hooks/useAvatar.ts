@@ -14,7 +14,7 @@ import useFetch from "@utils/hooks/useFetch";
 const REFRESH_INBOX_AVATARS = 60 * 60;
 
 export default function useAvatar(
-	email?: string | undefined
+	email: string | null
 ): { data?: string; isLoading: boolean } | void {
 	const fetcher = useFetch();
 
@@ -43,8 +43,7 @@ export default function useAvatar(
 			return;
 		},
 		enabled:
-			(email != undefined && !blacklisted) ||
-			!!(noAvatar && noAvatar < Date.now())
+			(email != null && !blacklisted) || !!(noAvatar && noAvatar < Date.now())
 	});
 
 	const avatar = useMemo(() => ({ data, isLoading }), [data, isLoading]);

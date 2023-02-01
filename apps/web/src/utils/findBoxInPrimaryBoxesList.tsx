@@ -14,8 +14,6 @@ import Send from "@mui/icons-material/Send";
 import Star from "@mui/icons-material/Star";
 import Updates from "@mui/icons-material/TipsAndUpdates";
 
-import Box from "@interfaces/box";
-
 const DEFAULT_PRIMARY_BOXES: {
 	id: string[] | string;
 	name: string;
@@ -38,9 +36,15 @@ const DEFAULT_PRIMARY_BOXES: {
 	{ name: "Updates", id: "CATEGORY_UPDATES", icon: <Updates /> }
 ];
 
-type PrimaryBox = Omit<Box, "delimiter" | "unreadCount">;
+interface PrimaryBox {
+	name: string;
+	id: string[] | string;
+	icon: JSX.Element;
+}
 
-const findBoxInPrimaryBoxesList = (id: string): PrimaryBox | undefined => {
+const findBoxInPrimaryBoxesList = (
+	id: string
+): (Omit<PrimaryBox, "id"> & { id: string }) | undefined => {
 	const foundBox = DEFAULT_PRIMARY_BOXES.find((box) => {
 		if (Array.isArray(box.id)) {
 			const found = box.id.find(

@@ -11,7 +11,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 
-import queryClient from "@utils/createClient";
+import queryClient from "@utils/createQueryClient";
 import useTheme from "@utils/hooks/useTheme";
 
 const App: FC = () => {

@@ -33,7 +33,7 @@ const useHttpClient = (token?: string): HttpClient => {
 	const instance = axios.create({
 		baseURL: backendServer,
 		headers: {
-			Authorization: `Bearer ${token ?? user?.accessToken?.body}`
+			Authorization: `Bearer ${token ?? user?.token}`
 		}
 	});
 
@@ -101,7 +101,7 @@ const useHttpClient = (token?: string): HttpClient => {
 		async getBoxes(token?: string) {
 			const { data } = await instance.get("/mail/folders", {
 				headers: {
-					Authorization: `Bearer ${token ?? user?.accessToken?.body}`
+					Authorization: `Bearer ${token ?? user?.token}`
 				}
 			});
 
@@ -146,7 +146,7 @@ const useHttpClient = (token?: string): HttpClient => {
 					flag
 				},
 				headers: {
-					Authorization: `Bearer ${token ?? user?.accessToken?.body}`
+					Authorization: `Bearer ${token ?? user?.token}`
 				}
 			});
 

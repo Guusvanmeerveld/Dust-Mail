@@ -17,7 +17,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
-import { useRemoveBox } from "@utils/hooks/useUser";
 
 interface DeleteBoxStore {
 	boxesToDelete: string[];
@@ -30,8 +29,6 @@ export const deleteBoxStore = create<DeleteBoxStore>((set) => ({
 }));
 
 const UnMemoizedDeleteBox: FC = () => {
-	const removeBox = useRemoveBox();
-
 	const fetcher = useHttpClient();
 
 	const openSnackbar = useSnackbar();
@@ -63,8 +60,6 @@ const UnMemoizedDeleteBox: FC = () => {
 			.deleteBox(boxesToDelete)
 			.then(() => {
 				openSnackbar(`Folder(s) '${boxesToDelete.join("', '")}' deleted`);
-
-				removeBox(boxesToDelete);
 
 				deleteItemsDialogOnClose();
 				setBoxesToDelete([]);

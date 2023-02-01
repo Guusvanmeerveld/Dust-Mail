@@ -1,11 +1,24 @@
+import z from "zod";
+
+import useMailClient from "./useMailClient";
 import useSelectedStore from "./useSelected";
-import useUser from "./useUser";
 
 import { useMemo } from "react";
+import { useQuery } from "react-query";
+
+import { Error } from "@models/error";
+import { MailBox } from "@models/mailbox";
 
 import Box from "@interfaces/box";
 
-type UseSelectedBox = [Box | void, (boxID?: string) => void];
+import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
+import { errorToString } from "@utils/parseError";
+
+interface UseSelectedBox {
+	box: Box | void;
+	error: string | void;
+	setSelectedBox: (boxID?: string) => void;
+}
 
 export const useSetSelectedBox = (): ((id?: string) => void) => {
 	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
@@ -15,19 +28,29 @@ export const useSetSelectedBox = (): ((id?: string) => void) => {
 
 const useSelectedBox = (): UseSelectedBox => {
 	const setSelectedBox = useSetSelectedBox();
+
 	const boxID = useSelectedStore((state) => state.selectedBox);
 
-	const user = useUser();
+	const mailClient = useMailClient();
+
+	const { data, error } = useQuery<
+		z.infer<typeof MailBox>,
+		z.infer<typeof Error>
+	>(["box", boxID], () => mailClient.get(boxID), {
+		enabled: boxID != undefined
+	});
 
 	const selectedBox: UseSelectedBox = useMemo(() => {
-		if (boxID && user?.boxes.flattened) {
-			const box = user.boxes.flattened.find((item) => item.id == boxID);
+		const primaryBoxData = data
+			? findBoxInPrimaryBoxesList(data.id)
+			: undefined;
 
-			return [box, setSelectedBox];
-		}
-
-		return [, setSelectedBox];
-	}, [boxID, setSelectedBox, user?.boxes.flattened]);
+		return {
+			box: data ? { ...data, icon: primaryBoxData?.icon } : undefined,
+			error: error ? errorToString(error) : undefined,
+			setSelectedBox
+		};
+	}, [data, error, setSelectedBox]);
 
 	return selectedBox;
 };

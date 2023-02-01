@@ -2,31 +2,19 @@ import useLocalStorageState from "use-local-storage-state";
 
 import { useCallback, useMemo } from "react";
 
-import Box from "@interfaces/box";
-import User, { NewUser } from "@interfaces/user";
-
-import nestBoxes from "@utils/nestBoxes";
+import User from "@interfaces/user";
 
 export const useUsers = (): [
 	users: User[] | undefined,
-	setUsers: (users: NewUser[], oldUsers?: User[]) => void
+	setUsers: (users: User[], oldUsers?: User[]) => void
 ] => {
 	const [users, setUsers] = useLocalStorageState<User[]>("users", {
 		defaultValue: []
 	});
 
 	const setNewUsers = useCallback(
-		(newUsers: NewUser[], oldUsers: User[] = []) =>
-			setUsers([
-				...oldUsers,
-				...newUsers.map((user) => ({
-					...user,
-					boxes: {
-						flattened: user.boxes,
-						nested: nestBoxes(user.boxes)
-					}
-				}))
-			]),
+		(newUsers: User[], oldUsers: User[] = []) =>
+			setUsers([...oldUsers, ...newUsers]),
 		[setUsers]
 	);
 
@@ -51,7 +39,7 @@ export const useCurrentUser = (): [
 	return [currentUser, setCurrentUser];
 };
 
-export const useAddUser = (): ((user: NewUser) => void) => {
+export const useAddUser = (): ((user: User) => void) => {
 	const [users, setUsers] = useUsers();
 
 	return (user) => {
@@ -79,7 +67,7 @@ export const useRemoveUser = (): ((username: string) => void) => {
 
 export const useModifyUser = (): ((
 	username: string,
-	newUser: NewUser
+	newUser: User
 ) => void) => {
 	const [users, setUsers] = useUsers();
 
@@ -90,51 +78,6 @@ export const useModifyUser = (): ((
 			[newUser],
 			users.filter((user) => user.username != username)
 		);
-	};
-};
-
-export const useAddBox = (): ((box: Box) => void) => {
-	const [currentUser] = useCurrentUser();
-	const modifyUser = useModifyUser();
-
-	return (box) => {
-		if (!currentUser) return;
-
-		modifyUser(currentUser?.username, {
-			...currentUser,
-			boxes: [...currentUser.boxes.flattened, box]
-		});
-	};
-};
-
-export const useRemoveBox = (): ((ids: string[]) => void) => {
-	const [currentUser] = useCurrentUser();
-	const modifyUser = useModifyUser();
-
-	return (ids) => {
-		if (!currentUser) return;
-
-		modifyUser(currentUser.username, {
-			...currentUser,
-			boxes: currentUser.boxes.flattened.filter((box) => !ids.includes(box.id))
-		});
-	};
-};
-
-export const useModifyBox = (): ((id: string, newBox: Box) => void) => {
-	const [currentUser] = useCurrentUser();
-	const modifyUser = useModifyUser();
-
-	return (id, newBox) => {
-		if (!currentUser) return;
-
-		modifyUser(currentUser.username, {
-			...currentUser,
-			boxes: [
-				...currentUser.boxes.flattened.filter((box) => box.id != id),
-				newBox
-			]
-		});
 	};
 };
 

@@ -9,9 +9,6 @@ import {
 	useContext,
 	MouseEvent
 } from "react";
-import { useQuery } from "react-query";
-
-import { MessageCountResponse } from "@dust-mail/typings";
 
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
@@ -32,10 +29,8 @@ import FolderIcon from "@mui/icons-material/Folder";
 
 import MailBox from "@interfaces/box";
 
-import useHttpClient from "@utils/hooks/useFetch";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useTheme from "@utils/hooks/useTheme";
-import useUser from "@utils/hooks/useUser";
 
 export interface CheckedBoxesStore {
 	checkedBoxes: Record<string, boolean>;
@@ -58,7 +53,7 @@ const UnMemoizedFolderTree: FC<
 		title?: string;
 	} & FolderTreeProps
 > = ({ boxes, title, ...props }) => {
-	const [selectedBox] = useSelectedBox();
+	const { box: selectedBox } = useSelectedBox();
 
 	return (
 		<List
@@ -114,7 +109,7 @@ const UnMemoizedListItem: FC<
 	const indent = useMemo(
 		() =>
 			theme.spacing(
-				(showCheckBox ? 0 : 2) + box.id.split(box.delimiter).length
+				(showCheckBox ? 0 : 2) + box.id.split(box.delimiter ?? "").length
 			),
 		[theme.spacing, box.id, showCheckBox]
 	);
@@ -130,7 +125,8 @@ const UnMemoizedListItem: FC<
 		if (onContextMenu && !showCheckBox) onContextMenu(box, e);
 	};
 
-	const badge = box.unreadCount == 0 ? undefined : box.unreadCount;
+	const badge =
+		box.counts && box.counts.unseen != 0 ? box.counts.unseen : undefined;
 
 	return (
 		<>
@@ -145,7 +141,7 @@ const UnMemoizedListItem: FC<
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
 						<ListItemIcon>
-							<Icon box={box.id} icon={box.icon} badge={badge} />
+							<Icon icon={box.icon} badge={badge} />
 						</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
@@ -179,7 +175,7 @@ const UnMemoizedListItem: FC<
 							{showCheckBox && <Checkbox checked={checked} />}
 						</Box>
 						<ListItemIcon>
-							<Icon box={box.id} icon={box.icon} badge={badge} />
+							<Icon icon={box.icon} badge={badge} />
 						</ListItemIcon>
 						<ListItemText>
 							<Typography noWrap textOverflow="ellipsis">
@@ -196,21 +192,10 @@ const UnMemoizedListItem: FC<
 const Icon: FC<{
 	icon?: JSX.Element;
 	badge?: number;
-	box: string;
-}> = ({ icon, badge, box }) => {
-	const fetcher = useHttpClient();
-
-	const user = useUser();
-
-	const { data } = useQuery<MessageCountResponse>(
-		["unreadCount", box, user?.accessToken?.body],
-		() => fetcher.getMessageCount([box], "unread"),
-		{ enabled: !!badge && badge != 0 }
-	);
-
+}> = ({ icon, badge }) => {
 	if (badge && badge != 0)
 		return (
-			<Badge max={999} badgeContent={data ? data[box] : badge} color="primary">
+			<Badge max={999} badgeContent={badge} color="primary">
 				{icon ?? <FolderIcon />}
 			</Badge>
 		);
