@@ -20,3 +20,5 @@
 <p align="center">If you do encounter any issues, please report the on the <a href="https://github.com/Guusvanmeerveld/Dust-Mail/issues">issues</a> page, as there will be quite a lot of bugs and breakages in this early stage of development.</p>
 
 <p align="center">Currently, to get started with Dust Mail, you must setup the server and download / setup a client. For more information about this setup process, please visit the <a href="https://docs.dust.email">documentation</a>.</p>
+
+<p align="center"><a href="https://discord.gg/ybBaCaxfdt">Join the Discord server!</a></p>
