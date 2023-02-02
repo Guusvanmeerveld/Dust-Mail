@@ -21,10 +21,9 @@ use tauri::{async_runtime::spawn_blocking, State};
 
 #[tauri::command(async)]
 pub async fn detect_config(email_address: String) -> Result<Config> {
-    let blocking_task =
-        spawn_blocking(move || detect::from_email(&email_address).map_err(parse_sdk_error));
-
-    blocking_task.await.unwrap()
+    detect::from_email(&email_address)
+        .await
+        .map_err(parse_sdk_error)
 }
 
 #[tauri::command(async)]

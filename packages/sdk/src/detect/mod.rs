@@ -1,8 +1,12 @@
+use std::sync::Arc;
+
+use futures::future::join_all;
 use serde::Serialize;
+use tokio::task::{spawn_blocking, JoinHandle};
 
 use crate::{
     parse::to_json,
-    types::{self, ConnectionSecurity, ErrorKind},
+    types::{self, ConnectionSecurity, ErrorKind, IncomingClientType},
 };
 
 mod parse;
@@ -96,8 +100,39 @@ impl Config {
     }
 }
 
+type Socket = (String, u16, ConnectionSecurity);
+
+async fn check_sockets(sockets: Vec<Socket>, client_type: IncomingClientType) -> Vec<Socket> {
+    let working_socket_results: Vec<JoinHandle<types::Result<Option<IncomingClientType>>>> =
+        sockets
+            .clone()
+            .into_iter()
+            .map(move |(domain, port, security)| {
+                spawn_blocking(move || service::from_server(&domain, &port, &security))
+            })
+            .collect();
+
+    let working_sockets = join_all(working_socket_results)
+        .await
+        .into_iter()
+        .enumerate()
+        .filter_map(|(i, result)| match result.unwrap() {
+            Ok(result) => {
+                if result? == client_type {
+                    Some(sockets[i].clone())
+                } else {
+                    None
+                }
+            }
+            Err(_) => None,
+        })
+        .collect();
+
+    working_sockets
+}
+
 /// Automatically detect an email providers config for a given email address
-pub fn from_email(email_address: &str) -> types::Result<Config> {
+pub async fn from_email(email_address: &str) -> types::Result<Config> {
     let mut config: Option<Config> = None;
 
     let mut split = email_address.split(AT_SYMBOL);
@@ -105,19 +140,25 @@ pub fn from_email(email_address: &str) -> types::Result<Config> {
     // Skip the prefix
     split.next();
 
-    let domain = split.next().unwrap();
+    let domain = Arc::new(split.next().unwrap().to_string());
 
     #[cfg(feature = "autoconfig")]
     {
-        let detected_autoconfig = autoconfig::from_domain(domain).map_err(|e| {
-            types::Error::new(
-                types::ErrorKind::FetchConfigFailed,
-                format!(
-                    "Error when requesting config from email provider: {}",
-                    e.message()
-                ),
-            )
-        })?;
+        let domain_clone = domain.clone();
+
+        let detected_autoconfig = spawn_blocking(move || {
+            autoconfig::from_domain(&domain_clone).map_err(|e| {
+                types::Error::new(
+                    types::ErrorKind::FetchConfigFailed,
+                    format!(
+                        "Error when requesting config from email provider: {}",
+                        e.message()
+                    ),
+                )
+            })
+        })
+        .await
+        .unwrap()?;
 
         match detected_autoconfig {
             Some(detected_autoconfig) => {
@@ -140,47 +181,36 @@ pub fn from_email(email_address: &str) -> types::Result<Config> {
 
             let imap_domain = format!("imap.{}", domain);
 
-            let addresses_to_check: Vec<(&str, u16, ConnectionSecurity)> = vec![
+            let sockets_to_check: Vec<Socket> = vec![
                 (
-                    mail_domain.as_str(),
+                    mail_domain.clone(),
                     secure_imap_port,
                     ConnectionSecurity::Tls,
                 ),
                 (
-                    imap_domain.as_str(),
+                    imap_domain.clone(),
                     secure_imap_port,
                     ConnectionSecurity::Tls,
                 ),
-                // (mail_domain.as_str(), imap_port, ConnectionSecurity::Plain),
-                // (imap_domain.as_str(), imap_port, ConnectionSecurity::Plain),
+                (mail_domain, imap_port, ConnectionSecurity::Plain),
+                (imap_domain, imap_port, ConnectionSecurity::Plain),
             ];
 
             // Check mail.domain.tld and imap.domain.tld on the default secure imap port
-            let working_addresses: Vec<(&&str, &u16)> = addresses_to_check
-                .iter()
-                .filter_map(|(domain, port, security)| {
-                    match service::from_server(domain, *port, security) {
-                        Ok(_) => Some((domain, port)),
-                        Err(error) => match error.kind() {
-                            ErrorKind::Connect => None,
-                            _ => None,
-                        },
-                    }
-                })
-                .collect();
+            let working_sockets = check_sockets(sockets_to_check, IncomingClientType::Imap).await;
 
-            if working_addresses.len() > 0 {
-                let address_to_use = match working_addresses.first() {
-                    Some(address) => address,
+            if working_sockets.len() > 0 {
+                let socket_to_use = match working_sockets.first() {
+                    Some(socket) => socket.clone(),
                     // We know the array is larger than 0 items
                     None => unreachable!(),
                 };
 
                 let config: ServerConfig = ServerConfig {
                     r#type: ServerConfigType::Imap,
-                    port: *address_to_use.1,
-                    domain: address_to_use.0.to_string(),
-                    security: ConnectionSecurity::Tls,
+                    port: socket_to_use.1,
+                    domain: socket_to_use.0,
+                    security: socket_to_use.2,
                     auth_type: vec![AuthenticationType::ClearText],
                 };
 
@@ -215,11 +245,11 @@ pub fn from_email(email_address: &str) -> types::Result<Config> {
 }
 
 mod test {
-    #[test]
-    fn from_email() {
+    #[tokio::test]
+    async fn from_email() {
         let email = "mail@samtaen.nl";
 
-        let config = super::from_email(email).unwrap();
+        let config = super::from_email(email).await.unwrap();
 
         println!("{}", config.to_json().unwrap());
     }

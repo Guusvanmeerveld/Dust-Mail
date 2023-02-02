@@ -46,12 +46,12 @@ fn detect_imap_from_stream<S: Read + Write + BufRead>(stream: &mut S) -> types::
 /// This function is needed because, for example we can never assume that a service running on port 993 is an Imap server, even though that would be the expected behavior.
 pub fn from_server(
     domain: &str,
-    port: u16,
+    port: &u16,
     security: &ConnectionSecurity,
 ) -> types::Result<Option<IncomingClientType>> {
-    let addr = (domain, port);
+    let addr = (domain, *port);
 
-    let connect_timeout = Some(Duration::from_secs(5));
+    let connect_timeout = Some(Duration::from_millis(2500));
 
     #[cfg(feature = "imap")]
     {
@@ -114,12 +114,12 @@ mod test {
         #[cfg(feature = "imap")]
         {
             assert_eq!(
-                from_server(domain, imap_port, &ConnectionSecurity::Tls).unwrap(),
+                from_server(domain, &imap_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Imap),
             );
 
             assert_ne!(
-                from_server(domain, pop_port, &ConnectionSecurity::Tls).unwrap(),
+                from_server(domain, &pop_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Imap),
             );
         }
@@ -127,12 +127,12 @@ mod test {
         #[cfg(feature = "pop")]
         {
             assert_eq!(
-                from_server(domain, pop_port, &ConnectionSecurity::Tls).unwrap(),
+                from_server(domain, &pop_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Pop),
             );
 
             assert_ne!(
-                from_server(domain, imap_port, &ConnectionSecurity::Tls).unwrap(),
+                from_server(domain, &imap_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(IncomingClientType::Pop),
             );
         }
