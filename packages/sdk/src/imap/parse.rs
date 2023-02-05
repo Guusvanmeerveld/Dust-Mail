@@ -190,16 +190,16 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
 }
 
 /// Given a mailboxes id on the server and the delimiter assigned to that box, give that last item that is created when the id is splitted on the delimiter.
-pub fn name_from_box_id(id: &str, delimiter: Option<&str>) -> String {
-    match delimiter {
-        Some(delimiter) => {
-            let split = id.split(delimiter);
+// pub fn name_from_box_id(id: &str, delimiter: Option<&str>) -> String {
+//     match delimiter {
+//         Some(delimiter) => {
+//             let split = id.split(delimiter);
 
-            split.last().unwrap().to_owned()
-        }
-        None => id.to_owned(),
-    }
-}
+//             split.last().unwrap().to_owned()
+//         }
+//         None => id.to_owned(),
+//     }
+// }
 
 fn counts_from_imap_counts(imap_counts: &Option<ImapCounts>) -> Option<Counts> {
     imap_counts

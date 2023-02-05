@@ -299,7 +299,8 @@ const UnMemoizedAddBox: FC = () => {
 											: "") + folderName,
 									delimiter: parentFolder?.delimiter ?? ".",
 									children: [],
-									counts: null
+									counts: null,
+									selectable: true
 									// TODO: Look at unified mailboxes
 									// unifies:
 									// 	folderType == "unified"

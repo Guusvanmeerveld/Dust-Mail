@@ -31,6 +31,7 @@ const defaultBox: (boxId: string) => Box = (boxId) => ({
 	counts: null,
 	delimiter: null,
 	id: boxId,
+	selectable: true,
 	name: ""
 });
 

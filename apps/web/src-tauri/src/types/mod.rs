@@ -1,8 +1,10 @@
 use std::result;
 
-pub mod credentials;
+// pub mod credentials;
+pub mod session;
 
-pub use credentials::Credentials;
+pub use session::Sessions;
+// pub use credentials::Credentials;
 
 use sdk::types::{ConnectionSecurity, IncomingClientType, OutgoingClientType};
 use serde::{Deserialize, Serialize};

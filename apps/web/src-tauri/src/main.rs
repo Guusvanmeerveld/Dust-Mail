@@ -7,14 +7,14 @@ mod base64;
 mod commands;
 mod cryptography;
 mod files;
-mod login;
+
 mod menu;
 mod parse;
 mod tray;
 mod types;
 
 use tauri::{Manager, SystemTrayEvent};
-use types::Credentials;
+use types::Sessions;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -30,7 +30,7 @@ fn main() {
     tauri::Builder::default()
         .menu(menu)
         .system_tray(tray)
-        .manage(Credentials::new())
+        .manage(Sessions::new())
         .on_menu_event(move |event| match event.menu_item_id() {
             "repository" => {
                 open::that(github_page).unwrap();

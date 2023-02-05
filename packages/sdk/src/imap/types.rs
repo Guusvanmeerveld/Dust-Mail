@@ -31,7 +31,7 @@ impl MailBoxTree {
             .collect();
 
         MailBox::new(
-            None,
+            self.counts,
             self.delimiter,
             children,
             self.selectable,

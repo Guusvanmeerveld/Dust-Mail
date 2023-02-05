@@ -4,18 +4,13 @@ use sdk::{
 };
 
 use crate::{
-    cryptography,
-    login::try_login,
+    base64, cryptography,
+    files::CacheFile,
     parse::{self, parse_sdk_error},
-    types::{
-        credentials::{self, get_incoming_session_from_login_options},
-        Credentials, Error, ErrorKind, LoginOptions, Result,
-    },
+    types::{session, ClientType, Error, ErrorKind, LoginOptions, Result, Sessions},
 };
 
 use futures::future::join_all;
-
-use crate::{base64, files::CacheFile};
 
 use tauri::{async_runtime::spawn_blocking, State};
 
@@ -27,7 +22,7 @@ pub async fn detect_config(email_address: String) -> Result<Config> {
 }
 
 #[tauri::command(async)]
-pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>) -> Result<String> {
+pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Sessions>) -> Result<String> {
     if options.len() < 1 {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -35,23 +30,59 @@ pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>)
         ));
     }
 
+    if options
+        .iter()
+        .filter(|login_config| match login_config.client_type() {
+            ClientType::Incoming(_) => true,
+            ClientType::Outgoing(_) => false,
+        })
+        .count()
+        > 1
+    {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Cannot login to multiple incoming servers at the same time.",
+        ));
+    }
+
+    if options
+        .iter()
+        .filter(|login_config| match login_config.client_type() {
+            ClientType::Incoming(_) => false,
+            ClientType::Outgoing(_) => true,
+        })
+        .count()
+        > 1
+    {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "Cannot login to multiple outgoing servers at the same time.",
+        ));
+    }
+
     // Try to get a session for all of the given login options
     let mut login_threads = Vec::new();
 
     for option in options.clone() {
-        let login_thread = spawn_blocking(move || try_login(&option));
+        let login_thread =
+            spawn_blocking(move || session::get_incoming_session_from_login_options(&option));
 
         login_threads.push(login_thread);
     }
 
     let login_results = join_all(login_threads).await;
 
-    for result in login_results {
-        match result.unwrap() {
-            Ok(_) => {}
-            Err(err) => return Err(err),
-        }
-    }
+    let new_sessions = login_results
+        .into_iter()
+        .map(|result| result.unwrap())
+        .fold(Ok(Vec::new()), |result, session_result| {
+            result.and_then(|mut result_vec| {
+                session_result.map(|session| {
+                    result_vec.push(session);
+                    result_vec
+                })
+            })
+        })?;
 
     let generate_token = spawn_blocking(move || {
         // Serialize the given options to json
@@ -73,18 +104,21 @@ pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>)
         // Write to file cache so the credentials are still available when the program restarts.
         cache.write(&encrypted)?;
 
-        Ok((nonce_base64, key_base64, encrypted))
+        let token = format!("{}:{}", nonce_base64, key_base64);
+
+        Ok(token)
     });
 
-    let (nonce_base64, key_base64, encrypted) = generate_token.await.unwrap()?;
+    let token = generate_token.await.unwrap()?;
 
-    // Get a mutable lock on the sessions
-    let mut sessions_lock = sessions.map().lock().unwrap();
-
-    // Insert the encrypted options into memory using the nonce as an identifier so we can retrieve it later.
-    sessions_lock.insert(nonce_base64.clone(), encrypted);
-
-    let token = format!("{}:{}", nonce_base64, key_base64);
+    for session in new_sessions {
+        match session {
+            Some(session) => {
+                sessions.insert_session(&token, session)?;
+            }
+            None => {}
+        }
+    }
 
     // Return the key and nonce to the frontend so it can verify its session later.
     Ok(token)
@@ -92,18 +126,16 @@ pub async fn login(options: Vec<LoginOptions>, sessions: State<'_, Credentials>)
 
 #[tauri::command(async)]
 /// Gets a list of all of the mail boxes in the currently logged in account.
-pub async fn list(token: String, sessions: State<'_, Credentials>) -> Result<Vec<MailBox>> {
-    let login_options = sessions.get_login_options(token)?;
+pub async fn list(token: String, sessions: State<'_, Sessions>) -> Result<Vec<MailBox>> {
+    let session = sessions.get_incoming_session(&token)?;
 
     let fetch_box_list = spawn_blocking(move || {
-        let mut session = get_incoming_session_from_login_options(login_options)?;
+        let mut session_lock = session.lock().unwrap();
 
-        let list = session
+        let list = session_lock
             .box_list()
             .map_err(parse_sdk_error)
             .map(|box_list| box_list.clone());
-
-        session.logout().map_err(parse_sdk_error)?;
 
         list
     });
@@ -113,22 +145,16 @@ pub async fn list(token: String, sessions: State<'_, Credentials>) -> Result<Vec
 
 #[tauri::command(async)]
 /// Gets a mailbox by its box id.
-pub async fn get(
-    token: String,
-    box_id: String,
-    sessions: State<'_, Credentials>,
-) -> Result<MailBox> {
-    let login_options = sessions.get_login_options(token)?;
+pub async fn get(token: String, box_id: String, sessions: State<'_, Sessions>) -> Result<MailBox> {
+    let session = sessions.get_incoming_session(&token)?;
 
     let fetch_box = spawn_blocking(move || {
-        let mut session = get_incoming_session_from_login_options(login_options)?;
+        let mut session_lock = session.lock().unwrap();
 
-        let mailbox = session
+        let mailbox = session_lock
             .get(&box_id)
             .map_err(parse_sdk_error)
             .map(|mailbox| mailbox.clone());
-
-        session.logout().map_err(parse_sdk_error)?;
 
         mailbox
     });
@@ -143,18 +169,16 @@ pub async fn messages(
     box_id: String,
     start: u32,
     end: u32,
-    sessions: State<'_, Credentials>,
+    sessions: State<'_, Sessions>,
 ) -> Result<Vec<Preview>> {
-    let login_options = sessions.get_login_options(token)?;
+    let session = sessions.get_incoming_session(&token)?;
 
     let fetch_message_list = spawn_blocking(move || {
-        let mut session = get_incoming_session_from_login_options(login_options)?;
+        let mut session_lock = session.lock().unwrap();
 
-        let message_list = session
+        let message_list = session_lock
             .messages(&box_id, start, end)
             .map_err(parse_sdk_error);
-
-        session.logout().map_err(parse_sdk_error)?;
 
         message_list
     });
@@ -168,18 +192,16 @@ pub async fn get_message(
     token: String,
     box_id: String,
     message_id: String,
-    sessions: State<'_, Credentials>,
+    sessions: State<'_, Sessions>,
 ) -> Result<Message> {
-    let login_options = sessions.get_login_options(token)?;
+    let session = sessions.get_incoming_session(&token)?;
 
     let fetch_message = spawn_blocking(move || {
-        let mut session = get_incoming_session_from_login_options(login_options)?;
+        let mut session_lock = session.lock().unwrap();
 
-        let message = session
+        let message = session_lock
             .get_message(&box_id, &message_id)
             .map_err(parse_sdk_error);
-
-        session.logout().map_err(parse_sdk_error)?;
 
         message
     });
@@ -187,14 +209,24 @@ pub async fn get_message(
     fetch_message.await.unwrap()
 }
 
-#[tauri::command]
+#[tauri::command(async)]
 /// Log out of the currently logged in account.
-pub fn logout(token: String, sessions: State<'_, Credentials>) -> Result<()> {
-    let (_, nonce) = credentials::get_nonce_and_key_from_token(&token)?;
+pub async fn logout(token: String, sessions: State<'_, Sessions>) -> Result<()> {
+    let session = sessions.get_incoming_session(&token)?;
 
-    let cache = CacheFile::from_session_name(nonce);
+    let logout = spawn_blocking(move || {
+        let mut session_lock = session.lock().unwrap();
 
-    cache.delete()?;
+        session_lock.logout().map_err(parse_sdk_error)?;
 
-    Ok(())
+        let (_, nonce) = session::get_nonce_and_key_from_token(&token)?;
+
+        let cache = CacheFile::from_session_name(nonce);
+
+        cache.delete()?;
+
+        Ok(())
+    });
+
+    logout.await.unwrap()
 }

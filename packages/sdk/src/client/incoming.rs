@@ -19,8 +19,8 @@ pub struct IncomingClient<S: Read + Write> {
     client: IncomingClientTypeWithClient<S>,
 }
 
-impl<S: Read + Write + 'static> IncomingClient<S> {
-    pub fn login(self, username: &str, password: &str) -> types::Result<Box<dyn Session>> {
+impl<S: Read + Write + 'static + Send> IncomingClient<S> {
+    pub fn login(self, username: &str, password: &str) -> types::Result<Box<dyn Session + Send>> {
         match self.client {
             #[cfg(feature = "imap")]
             IncomingClientTypeWithClient::Imap(client) => {

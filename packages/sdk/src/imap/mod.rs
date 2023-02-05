@@ -163,7 +163,9 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
         // If we already have all of the mailboxes, return those instead.
         let mailbox = if box_list_length > &0 {
-            if let Some(found_mailbox) = utils::find_box_in_list(self.box_list()?, box_id) {
+            let cached_box_list = self.box_list()?;
+
+            if let Some(found_mailbox) = utils::find_box_in_list(cached_box_list, box_id) {
                 found_mailbox.clone()
             } else {
                 unreachable!()
