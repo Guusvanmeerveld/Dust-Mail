@@ -98,7 +98,10 @@ pub async fn list(token: String, sessions: State<'_, Credentials>) -> Result<Vec
     let fetch_box_list = spawn_blocking(move || {
         let mut session = get_incoming_session_from_login_options(login_options)?;
 
-        let list = session.box_list().map_err(parse_sdk_error);
+        let list = session
+            .box_list()
+            .map_err(parse_sdk_error)
+            .map(|box_list| box_list.clone());
 
         session.logout().map_err(parse_sdk_error)?;
 
@@ -120,7 +123,10 @@ pub async fn get(
     let fetch_box = spawn_blocking(move || {
         let mut session = get_incoming_session_from_login_options(login_options)?;
 
-        let mailbox = session.get(&box_id).map_err(parse_sdk_error);
+        let mailbox = session
+            .get(&box_id)
+            .map_err(parse_sdk_error)
+            .map(|mailbox| mailbox.clone());
 
         session.logout().map_err(parse_sdk_error)?;
 

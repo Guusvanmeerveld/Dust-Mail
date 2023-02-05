@@ -1,6 +1,7 @@
 import z from "zod";
 
 import useMailClient from "./useMailClient";
+import useUser from "./useUser";
 
 import { useCallback } from "react";
 import { useQuery } from "react-query";
@@ -20,10 +21,12 @@ type UseBoxes = {
 const useBoxes = (): UseBoxes => {
 	const mailClient = useMailClient();
 
+	const user = useUser();
+
 	const { data: boxes, error } = useQuery<
 		z.infer<typeof MailBoxList>,
 		z.infer<typeof Error>
-	>("boxes", () => mailClient.list());
+	>(["boxes", user?.username], () => mailClient.list());
 
 	const findBox = useCallback(
 		(id: string) => {

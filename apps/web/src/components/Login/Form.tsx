@@ -324,14 +324,15 @@ const LoginOptionsMenu: FC = () => {
 			}
 		];
 
-		await login(options).catch((error: z.infer<typeof ErrorModel>) => {
-			const message = errorToString(error);
+		await login(options)
+			.then(() => {
+				onClose();
+			})
+			.catch((error: z.infer<typeof ErrorModel>) => {
+				const message = errorToString(error);
 
-			setError(message);
-		});
-		// .then(() => {
-		// 	onClose();
-		// });
+				setError(message);
+			});
 	};
 
 	return (
@@ -369,6 +370,7 @@ const LoginOptionsMenu: FC = () => {
 								password={incoming.password}
 								selectedMailServerType={selectedMailServerTypes.incoming}
 							/>
+
 							<ServerConfigColumn
 								type="outgoing"
 								port={outgoing.port}
@@ -457,8 +459,6 @@ const LoginForm: FC<{
 		const config = await mailClient
 			.detectConfig(username)
 			.catch((error: z.infer<typeof ErrorModel>) => {
-				console.log(error);
-
 				if (errorIsOfErrorKind(error, "ConfigNotFound")) {
 					setMultiServerLoginError(
 						"Could not automagically detect your login servers, please fill the information in manually or try again."
@@ -486,6 +486,7 @@ const LoginForm: FC<{
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				({ authType, ...config }) => ({
 					...config,
+					loginType: authType,
 					username,
 					password
 				})
@@ -497,6 +498,7 @@ const LoginForm: FC<{
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				({ authType, ...config }) => ({
 					...config,
+					loginType: authType,
 					username,
 					password
 				})
@@ -545,10 +547,10 @@ const LoginForm: FC<{
 							{error}
 						</Alert>
 					)}
-					<LoginOptionsMenu />
 				</Stack>
 			</form>
 			{trailing}
+			<LoginOptionsMenu />
 		</Stack>
 	);
 };

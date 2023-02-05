@@ -82,11 +82,11 @@ pub fn from_server(
             ConnectionSecurity::Tls => {
                 let tls = create_tls_connector()?;
 
-                pop3::connect(addr, domain, &tls, None)
+                pop3::connect(addr, domain, &tls, connect_timeout)
                     .map_err(map_pop_error)
                     .is_ok()
             }
-            _ => pop3::connect_plain(addr, None)
+            _ => pop3::connect_plain(addr, connect_timeout)
                 .map_err(map_pop_error)
                 .is_ok(),
         };

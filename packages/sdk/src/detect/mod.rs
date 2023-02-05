@@ -6,7 +6,7 @@ use tokio::task::{spawn_blocking, JoinHandle};
 
 use crate::{
     parse::to_json,
-    types::{self, ConnectionSecurity, ErrorKind, IncomingClientType},
+    types::{self, ConnectionSecurity, IncomingClientType},
 };
 
 mod parse;
@@ -183,7 +183,7 @@ pub async fn from_email(email_address: &str) -> types::Result<Config> {
 
             let sockets_to_check: Vec<Socket> = vec![
                 (
-                    mail_domain.clone(),
+                    mail_domain.to_string(),
                     secure_imap_port,
                     ConnectionSecurity::Tls,
                 ),
@@ -192,7 +192,11 @@ pub async fn from_email(email_address: &str) -> types::Result<Config> {
                     secure_imap_port,
                     ConnectionSecurity::Tls,
                 ),
-                (mail_domain, imap_port, ConnectionSecurity::Plain),
+                (
+                    mail_domain.to_string(),
+                    imap_port,
+                    ConnectionSecurity::Plain,
+                ),
                 (imap_domain, imap_port, ConnectionSecurity::Plain),
             ];
 
@@ -200,16 +204,18 @@ pub async fn from_email(email_address: &str) -> types::Result<Config> {
             let working_sockets = check_sockets(sockets_to_check, IncomingClientType::Imap).await;
 
             if working_sockets.len() > 0 {
-                let socket_to_use = match working_sockets.first() {
-                    Some(socket) => socket.clone(),
+                let mut working_sockets = working_sockets.into_iter();
+
+                let socket_to_use = match working_sockets.next() {
+                    Some(socket) => socket,
                     // We know the array is larger than 0 items
                     None => unreachable!(),
                 };
 
                 let config: ServerConfig = ServerConfig {
                     r#type: ServerConfigType::Imap,
-                    port: socket_to_use.1,
                     domain: socket_to_use.0,
+                    port: socket_to_use.1,
                     security: socket_to_use.2,
                     auth_type: vec![AuthenticationType::ClearText],
                 };
@@ -220,7 +226,23 @@ pub async fn from_email(email_address: &str) -> types::Result<Config> {
 
         #[cfg(feature = "pop")]
         {
-            // let mail_domain_pop = service::from_server(&mail_domain, 995, ConnectionSecurity::Tls);
+            let secure_pop_port: u16 = 995;
+            let pop_port: u16 = 110;
+
+            let pop_domain = format!("pop.{}", domain);
+
+            let sockets_to_check: Vec<Socket> = vec![
+                (
+                    mail_domain.clone(),
+                    secure_pop_port,
+                    ConnectionSecurity::Tls,
+                ),
+                (pop_domain.clone(), secure_pop_port, ConnectionSecurity::Tls),
+                (mail_domain, pop_port, ConnectionSecurity::Plain),
+                (pop_domain, pop_port, ConnectionSecurity::Plain),
+            ];
+
+            let working_sockets = check_sockets(sockets_to_check, IncomingClientType::Pop).await;
         }
 
         if incoming_configs.len() > 0 || outgoing_configs.len() > 0 {
@@ -247,7 +269,7 @@ pub async fn from_email(email_address: &str) -> types::Result<Config> {
 mod test {
     #[tokio::test]
     async fn from_email() {
-        let email = "mail@samtaen.nl";
+        let email = "hello@mail@samtaen.nl";
 
         let config = super::from_email(email).await.unwrap();
 

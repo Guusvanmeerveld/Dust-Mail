@@ -43,10 +43,10 @@ pub trait Session {
     fn logout(&mut self) -> types::Result<()>;
 
     /// Returns a list of all of the mailboxes that are on the server.
-    fn box_list(&mut self) -> types::Result<Vec<MailBox>>;
+    fn box_list(&mut self) -> types::Result<&Vec<MailBox>>;
 
     /// Returns some basic information about a specified mailbox.
-    fn get(&mut self, box_id: &str) -> types::Result<MailBox>;
+    fn get(&mut self, box_id: &str) -> types::Result<&MailBox>;
 
     /// Deletes a specified mailbox.
     fn delete(&mut self, box_id: &str) -> types::Result<()>;
@@ -66,7 +66,7 @@ pub trait Session {
 
 pub struct ClientConstructor;
 
-/// Check whether the options exist if they are needed for a given client type.
+/// Check whether the login options exist if they are needed for a given client type.
 fn check_options(
     client_type: &IncomingClientType,
     options: &Option<LoginOptions>,

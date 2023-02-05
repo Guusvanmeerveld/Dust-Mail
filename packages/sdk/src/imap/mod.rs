@@ -1,62 +1,22 @@
 mod parse;
-use std::collections::HashMap;
+mod types;
+mod utils;
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::time::{Duration, Instant};
 
-use imap::types::{Fetch, Name};
+use imap::types::Fetch as ImapFetch;
 use native_tls::TlsStream;
 
 use crate::client::incoming::Session;
 use crate::parse::map_imap_error;
 use crate::tls::create_tls_connector;
-use crate::types::{self, Counts, LoginOptions, MailBox, Message, Preview};
+use crate::types::{Error, ErrorKind, LoginOptions, MailBox, Message, Preview, Result};
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
 
-#[derive(Debug)]
-/// A struct useful for building a folder tree structure out of a flat mailbox array.
-pub struct MailBoxTree {
-    delimiter: Option<String>,
-    children: HashMap<String, MailBoxTree>,
-    id: String,
-    name: String,
-}
-
-impl MailBoxTree {
-    pub fn children_mut(&mut self) -> &mut HashMap<String, MailBoxTree> {
-        &mut self.children
-    }
-
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
-    /// Convert this mailbox tree to a normal mailbox struct.
-    pub fn to_mailbox(self) -> MailBox {
-        let children = self
-            .children
-            .into_iter()
-            .map(|(_, value)| value.to_mailbox())
-            .collect();
-
-        MailBox::new(None, self.delimiter, children, self.id, self.name)
-    }
-
-    pub fn new<S: Into<String>>(
-        delimiter: Option<String>,
-        children: HashMap<String, MailBoxTree>,
-        id: S,
-        name: S,
-    ) -> Self {
-        Self {
-            delimiter,
-            children,
-            id: id.into(),
-            name: name.into(),
-        }
-    }
-}
+const REFRESH_BOX_LIST_TIMEOUT: u64 = 1 * 60;
 
 pub struct ImapClient<S: Read + Write> {
     client: imap::Client<S>,
@@ -64,9 +24,12 @@ pub struct ImapClient<S: Read + Write> {
 
 pub struct ImapSession<S: Read + Write> {
     session: imap::Session<S>,
+    box_list: Vec<MailBox>,
+    box_list_last_refresh: Option<Instant>,
+    selected_box: Option<MailBox>,
 }
 
-pub fn connect(options: LoginOptions) -> types::Result<ImapClient<TlsStream<TcpStream>>> {
+pub fn connect(options: LoginOptions) -> Result<ImapClient<TlsStream<TcpStream>>> {
     let tls = create_tls_connector()?;
 
     let domain = options.server();
@@ -79,12 +42,12 @@ pub fn connect(options: LoginOptions) -> types::Result<ImapClient<TlsStream<TcpS
     Ok(imap_client)
 }
 
-pub fn connect_plain(options: LoginOptions) -> types::Result<ImapClient<TcpStream>> {
+pub fn connect_plain(options: LoginOptions) -> Result<ImapClient<TcpStream>> {
     let domain = options.server();
     let port = *options.port();
 
     let stream = TcpStream::connect((domain, port))
-        .map_err(|e| types::Error::new(types::ErrorKind::Connect, e.to_string()))?;
+        .map_err(|e| Error::new(ErrorKind::Connect, e.to_string()))?;
 
     let client = imap::Client::new(stream);
 
@@ -92,13 +55,18 @@ pub fn connect_plain(options: LoginOptions) -> types::Result<ImapClient<TcpStrea
 }
 
 impl<S: Read + Write> ImapClient<S> {
-    pub fn login(self, username: &str, password: &str) -> types::Result<ImapSession<S>> {
+    pub fn login(self, username: &str, password: &str) -> Result<ImapSession<S>> {
         let session = self
             .client
             .login(username, password)
             .map_err(|(err, _)| map_imap_error(err))?;
 
-        let imap_session = ImapSession { session };
+        let imap_session = ImapSession {
+            session,
+            box_list: Vec::new(),
+            box_list_last_refresh: None,
+            selected_box: None,
+        };
 
         Ok(imap_session)
     }
@@ -110,17 +78,17 @@ impl<S: Read + Write> ImapSession<S> {
     }
 
     /// Given an array of fetches that is expected to have length 1, return that one fetch and error if it has more or less than 1 items.
-    fn get_item_from_fetch_else_err<'a>(fetched: &'a Vec<Fetch>) -> types::Result<&'a Fetch> {
+    fn get_item_from_fetch_else_err<'a>(fetched: &'a Vec<ImapFetch>) -> Result<&'a ImapFetch> {
         // if fetched.len() > 1 {
-        //     return Err(types::Error::new(
-        //         types::ErrorKind::UnexpectedBehavior,
+        //     return Err(Error::new(
+        //         ErrorKind::UnexpectedBehavior,
         //         "Got multiple messages when fetching a single message",
         //     ));
         // }
 
         if fetched.len() == 0 {
-            return Err(types::Error::new(
-                types::ErrorKind::ImapError,
+            return Err(Error::new(
+                ErrorKind::ImapError,
                 "Could not find a message with that id",
             ));
         }
@@ -133,69 +101,19 @@ impl<S: Read + Write> ImapSession<S> {
         }
     }
 
-    /// Given a mailboxes id on the server and the delimiter assigned to that box, give that last item that is created when the id is splitted on the delimiter.
-    fn name_from_box_id(id: &str, delimiter: Option<&str>) -> String {
-        match delimiter {
-            Some(delimiter) => {
-                let split = id.split(delimiter);
+    fn close(&mut self) -> Result<()> {
+        let session = self.get_session_mut();
 
-                split.last().unwrap().to_owned()
-            }
-            None => id.to_owned(),
-        }
-    }
+        session.close().map_err(map_imap_error)?;
 
-    /// This is a function that takes an array of mailbox names and builds it into a folder tree of mailboxes.
-    fn get_boxes_from_names(names: &Vec<Name>) -> Vec<MailBox> {
-        let mut folders: HashMap<String, MailBoxTree> = HashMap::new();
+        self.selected_box = None;
 
-        for folder in names {
-            match folder.delimiter() {
-                Some(delimiter) => {
-                    let parts = folder.name().split(delimiter);
-
-                    let mut current: Option<&mut MailBoxTree> = None;
-
-                    for part in parts {
-                        let id = match current.as_ref() {
-                            Some(current) => {
-                                format!("{}{}{}", current.id(), delimiter, part)
-                            }
-                            None => String::from(part),
-                        };
-
-                        let children = match current {
-                            Some(current_box) => current_box.children_mut(),
-                            None => &mut folders,
-                        };
-
-                        current = Some(children.entry(String::from(part)).or_insert(
-                            MailBoxTree::new(
-                                Some(String::from(delimiter)),
-                                HashMap::new(),
-                                id.as_str(),
-                                part,
-                            ),
-                        ));
-                    }
-                }
-                None => {
-                    let id = folder.name().to_string();
-
-                    folders.insert(id.clone(), MailBoxTree::new(None, HashMap::new(), &id, &id));
-                }
-            }
-        }
-
-        folders
-            .into_iter()
-            .map(|(_, value)| value.to_mailbox())
-            .collect()
+        Ok(())
     }
 }
 
 impl<S: Read + Write> Session for ImapSession<S> {
-    fn logout(&mut self) -> types::Result<()> {
+    fn logout(&mut self) -> Result<()> {
         let session = self.get_session_mut();
 
         session.logout().map_err(map_imap_error)?;
@@ -203,55 +121,100 @@ impl<S: Read + Write> Session for ImapSession<S> {
         Ok(())
     }
 
-    fn box_list(&mut self) -> types::Result<Vec<MailBox>> {
+    fn box_list(&mut self) -> Result<&Vec<MailBox>> {
+        let last_box_list_refresh = self.box_list_last_refresh;
+
         let session = self.get_session_mut();
 
-        let names = session.list(None, Some("*")).map_err(map_imap_error)?;
+        let timeout_duration = Duration::from_secs(REFRESH_BOX_LIST_TIMEOUT);
 
-        let boxes = Self::get_boxes_from_names(&names);
+        if let Some(last_refresh) = last_box_list_refresh {
+            if last_refresh
+                .elapsed()
+                .checked_sub(timeout_duration)
+                .is_none()
+            {
+                return Ok(&self.box_list);
+            }
+        }
 
-        Ok(boxes)
+        let mailboxes = session.list(None, Some("*")).map_err(map_imap_error)?;
+
+        let mailboxes = mailboxes
+            .into_iter()
+            .map(|mailbox| (mailbox, None))
+            .collect();
+
+        let boxes = parse::get_boxes_from_names(mailboxes);
+
+        self.box_list_last_refresh = Some(Instant::now());
+
+        self.box_list = boxes;
+
+        Ok(&self.box_list)
     }
 
-    fn get(&mut self, box_id: &str) -> types::Result<MailBox> {
+    fn get(&mut self, box_id: &str) -> Result<&MailBox> {
+        let box_list_length = &self.box_list.len();
+
         let session = self.get_session_mut();
 
-        let imap_mailbox = session.select(&box_id).map_err(map_imap_error)?;
+        let imap_counts = session.select(box_id).map_err(map_imap_error)?;
 
-        let data = session.list(None, Some(box_id)).map_err(map_imap_error)?;
+        // If we already have all of the mailboxes, return those instead.
+        let mailbox = if box_list_length > &0 {
+            if let Some(found_mailbox) = utils::find_box_in_list(self.box_list()?, box_id) {
+                found_mailbox.clone()
+            } else {
+                unreachable!()
+            }
+        // Otherwise retrieve them from the server
+        } else {
+            let names = session
+                .list(Some(box_id), Some("*"))
+                .map_err(map_imap_error)?;
 
-        let box_data = data.first().unwrap();
+            let mailboxes = parse::get_boxes_from_names(
+                names
+                    .iter()
+                    .map(|name| {
+                        if name.name() == box_id {
+                            (name, Some(imap_counts.clone()))
+                        } else {
+                            (name, None)
+                        }
+                    })
+                    .collect(),
+            );
 
-        let delimiter = match box_data.delimiter() {
-            Some(delimiter) => Some(delimiter.to_owned()),
-            None => None,
+            match utils::find_box_in_list(&mailboxes, box_id) {
+                Some(mailbox) => mailbox.clone(),
+                None => {
+                    return Err(Error::new(
+                        ErrorKind::ImapError,
+                        format!("Box with id '{}' not found", box_id),
+                    ))
+                }
+            }
         };
 
-        let id = box_data.name();
+        self.selected_box = Some(mailbox);
 
-        let counts = Counts::new(
-            imap_mailbox.unseen.unwrap_or_else(|| 0),
-            imap_mailbox.exists,
-        );
-
-        let selected_box = MailBox::new(
-            Some(counts),
-            delimiter,
-            Vec::new(),
-            id,
-            &Self::name_from_box_id(id, box_data.delimiter()),
-        );
+        let selected_box = match self.selected_box.as_ref() {
+            Some(selected_box) => selected_box,
+            None => unreachable!(),
+        };
 
         Ok(selected_box)
     }
 
-    fn delete(&mut self, box_id: &str) -> types::Result<()> {
+    fn delete(&mut self, box_id: &str) -> Result<()> {
         let session = self.get_session_mut();
 
         session.delete(box_id).map_err(map_imap_error)
     }
 
-    fn rename(&mut self, box_id: &str, new_name: &str) -> types::Result<()> {
+    fn rename(&mut self, box_id: &str, new_name: &str) -> Result<()> {
         let mailbox = self.get(box_id)?;
 
         let new_name = match mailbox.delimiter() {
@@ -283,31 +246,28 @@ impl<S: Read + Write> Session for ImapSession<S> {
         session.rename(box_id, new_name).map_err(map_imap_error)
     }
 
-    fn create(&mut self, box_id: &str) -> types::Result<()> {
+    fn create(&mut self, box_id: &str) -> Result<()> {
         let session = self.get_session_mut();
 
         session.create(box_id).map_err(map_imap_error)
     }
 
-    fn messages(&mut self, box_id: &str, start: u32, end: u32) -> types::Result<Vec<Preview>> {
-        let total_messages = match self.get(box_id) {
-            Ok(selected_box) => match selected_box.counts() {
-                Some(counts) => *counts.total(),
-                None => unreachable!(),
-            },
-            Err(err) => return Err(err),
-        };
+    fn messages(&mut self, box_id: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
+        let session = self.get_session_mut();
+
+        let total_messages = session
+            .select(&box_id)
+            .map(|selected_box| selected_box.exists)
+            .map_err(map_imap_error)?;
 
         if total_messages < 1 {
             return Ok(Vec::new());
         }
 
-        let session = self.get_session_mut();
-
         let sequence_start = if total_messages < end {
             1
         } else {
-            total_messages.saturating_sub(end)
+            total_messages.saturating_sub(end).saturating_add(1)
         };
 
         let sequence_end = if total_messages < start {
@@ -322,20 +282,20 @@ impl<S: Read + Write> Session for ImapSession<S> {
             .fetch(sequence, QUERY_PREVIEW)
             .map_err(map_imap_error)?;
 
-        session.close().map_err(map_imap_error)?;
+        self.close()?;
 
         let mut previews: Vec<Preview> =
-            Vec::with_capacity((sequence_end - sequence_start) as usize);
+            Vec::with_capacity((sequence_end.saturating_sub(sequence_start)) as usize);
 
         for fetch in data.iter() {
             let preview = parse::fetch_to_preview(fetch)?;
-            previews.push(preview);
+            previews.insert(0, preview);
         }
 
         Ok(previews)
     }
 
-    fn get_message(&mut self, box_id: &str, msg_id: &str) -> types::Result<Message> {
+    fn get_message(&mut self, box_id: &str, msg_id: &str) -> Result<Message> {
         self.get(box_id)?;
 
         let session = self.get_session_mut();
@@ -391,11 +351,11 @@ mod tests {
     fn get_mailbox() {
         let mut session = create_test_session();
 
-        let box_name = "INBOX";
+        let box_name = "Web";
 
         let mailbox = session.get(box_name).unwrap();
 
-        println!("{}", mailbox.counts().unwrap().total());
+        println!("{:?}", mailbox);
 
         session.logout().unwrap();
     }
@@ -404,7 +364,7 @@ mod tests {
     fn get_messages() {
         let mut session = create_test_session();
 
-        let box_name = "Inbox";
+        let box_name = "[Gmail]";
 
         let messages = session.messages(box_name, 0, 10).unwrap();
 

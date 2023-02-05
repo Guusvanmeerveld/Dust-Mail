@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { AuthType as AuthTypeModel } from "@models/config";
 import {
 	ConnectionSecurity as ConnectionSecurityModel,
 	MailServerType as MailServerTypeModel,
@@ -14,6 +15,7 @@ export default interface MultiServerLoginOptions {
 	domain: string;
 	port: number;
 	security: ConnectionSecurity;
+	loginType: z.infer<typeof AuthTypeModel>[];
 }
 
 type IncomingMailServerType = z.infer<typeof IncomingMailServerTypeModel>;

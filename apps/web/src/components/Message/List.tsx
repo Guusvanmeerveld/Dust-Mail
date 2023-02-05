@@ -195,7 +195,7 @@ const UnMemoizedMessageList: FC = () => {
 		isFetchingNextPage,
 		refetch
 	} = useInfiniteQuery<z.infer<typeof Preview>[], z.infer<typeof Error>>(
-		["box", selectedBox?.id, filter],
+		["messageList", selectedBox?.id, filter],
 		({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];

@@ -9,6 +9,7 @@ interface MailBox {
 	counts: z.infer<typeof Counts> | null;
 	delimiter: string | null;
 	children: MailBox[];
+	selectable: boolean;
 	id: string;
 	name: string;
 }
@@ -18,6 +19,7 @@ export const MailBox: z.ZodType<MailBox> = z.lazy(() =>
 		counts: Counts.nullable(),
 		delimiter: z.string().nullable(),
 		children: MailBox.array(),
+		selectable: z.boolean(),
 		id: z.string(),
 		name: z.string()
 	})

@@ -148,15 +148,11 @@ const useMailClient = (): MailClient => {
 			if (isTauri) {
 				return invoke("messages", { token, boxId, start, end })
 					.catch((error: unknown) => {
-						console.error(error);
-
 						const output = Error.safeParse(error);
 
 						throw parseZodOutput(output);
 					})
 					.then((data: unknown) => {
-						console.log(data);
-
 						const output = Preview.array().safeParse(data);
 
 						return parseZodOutput(output);

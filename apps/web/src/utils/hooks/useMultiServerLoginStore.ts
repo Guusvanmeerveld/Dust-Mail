@@ -1,6 +1,7 @@
 import { z } from "zod";
 import create from "zustand";
 
+import { AuthType as AuthTypeModel } from "@models/config";
 import {
 	IncomingServerType as IncomingServerTypeModel,
 	OutgoingServerType as OutgoingServerTypeModel,
@@ -68,12 +69,15 @@ export const defaultPorts: Record<MailServerType, number> = {
 
 export const defaultSecuritySetting: ConnectionSecurity = "Tls";
 
+const defaultLoginTypes: z.infer<typeof AuthTypeModel>[] = ["ClearText"];
+
 const defaultImapConfig: MultiServerLoginOptions = {
 	password: defaultPassword,
 	username: defaultUsername,
 	domain: "imap.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Imap"]
+	port: defaultPorts["Imap"],
+	loginType: defaultLoginTypes
 };
 
 const defaultExchangeConfig: MultiServerLoginOptions = {
@@ -81,7 +85,8 @@ const defaultExchangeConfig: MultiServerLoginOptions = {
 	username: defaultUsername,
 	domain: "exchange.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Exchange"]
+	port: defaultPorts["Exchange"],
+	loginType: defaultLoginTypes
 };
 
 const defaultPopConfig: MultiServerLoginOptions = {
@@ -89,7 +94,8 @@ const defaultPopConfig: MultiServerLoginOptions = {
 	username: defaultUsername,
 	domain: "pop.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Pop"]
+	port: defaultPorts["Pop"],
+	loginType: defaultLoginTypes
 };
 
 const defaultSmtpConfig: MultiServerLoginOptions = {
@@ -97,7 +103,8 @@ const defaultSmtpConfig: MultiServerLoginOptions = {
 	username: defaultUsername,
 	domain: "smtp.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Smtp"]
+	port: defaultPorts["Smtp"],
+	loginType: defaultLoginTypes
 };
 
 const defaultConfigs = {

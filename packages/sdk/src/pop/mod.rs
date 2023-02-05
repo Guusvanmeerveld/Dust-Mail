@@ -23,6 +23,7 @@ pub struct PopClient<S: Read + Write> {
 
 pub struct PopSession<S: Read + Write> {
     session: pop3::Client<S>,
+    current_mailbox: Vec<MailBox>,
 }
 
 pub fn connect(options: LoginOptions) -> types::Result<PopClient<TlsStream<TcpStream>>> {
@@ -51,7 +52,10 @@ impl<S: Read + Write> PopClient<S> {
 
         session.login(username, password).map_err(map_pop_error)?;
 
-        Ok(PopSession { session })
+        Ok(PopSession {
+            session,
+            current_mailbox: Vec::new(),
+        })
     }
 }
 
@@ -78,7 +82,7 @@ impl<S: Read + Write> PopSession<S> {
             None => None,
         };
 
-        let mailbox = MailBox::new(counts, None, Vec::new(), box_name, box_name);
+        let mailbox = MailBox::new(counts, None, Vec::new(), true, box_name, box_name);
 
         Ok(mailbox)
     }
@@ -93,31 +97,28 @@ impl<S: Read + Write> Session for PopSession<S> {
         Ok(())
     }
 
-    fn box_list(&mut self) -> types::Result<Vec<MailBox>> {
-        let default_box = self.get_default_box()?;
+    fn box_list(&mut self) -> types::Result<&Vec<MailBox>> {
+        self.current_mailbox = vec![self.get_default_box()?];
 
-        Ok(vec![default_box])
+        Ok(&self.current_mailbox)
     }
 
-    fn get(&mut self, box_name: &str) -> types::Result<MailBox> {
-        let mailbox = self.get_default_box()?;
+    fn get(&mut self, _: &str) -> types::Result<&MailBox> {
+        self.current_mailbox = vec![self.get_default_box()?];
 
-        // If we request anything other than the default mailbox that we've defined, we throw an error saying that Pop does not support mailboxes
-        if box_name != mailbox.name() {
-            return Err(types::Error::new(
-                types::ErrorKind::Unsupported,
-                "Mailboxes are unsupported in Pop",
-            ));
-        } else {
-            Ok(mailbox)
-        }
+        let selected_box = match self.current_mailbox.first() {
+            Some(mailbox) => mailbox,
+            None => unreachable!(),
+        };
+
+        Ok(selected_box)
     }
 
     fn delete(&mut self, _: &str) -> types::Result<()> {
         todo!()
     }
 
-    fn rename(&mut self, _: &str, new_name: &str) -> types::Result<()> {
+    fn rename(&mut self, _: &str, _: &str) -> types::Result<()> {
         todo!()
     }
 

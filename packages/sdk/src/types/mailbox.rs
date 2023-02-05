@@ -1,15 +1,16 @@
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct MailBox {
     counts: Option<Counts>,
     delimiter: Option<String>,
     children: Vec<MailBox>,
+    selectable: bool,
     id: String,
     name: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct Counts {
     unseen: u32,
     total: u32,
@@ -36,6 +37,7 @@ impl MailBox {
         counts: Option<Counts>,
         delimiter: Option<String>,
         children: Vec<MailBox>,
+        selectable: bool,
         id: S,
         name: S,
     ) -> Self {
@@ -43,6 +45,7 @@ impl MailBox {
             counts,
             delimiter,
             children,
+            selectable,
             id: id.into(),
             name: name.into(),
         }
@@ -51,6 +54,11 @@ impl MailBox {
     /// A struct containing some info about the message counts in this mailbox.
     pub fn counts(&self) -> Option<&Counts> {
         self.counts.as_ref()
+    }
+
+    /// Whether the mailbox contains messages and can be selected.
+    pub fn selectable(&self) -> &bool {
+        &self.selectable
     }
 
     /// The name delimiter in this mailbox that indicates the hierachy in the id.
@@ -77,5 +85,27 @@ impl MailBox {
     /// The mailbox name.
     pub fn name(&self) -> &str {
         &self.name
+    }
+}
+
+impl Default for Counts {
+    fn default() -> Self {
+        Self {
+            total: 0,
+            unseen: 0,
+        }
+    }
+}
+
+impl Default for MailBox {
+    fn default() -> Self {
+        Self {
+            children: Vec::new(),
+            counts: Some(Counts::default()),
+            delimiter: None,
+            id: String::new(),
+            name: String::new(),
+            selectable: true,
+        }
     }
 }

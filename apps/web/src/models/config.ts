@@ -10,7 +10,7 @@ import {
 	OutgoingServerTypeString
 } from "./login";
 
-const AuthType = z.enum([
+export const AuthType = z.enum([
 	"ClearText",
 	"Encrypted",
 	"OAuth2",

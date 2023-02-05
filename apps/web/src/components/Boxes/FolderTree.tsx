@@ -114,12 +114,13 @@ const UnMemoizedListItem: FC<
 		[theme.spacing, box.id, showCheckBox]
 	);
 
-	const handleClick =
-		onClick && !showCheckBox
+	const handleClick = box.selectable
+		? onClick && !showCheckBox
 			? (e: MouseEvent) => {
 					onClick(box, e);
 			  }
-			: () => setChecked(box.id, !checked);
+			: () => setChecked(box.id, !checked)
+		: undefined;
 
 	const handleContextMenu = (e: MouseEvent<HTMLElement>): void => {
 		if (onContextMenu && !showCheckBox) onContextMenu(box, e);
