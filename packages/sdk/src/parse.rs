@@ -6,10 +6,9 @@ use std::{
 use mailparse::parse_mail;
 use serde::Serialize;
 
-use crate::{
-    types::{self, Content, Headers},
-    utils::map_mailparse_error,
-};
+use mailparse::MailParseError;
+
+use crate::types::{self, Content, Headers};
 
 /// Parse an RFC 822 body to an appropriate and useful struct.
 pub fn parse_rfc822(body: &[u8]) -> types::Result<Content> {
@@ -68,6 +67,13 @@ pub fn map_imap_error(error: imap::Error) -> types::Error {
     types::Error::new(
         types::ErrorKind::ImapError,
         format!("Error from Imap server: {}", error),
+    )
+}
+
+pub fn map_mailparse_error(error: MailParseError) -> types::Error {
+    types::Error::new(
+        types::ErrorKind::ParseMessage,
+        format!("Failed to read message from server: {}", error),
     )
 }
 

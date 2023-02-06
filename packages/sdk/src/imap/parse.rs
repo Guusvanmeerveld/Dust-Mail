@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use imap::types::{
-    Fetch, Flag as ImapFlag, Mailbox as ImapCounts, Name as ImapBox,
+    Fetch,
+    Flag as ImapFlag,
+    //  Mailbox as ImapCounts,
+    Name as ImapBox,
     NameAttribute as ImapBoxAttribute,
 };
 
@@ -19,7 +22,7 @@ const AT_SYMBOL: u8 = 64;
 
 fn bytes_to_string(bytes: &Option<&[u8]>) -> Option<String> {
     match bytes {
-        Some(bytes) => Some(String::from_utf8_lossy(bytes).to_string()),
+        Some(bytes) => String::from_utf8(bytes.to_vec()).ok(),
         None => None,
     }
 }
@@ -201,18 +204,18 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
 //     }
 // }
 
-fn counts_from_imap_counts(imap_counts: &Option<ImapCounts>) -> Option<Counts> {
-    imap_counts
-        .as_ref()
-        .map(|imap_counts| Counts::new(imap_counts.unseen.unwrap_or_else(|| 0), imap_counts.exists))
-}
+// fn counts_from_imap_counts(imap_counts: &Option<ImapCounts>) -> Option<Counts> {
+//     imap_counts
+//         .as_ref()
+//         .map(|imap_counts| Counts::new(imap_counts.unseen.unwrap_or(0), imap_counts.exists))
+// }
 
 /// This is a function that takes an array of mailbox names and builds it into a folder tree of mailboxes.
 /// In the case that there is a mailbox present that has children, the children must also be present in the given array of mailboxes.
-pub fn get_boxes_from_names(imap_boxes: Vec<(&ImapBox, Option<ImapCounts>)>) -> Vec<MailBox> {
+pub fn get_boxes_from_names(imap_boxes: &Vec<(&ImapBox, Option<Counts>)>) -> Vec<MailBox> {
     let mut folders: HashMap<String, MailBoxTree> = HashMap::new();
 
-    for (folder, counts) in &imap_boxes {
+    for (folder, counts) in imap_boxes {
         match folder.delimiter() {
             Some(delimiter) => {
                 let parts: Vec<_> = folder.name().split(delimiter).collect();
@@ -245,7 +248,7 @@ pub fn get_boxes_from_names(imap_boxes: Vec<(&ImapBox, Option<ImapCounts>)>) -> 
                         .unwrap_or(false);
 
                     let counts = current_box
-                        .map(|current_box| counts_from_imap_counts(&current_box.1))
+                        .map(|current_box| current_box.1.clone())
                         .unwrap_or(Some(Counts::new(0, 0)));
 
                     current = Some(
@@ -265,13 +268,11 @@ pub fn get_boxes_from_names(imap_boxes: Vec<(&ImapBox, Option<ImapCounts>)>) -> 
             None => {
                 let id = folder.name().to_string();
 
-                let counts = counts_from_imap_counts(&counts);
-
                 let selectable = !folder.attributes().contains(&ImapBoxAttribute::NoSelect);
 
                 folders.insert(
                     id.clone(),
-                    MailBoxTree::new(counts, None, HashMap::new(), selectable, &id, &id),
+                    MailBoxTree::new(counts.clone(), None, HashMap::new(), selectable, &id, &id),
                 );
             }
         }

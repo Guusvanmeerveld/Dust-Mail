@@ -21,6 +21,8 @@ pub enum ErrorKind {
     #[cfg(feature = "pop")]
     /// An error from the Pop server.
     PopError(PopError),
+    /// Failed to parse a string given by the server.
+    ParseString,
     /// Failed to parse a socket address which is used to connect to the remote mail server
     ParseAddress,
     /// Failed to parse a date from the server.

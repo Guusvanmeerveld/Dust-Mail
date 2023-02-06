@@ -213,7 +213,10 @@ const UnMemoizedMessageList: FC = () => {
 
 				return pages.length;
 			},
-			enabled: selectedBox?.id != undefined && user?.token != undefined
+			enabled:
+				selectedBox?.id != undefined &&
+				selectedBox.selectable &&
+				user?.token != undefined
 		}
 	);
 

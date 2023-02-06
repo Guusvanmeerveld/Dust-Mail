@@ -54,13 +54,7 @@ impl AutoConfigParser {
                 AutoConfigServerType::Exchange => ServerConfigType::Exchange,
             };
 
-            let server_config = ServerConfig {
-                r#type: server_type,
-                domain,
-                port,
-                security,
-                auth_type,
-            };
+            let server_config = ServerConfig::new(server_type, port, domain, security, auth_type);
 
             Some(server_config)
         }
@@ -86,11 +80,7 @@ impl AutoConfigParser {
 
         let config_type = ConfigType::MultiServer { incoming, outgoing };
 
-        let config = Config {
-            r#type: config_type,
-            provider,
-            display_name,
-        };
+        let config = Config::new(config_type, provider, display_name);
 
         Ok(config)
     }

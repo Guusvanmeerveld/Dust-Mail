@@ -1,5 +1,7 @@
 import z from "zod";
 
+import findBoxInPrimaryBoxesList from "./findBoxInPrimaryBoxesList";
+
 import { MailBoxList, MailBox } from "@models/mailbox";
 
 const findBox = (
@@ -10,7 +12,11 @@ const findBox = (
 
 	const foundBox = boxes.find((mailbox) => mailbox.id == idToFind);
 
-	if (foundBox) return foundBox;
+	if (foundBox) {
+		const primaryBoxData = findBoxInPrimaryBoxesList(foundBox.id);
+
+		return { ...foundBox, ...primaryBoxData };
+	}
 
 	const foundBoxes = boxes
 		.map((mailbox) => findBox(idToFind, mailbox.children))

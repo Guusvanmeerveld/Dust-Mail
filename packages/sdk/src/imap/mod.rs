@@ -1,6 +1,7 @@
 mod parse;
 mod types;
 mod utils;
+// use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
@@ -11,7 +12,18 @@ use native_tls::TlsStream;
 use crate::client::incoming::Session;
 use crate::parse::map_imap_error;
 use crate::tls::create_tls_connector;
-use crate::types::{Error, ErrorKind, LoginOptions, MailBox, Message, Preview, Result};
+use crate::types::{
+    // Counts,
+    Error,
+    ErrorKind,
+    LoginOptions,
+    MailBox,
+    Message,
+    Preview,
+    Result,
+};
+
+use self::utils::find_box_in_list;
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
@@ -26,7 +38,8 @@ pub struct ImapSession<S: Read + Write> {
     session: imap::Session<S>,
     box_list: Vec<MailBox>,
     box_list_last_refresh: Option<Instant>,
-    selected_box: Option<MailBox>,
+    // Whether the message count for each mailbox has been retrieved in this session.
+    // retrieved_message_counts: bool,
 }
 
 pub fn connect(options: LoginOptions) -> Result<ImapClient<TlsStream<TcpStream>>> {
@@ -65,7 +78,7 @@ impl<S: Read + Write> ImapClient<S> {
             session,
             box_list: Vec::new(),
             box_list_last_refresh: None,
-            selected_box: None,
+            // retrieved_message_counts: false,
         };
 
         Ok(imap_session)
@@ -101,12 +114,25 @@ impl<S: Read + Write> ImapSession<S> {
         }
     }
 
-    fn close(&mut self) -> Result<()> {
-        let session = self.get_session_mut();
+    /// This function will check if a box with a given box id is actually selectable, throwing an error if it is not.
+    fn box_is_selectable_else_err(&mut self, box_id: &str) -> Result<()> {
+        if self.box_list.len() > 0 {
+            let current_box_list = self.box_list()?;
 
-        session.close().map_err(map_imap_error)?;
+            let requested_box = find_box_in_list(current_box_list, box_id);
 
-        self.selected_box = None;
+            match requested_box {
+                Some(mailbox) => {
+                    if !mailbox.selectable() {
+                        return Err(Error::new(
+                            ErrorKind::ImapError,
+                            format!("The mailbox with id '{}' is not selectable", box_id),
+                        ));
+                    }
+                }
+                None => {}
+            }
+        };
 
         Ok(())
     }
@@ -122,13 +148,9 @@ impl<S: Read + Write> Session for ImapSession<S> {
     }
 
     fn box_list(&mut self) -> Result<&Vec<MailBox>> {
-        let last_box_list_refresh = self.box_list_last_refresh;
+        if let Some(last_refresh) = self.box_list_last_refresh {
+            let timeout_duration = Duration::from_secs(REFRESH_BOX_LIST_TIMEOUT);
 
-        let session = self.get_session_mut();
-
-        let timeout_duration = Duration::from_secs(REFRESH_BOX_LIST_TIMEOUT);
-
-        if let Some(last_refresh) = last_box_list_refresh {
             if last_refresh
                 .elapsed()
                 .checked_sub(timeout_duration)
@@ -138,14 +160,39 @@ impl<S: Read + Write> Session for ImapSession<S> {
             }
         }
 
+        // let has_retrieved_box_counts = self.retrieved_message_counts;
+
+        let session = self.get_session_mut();
+
         let mailboxes = session.list(None, Some("*")).map_err(map_imap_error)?;
 
-        let mailboxes = mailboxes
-            .into_iter()
-            .map(|mailbox| (mailbox, None))
-            .collect();
+        // let mut count_map = HashMap::new();
 
-        let boxes = parse::get_boxes_from_names(mailboxes);
+        // if !has_retrieved_box_counts {
+        //     for mailbox in &mailboxes {
+        //         let counts = session
+        //             .status(mailbox.name(), "(MESSAGES UNSEEN)")
+        //             .map_err(map_imap_error)?;
+
+        //         println!("{:?}", counts);
+        //         count_map.insert(
+        //             mailbox.name(),
+        //             Counts::new(counts.unseen.unwrap_or(0), counts.exists),
+        //         );
+        //     }
+
+        //     self.retrieved_message_counts = true;
+        // } else {
+        //     for mailbox in &self.box_list {
+        //         if let Some(counts) = mailbox.counts() {
+        //             count_map.insert(mailbox.id().clone(), counts.clone());
+        //         }
+        //     }
+        // }
+
+        let mailboxes: Vec<_> = mailboxes.iter().map(|mailbox| (mailbox, None)).collect();
+
+        let boxes = parse::get_boxes_from_names(&mailboxes);
 
         self.box_list_last_refresh = Some(Instant::now());
 
@@ -159,15 +206,16 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
         let session = self.get_session_mut();
 
-        let imap_counts = session.select(box_id).map_err(map_imap_error)?;
+        // let imap_counts = session.select(box_id).map_err(map_imap_error)?;
 
         // If we already have all of the mailboxes, return those instead.
         let mailbox = if box_list_length > &0 {
             let cached_box_list = self.box_list()?;
 
             if let Some(found_mailbox) = utils::find_box_in_list(cached_box_list, box_id) {
-                found_mailbox.clone()
+                found_mailbox
             } else {
+                // The mailbox has to be in the local list because when we run the box_list function, it will retrieve ALL mailboxes
                 unreachable!()
             }
         // Otherwise retrieve them from the server
@@ -176,21 +224,23 @@ impl<S: Read + Write> Session for ImapSession<S> {
                 .list(Some(box_id), Some("*"))
                 .map_err(map_imap_error)?;
 
-            let mailboxes = parse::get_boxes_from_names(
-                names
-                    .iter()
-                    .map(|name| {
-                        if name.name() == box_id {
-                            (name, Some(imap_counts.clone()))
-                        } else {
-                            (name, None)
-                        }
-                    })
-                    .collect(),
-            );
+            let mailboxes_with_counts: Vec<_> = names
+                .iter()
+                .map(|name| {
+                    // if name.name() == box_id {
+                    //     (name, Some(imap_counts.clone()))
+                    // } else {
+                    (name, None)
+                    // }
+                })
+                .collect();
 
-            match utils::find_box_in_list(&mailboxes, box_id) {
-                Some(mailbox) => mailbox.clone(),
+            let mailboxes = parse::get_boxes_from_names(&mailboxes_with_counts);
+
+            self.box_list = mailboxes;
+
+            match utils::find_box_in_list(&self.box_list, box_id) {
+                Some(mailbox) => mailbox,
                 None => {
                     return Err(Error::new(
                         ErrorKind::ImapError,
@@ -200,14 +250,7 @@ impl<S: Read + Write> Session for ImapSession<S> {
             }
         };
 
-        self.selected_box = Some(mailbox);
-
-        let selected_box = match self.selected_box.as_ref() {
-            Some(selected_box) => selected_box,
-            None => unreachable!(),
-        };
-
-        Ok(selected_box)
+        Ok(mailbox)
     }
 
     fn delete(&mut self, box_id: &str) -> Result<()> {
@@ -235,10 +278,10 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
                     prefix
                 } else {
-                    new_name.to_owned()
+                    new_name.to_string()
                 }
             }
-            None => new_name.to_owned(),
+            None => new_name.to_string(),
         };
 
         let session = self.get_session_mut();
@@ -255,6 +298,8 @@ impl<S: Read + Write> Session for ImapSession<S> {
     }
 
     fn messages(&mut self, box_id: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
+        self.box_is_selectable_else_err(box_id)?;
+
         let session = self.get_session_mut();
 
         let total_messages = session
@@ -284,7 +329,7 @@ impl<S: Read + Write> Session for ImapSession<S> {
             .fetch(sequence, QUERY_PREVIEW)
             .map_err(map_imap_error)?;
 
-        self.close()?;
+        session.close().map_err(map_imap_error)?;
 
         let mut previews: Vec<Preview> =
             Vec::with_capacity((sequence_end.saturating_sub(sequence_start)) as usize);
@@ -298,9 +343,11 @@ impl<S: Read + Write> Session for ImapSession<S> {
     }
 
     fn get_message(&mut self, box_id: &str, msg_id: &str) -> Result<Message> {
-        self.get(box_id)?;
+        self.box_is_selectable_else_err(box_id)?;
 
         let session = self.get_session_mut();
+
+        session.select(box_id).map_err(map_imap_error)?;
 
         let fetched = session
             .uid_fetch(msg_id, QUERY_FULL_MESSAGE)

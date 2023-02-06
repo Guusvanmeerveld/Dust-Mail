@@ -134,6 +134,7 @@ const UnMemoizedListItem: FC<
 			{box.children && box.children.length != 0 && (
 				<>
 					<ListItemButton
+						disabled={handleClick == undefined}
 						onClick={handleClick}
 						onContextMenu={handleContextMenu}
 						selected={isSelectedBox}
@@ -169,6 +170,7 @@ const UnMemoizedListItem: FC<
 			{(!box.children || (box.children && box.children.length == 0)) && (
 				<MUIListItem selected={isSelectedBox} disablePadding>
 					<ListItemButton
+						disabled={handleClick == undefined}
 						onClick={handleClick}
 						onContextMenu={handleContextMenu}
 					>

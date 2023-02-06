@@ -9,7 +9,6 @@ use std::{collections::HashMap, env};
 #[cfg(test)]
 use dotenv::dotenv;
 
-use mailparse::MailParseError;
 use native_tls::TlsStream;
 
 use crate::{parse, tls, types};
@@ -29,13 +28,6 @@ pub fn get_env() -> HashMap<String, String> {
     }
 
     map
-}
-
-pub fn map_mailparse_error(error: MailParseError) -> types::Error {
-    types::Error::new(
-        types::ErrorKind::ParseMessage,
-        format!("Failed to read message from server: {}", error),
-    )
 }
 
 pub fn create_tcp_stream<A: ToSocketAddrs>(

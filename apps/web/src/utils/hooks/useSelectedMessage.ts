@@ -74,6 +74,7 @@ const useSelectedMessage = (): UseSelectedMessage => {
 			enabled:
 				messageId != undefined &&
 				selectedBox?.id != undefined &&
+				selectedBox.selectable &&
 				user?.token != undefined
 		}
 	);
