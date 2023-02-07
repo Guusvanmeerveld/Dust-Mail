@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use futures::future::join_all;
-use tokio::task::{spawn_blocking, JoinHandle};
+use tokio::task::{spawn, spawn_blocking};
 
-use crate::types::{ConnectionSecurity, Error, ErrorKind, IncomingClientType, Result};
+use crate::types::{ConnectionSecurity, Error, ErrorKind, Result};
 
 mod parse;
 mod service;
@@ -19,8 +19,11 @@ pub use types::Config;
 const AT_SYMBOL: &str = "@";
 
 /// Given an array of sockets (domain name, port and connection security) check which of the sockets have a server of a given mail server type running on them.
-async fn check_sockets(sockets: Vec<Socket>, client_type: IncomingClientType) -> Vec<Socket> {
-    let working_socket_results: Vec<JoinHandle<Result<Option<IncomingClientType>>>> = sockets
+async fn check_sockets<'a>(
+    sockets: Vec<Socket>,
+    client_type: &'a ServerConfigType,
+) -> Vec<(Socket, &'a ServerConfigType)> {
+    let working_socket_results: Vec<_> = sockets
         .clone()
         .into_iter()
         .map(move |(domain, port, security)| {
@@ -34,8 +37,8 @@ async fn check_sockets(sockets: Vec<Socket>, client_type: IncomingClientType) ->
         .enumerate()
         .filter_map(|(i, result)| match result.unwrap() {
             Ok(result) => {
-                if result? == client_type {
-                    Some(sockets[i].clone())
+                if &result? == client_type {
+                    Some((sockets.get(i).cloned().unwrap(), client_type))
                 } else {
                     None
                 }
@@ -90,6 +93,8 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
         let mut incoming_configs: Vec<ServerConfig> = Vec::new();
         let mut outgoing_configs: Vec<ServerConfig> = Vec::new();
 
+        let mut check_socket_threads = Vec::new();
+
         #[cfg(feature = "imap")]
         {
             let secure_imap_port: u16 = 993;
@@ -117,27 +122,10 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
             ];
 
             // Check mail.domain.tld and imap.domain.tld on the default secure imap port
-            let working_sockets = check_sockets(sockets_to_check, IncomingClientType::Imap).await;
+            let check_imap_sockets =
+                spawn(check_sockets(sockets_to_check, &ServerConfigType::Imap));
 
-            if working_sockets.len() > 0 {
-                let mut working_sockets = working_sockets.into_iter();
-
-                let socket_to_use = match working_sockets.next() {
-                    Some(socket) => socket,
-                    // We know the array is larger than 0 items
-                    None => unreachable!(),
-                };
-
-                let config: ServerConfig = ServerConfig::new(
-                    ServerConfigType::Imap,
-                    socket_to_use.1,
-                    socket_to_use.0,
-                    socket_to_use.2,
-                    vec![AuthenticationType::ClearText],
-                );
-
-                incoming_configs.push(config);
-            }
+            check_socket_threads.push(check_imap_sockets);
         }
 
         #[cfg(feature = "pop")]
@@ -158,16 +146,42 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
                 (pop_domain, pop_port, ConnectionSecurity::Plain),
             ];
 
-            let working_sockets = check_sockets(sockets_to_check, IncomingClientType::Pop).await;
+            let check_pop_sockets = spawn(check_sockets(sockets_to_check, &ServerConfigType::Pop));
+
+            check_socket_threads.push(check_pop_sockets);
+        }
+
+        let check_sockets_results = join_all(check_socket_threads).await;
+
+        for check_sockets_result in check_sockets_results {
+            let working_sockets = check_sockets_result.unwrap();
+
+            if working_sockets.len() > 0 {
+                let mut working_sockets = working_sockets.into_iter();
+
+                let (socket_to_use, client_type) = match working_sockets.next() {
+                    Some(socket) => socket,
+                    // We know the array is larger than 0 items
+                    None => unreachable!(),
+                };
+
+                let config: ServerConfig = ServerConfig::new(
+                    client_type.clone(),
+                    socket_to_use.1,
+                    socket_to_use.0,
+                    socket_to_use.2,
+                    vec![AuthenticationType::ClearText],
+                );
+
+                incoming_configs.push(config);
+            }
         }
 
         if incoming_configs.len() > 0 || outgoing_configs.len() > 0 {
-            let domain = domain.as_str();
-
             config = Some(Config::new(
                 ConfigType::new_multiserver(incoming_configs, outgoing_configs),
-                domain,
-                domain,
+                domain.as_str(),
+                Some(domain.to_string()),
             ));
         }
     }

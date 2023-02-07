@@ -5,7 +5,7 @@ use crate::{
     types::{ConnectionSecurity, Result},
 };
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
 pub enum ServerConfigType {
     Imap,
     Pop,
@@ -86,13 +86,17 @@ impl ConfigType {
 pub struct Config {
     r#type: ConfigType,
     provider: String,
-    display_name: String,
+    display_name: Option<String>,
 }
 
 impl Config {
-    pub fn new<S: Into<String>>(r#type: ConfigType, provider: S, display_name: S) -> Self {
+    pub fn new<S: Into<String>>(
+        r#type: ConfigType,
+        provider: S,
+        display_name: Option<String>,
+    ) -> Self {
         Self {
-            display_name: display_name.into(),
+            display_name,
             provider: provider.into(),
             r#type,
         }
@@ -109,7 +113,7 @@ impl Config {
     }
 
     /// The display name for the email provider
-    pub fn display_name(&self) -> &str {
+    pub fn display_name(&self) -> &Option<String> {
         &self.display_name
     }
 

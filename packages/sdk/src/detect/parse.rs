@@ -62,7 +62,10 @@ impl AutoConfigParser {
 
     pub fn parse(autoconfig: AutoConfig) -> Result<Config> {
         let provider: String = autoconfig.email_provider().id().into();
-        let display_name: String = autoconfig.email_provider().display_name().unwrap().into();
+        let display_name: Option<String> = autoconfig
+            .email_provider()
+            .display_name()
+            .map(|name| name.to_string());
 
         let incoming: Vec<ServerConfig> = autoconfig
             .email_provider()

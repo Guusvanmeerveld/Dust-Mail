@@ -11,9 +11,11 @@ use crate::parse::map_pop_error;
 
 use crate::{
     tls::create_tls_connector,
-    types::{self, ConnectionSecurity, IncomingClientType},
+    types::{self, ConnectionSecurity},
     utils::{create_tcp_stream, create_tls_stream},
 };
+
+use super::types::ServerConfigType;
 
 const IMAP_GREETING: &str = "* ok";
 
@@ -48,7 +50,7 @@ pub fn from_server(
     domain: &str,
     port: &u16,
     security: &ConnectionSecurity,
-) -> types::Result<Option<IncomingClientType>> {
+) -> types::Result<Option<ServerConfigType>> {
     let addr = (domain, *port);
 
     let connect_timeout = Some(Duration::from_millis(2500));
@@ -73,7 +75,7 @@ pub fn from_server(
         };
 
         if is_imap {
-            return Ok(Some(IncomingClientType::Imap));
+            return Ok(Some(ServerConfigType::Imap));
         }
     }
     #[cfg(feature = "pop")]
@@ -92,7 +94,7 @@ pub fn from_server(
         };
 
         if is_pop {
-            return Ok(Some(IncomingClientType::Pop));
+            return Ok(Some(ServerConfigType::Pop));
         }
     }
 
@@ -101,7 +103,7 @@ pub fn from_server(
 
 #[cfg(test)]
 mod test {
-    use crate::types::{ConnectionSecurity, IncomingClientType};
+    use crate::{detect::types::ServerConfigType, types::ConnectionSecurity};
 
     use super::from_server;
 
@@ -115,12 +117,12 @@ mod test {
         {
             assert_eq!(
                 from_server(domain, &imap_port, &ConnectionSecurity::Tls).unwrap(),
-                Some(IncomingClientType::Imap),
+                Some(ServerConfigType::Imap),
             );
 
             assert_ne!(
                 from_server(domain, &pop_port, &ConnectionSecurity::Tls).unwrap(),
-                Some(IncomingClientType::Imap),
+                Some(ServerConfigType::Imap),
             );
         }
 
@@ -128,12 +130,12 @@ mod test {
         {
             assert_eq!(
                 from_server(domain, &pop_port, &ConnectionSecurity::Tls).unwrap(),
-                Some(IncomingClientType::Pop),
+                Some(ServerConfigType::Pop),
             );
 
             assert_ne!(
                 from_server(domain, &imap_port, &ConnectionSecurity::Tls).unwrap(),
-                Some(IncomingClientType::Pop),
+                Some(ServerConfigType::Pop),
             );
         }
     }

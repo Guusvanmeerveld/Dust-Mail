@@ -183,16 +183,16 @@ mod tests {
     fn create_session() -> Box<dyn Session> {
         dotenv().ok();
 
-        let username = env::var("POP_USERNAME").unwrap();
-        let password = env::var("POP_PASSWORD").unwrap();
+        let username = env::var("IMAP_USERNAME").unwrap();
+        let password = env::var("IMAP_PASSWORD").unwrap();
 
-        let server = env::var("POP_SERVER").unwrap();
-        let port: u16 = 995;
+        let server = env::var("IMAP_SERVER").unwrap();
+        let port: u16 = 993;
 
         let options = LoginOptions::new(server, &port);
 
         let client =
-            super::ClientConstructor::new(&IncomingClientType::Pop, Some(options)).unwrap();
+            super::ClientConstructor::new(&IncomingClientType::Imap, Some(options)).unwrap();
 
         let session = client.login(&username, &password).unwrap();
 
