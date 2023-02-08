@@ -3,32 +3,9 @@ use std::{
     time::Duration,
 };
 
-#[cfg(test)]
-use std::{collections::HashMap, env};
-
-#[cfg(test)]
-use dotenv::dotenv;
-
 use native_tls::TlsStream;
 
 use crate::{parse, tls, types};
-
-#[cfg(test)]
-pub fn get_env() -> HashMap<String, String> {
-    dotenv().ok();
-
-    let mut map = HashMap::new();
-
-    let vars = env::vars();
-
-    for var in vars {
-        match map.insert(var.0, var.1) {
-            _ => {}
-        };
-    }
-
-    map
-}
 
 pub fn create_tcp_stream<A: ToSocketAddrs>(
     addr: A,

@@ -369,22 +369,26 @@ mod tests {
 
     use super::{ImapSession, LoginOptions};
 
-    use crate::{client::incoming::Session, utils::get_env};
+    use crate::client::incoming::Session;
+
+    use dotenv::dotenv;
+
+    use std::env;
 
     fn create_test_session() -> ImapSession<TlsStream<TcpStream>> {
-        let envs = get_env();
+        dotenv().ok();
 
-        let username = envs.get("IMAP_USERNAME").unwrap();
-        let password = envs.get("IMAP_PASSWORD").unwrap();
+        let username = env::var("IMAP_USERNAME").unwrap();
+        let password = env::var("IMAP_PASSWORD").unwrap();
 
-        let server = envs.get("IMAP_SERVER").unwrap();
+        let server = env::var("IMAP_SERVER").unwrap();
         let port: u16 = 993;
 
         let options = LoginOptions::new(server, &port);
 
         let client = super::connect(options).unwrap();
 
-        let session = client.login(username, password).unwrap();
+        let session = client.login(&username, &password).unwrap();
 
         session
     }
