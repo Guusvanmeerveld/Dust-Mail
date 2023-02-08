@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 
-use imap::types::Fetch as ImapFetch;
+use imap::types::{Fetch as ImapFetch, Mailbox as ImapMailbox};
 use native_tls::TlsStream;
 
 use crate::client::incoming::Session;
@@ -40,6 +40,8 @@ pub struct ImapSession<S: Read + Write> {
     box_list_last_refresh: Option<Instant>,
     // Whether the message count for each mailbox has been retrieved in this session.
     // retrieved_message_counts: bool,
+    /// The currently selected box' id.
+    selected_box: Option<(String, ImapMailbox)>,
 }
 
 pub fn connect(options: LoginOptions) -> Result<ImapClient<TlsStream<TcpStream>>> {
@@ -79,6 +81,7 @@ impl<S: Read + Write> ImapClient<S> {
             box_list: Vec::new(),
             box_list_last_refresh: None,
             // retrieved_message_counts: false,
+            selected_box: None,
         };
 
         Ok(imap_session)
@@ -135,6 +138,30 @@ impl<S: Read + Write> ImapSession<S> {
         };
 
         Ok(())
+    }
+
+    /// Select a given box if it hasn't already been selected, otherwise return the already selected box.
+    fn select(&mut self, box_id: &str) -> Result<ImapMailbox> {
+        match self.selected_box.as_ref() {
+            Some((selected_box_id, selected_box)) => {
+                if selected_box_id == box_id {
+                    return Ok(selected_box.clone());
+                } else {
+                    let session = self.get_session_mut();
+
+                    session.close().map_err(map_imap_error)?;
+                }
+            }
+            None => {}
+        };
+
+        let session = self.get_session_mut();
+
+        let mailbox = session.select(box_id).map_err(map_imap_error)?;
+
+        self.selected_box = Some((box_id.to_string(), mailbox.clone()));
+
+        Ok(mailbox)
     }
 }
 
@@ -300,12 +327,9 @@ impl<S: Read + Write> Session for ImapSession<S> {
     fn messages(&mut self, box_id: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
         self.box_is_selectable_else_err(box_id)?;
 
-        let session = self.get_session_mut();
-
-        let total_messages = session
+        let total_messages = self
             .select(&box_id)
-            .map(|selected_box| selected_box.exists)
-            .map_err(map_imap_error)?;
+            .map(|selected_box| selected_box.exists)?;
 
         if total_messages < 1 {
             return Ok(Vec::new());
@@ -325,11 +349,11 @@ impl<S: Read + Write> Session for ImapSession<S> {
 
         let sequence = format!("{}:{}", sequence_start, sequence_end);
 
+        let session = self.get_session_mut();
+
         let data = session
             .fetch(sequence, QUERY_PREVIEW)
             .map_err(map_imap_error)?;
-
-        session.close().map_err(map_imap_error)?;
 
         let mut previews: Vec<Preview> =
             Vec::with_capacity((sequence_end.saturating_sub(sequence_start)) as usize);
@@ -345,15 +369,13 @@ impl<S: Read + Write> Session for ImapSession<S> {
     fn get_message(&mut self, box_id: &str, msg_id: &str) -> Result<Message> {
         self.box_is_selectable_else_err(box_id)?;
 
-        let session = self.get_session_mut();
+        self.select(box_id)?;
 
-        session.select(box_id).map_err(map_imap_error)?;
+        let session = self.get_session_mut();
 
         let fetched = session
             .uid_fetch(msg_id, QUERY_FULL_MESSAGE)
             .map_err(map_imap_error)?;
-
-        session.close().map_err(map_imap_error)?;
 
         let fetch = Self::get_item_from_fetch_else_err(&fetched)?;
 
@@ -417,7 +439,7 @@ mod tests {
     fn get_messages() {
         let mut session = create_test_session();
 
-        let box_name = "[Gmail]";
+        let box_name = "INBOX";
 
         let messages = session.messages(box_name, 0, 10).unwrap();
 
