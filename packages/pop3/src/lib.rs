@@ -490,10 +490,12 @@ impl<S: Read + Write> Client<S> {
         }
     }
 
+    /// Returns the current list of capabilities given by the server.
     pub fn capabilities(&self) -> &Capabilities {
         &self.capabilities
     }
 
+    /// Fetches a list of capabilities for the currently connected server and returns it.
     pub fn capa(&mut self) -> types::Result<Capabilities> {
         let socket = self.get_socket_mut()?;
 

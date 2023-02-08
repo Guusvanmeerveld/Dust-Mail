@@ -50,7 +50,7 @@ impl Parser {
 
         let msg_id: u32 = split.next().unwrap().trim().parse().unwrap();
 
-        let unique_id = split.next().unwrap().to_owned();
+        let unique_id = split.next().unwrap().trim().to_owned();
 
         (msg_id, unique_id)
     }

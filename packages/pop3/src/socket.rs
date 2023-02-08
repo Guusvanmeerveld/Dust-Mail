@@ -44,7 +44,7 @@ impl<T: Read + Write> Socket<T> {
 
             Err(types::Error::new(
                 types::ErrorKind::ServerError,
-                format!("Server error: {}", left_over),
+                format!("Server error: {}", left_over.trim()),
             ))
         } else {
             Err(types::Error::new(
