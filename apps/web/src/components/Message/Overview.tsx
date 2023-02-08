@@ -21,6 +21,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 
 import CloseIcon from "@mui/icons-material/Close";
+import HtmlMarkupIcon from "@mui/icons-material/Code";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import CollapseIcon from "@mui/icons-material/ExpandLess";
 import ExpandIcon from "@mui/icons-material/ExpandMore";
@@ -29,6 +30,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import BrowserIcon from "@mui/icons-material/Language";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
+import TextOnlyIcon from "@mui/icons-material/TextFields";
 
 import { Address } from "@models/address";
 
@@ -203,6 +205,11 @@ const UnMemoizedMessageOverview: FC = () => {
 	const [showImages, setShowImages] =
 		useLocalStorageState<boolean>("showImages");
 
+	const [showTextOnly, setShowTextOnly] = useLocalStorageState<boolean>(
+		"showTextOnly",
+		{ defaultValue: false }
+	);
+
 	const [messageActionsAnchor, setMessageActionsAnchor] =
 		useState<null | Element>(null);
 	const messageActionsAnchorOpen = Boolean(messageActionsAnchor);
@@ -244,9 +251,9 @@ const UnMemoizedMessageOverview: FC = () => {
 													<Skeleton />
 												) : (
 													`${new Date(
-														data.sent ?? 0
+														(data.sent ?? 0) * 1000
 													).toLocaleDateString()} - ${new Date(
-														data.sent ?? 0
+														(data.sent ?? 0) * 1000
 													).toLocaleTimeString()}`
 												)}
 											</Typography>
@@ -283,18 +290,31 @@ const UnMemoizedMessageOverview: FC = () => {
 										spacing={0.5}
 										sx={{ display: minimized ? "none" : "flex" }}
 									>
-										<Tooltip title="Toggle dark mode for message view">
-											<IconButton onClick={() => setDarkMode(() => !darkMode)}>
-												{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
-											</IconButton>
-										</Tooltip>
-										<Tooltip title="Toggle images in message view">
+										<Tooltip title="Toggle text only mode">
 											<IconButton
-												onClick={() => setShowImages((state) => !state)}
+												onClick={() => setShowTextOnly(() => !showTextOnly)}
 											>
-												{showImages ? <ImageIcon /> : <HideImageIcon />}
+												{showTextOnly ? <TextOnlyIcon /> : <HtmlMarkupIcon />}
 											</IconButton>
 										</Tooltip>
+										{!showTextOnly && data.content.html && (
+											<>
+												<Tooltip title="Toggle dark mode for message view">
+													<IconButton
+														onClick={() => setDarkMode(() => !darkMode)}
+													>
+														{darkMode ? <DarkModeIcon /> : <LightModeIcon />}
+													</IconButton>
+												</Tooltip>
+												<Tooltip title="Toggle images in message view">
+													<IconButton
+														onClick={() => setShowImages((state) => !state)}
+													>
+														{showImages ? <ImageIcon /> : <HideImageIcon />}
+													</IconButton>
+												</Tooltip>
+											</>
+										)}
 										<Tooltip title="Message actions">
 											<IconButton
 												onClick={(e: MouseEvent) =>
@@ -363,7 +383,10 @@ const UnMemoizedMessageOverview: FC = () => {
 						sx={{
 							...scrollbarStyles(theme),
 							overflowY: "scroll",
-							p: data?.content?.text && !data.content.html ? 2 : 0,
+							p:
+								data?.content?.text && (!data.content.html || showTextOnly)
+									? 2
+									: 0,
 							flexGrow: 1
 						}}
 					>
@@ -376,18 +399,26 @@ const UnMemoizedMessageOverview: FC = () => {
 						)}
 						{!isFetching && data?.content && (
 							<>
-								{data.content.html && (
+								{!showTextOnly && data.content.html && (
 									<MessageDisplay content={data.content.html} />
 								)}
-								{!data.content.html && data.content.text && (
+								{(!data.content.html || showTextOnly) && data.content.text && (
 									<Box
+										sx={{ whiteSpace: "pre-line" }}
 										dangerouslySetInnerHTML={{
 											__html: data.content.text
 										}}
 									/>
 								)}
-								{!(data.content.html || data.content.text) && (
-									<Typography sx={{ m: 1 }}>No message content</Typography>
+								{!(
+									(data.content.html && !showTextOnly) ||
+									data.content.text
+								) && (
+									<Typography sx={{ m: 1 }}>
+										{showTextOnly && data.content.html
+											? "You need to allow html to view this email"
+											: "No message content "}
+									</Typography>
 								)}
 							</>
 						)}
