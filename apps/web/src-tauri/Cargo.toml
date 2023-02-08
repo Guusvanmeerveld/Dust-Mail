@@ -12,12 +12,12 @@ rust-version = "1.61"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.2", features = [] }
+tauri-build = { version = "1.2", features = ["isolation"] }
 
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.2", features = ["devtools", "shell-open", "system-tray", "window-close", "window-create"] }
+tauri = { version = "1.2", features = ["devtools", "isolation", "shell-open", "system-tray", "window-close", "window-create"] }
 sdk = { path = "../../../packages/sdk", version = "0.1" }
 chacha20poly1305 = { version = "0.10", features = ["stream"] }
 open = "3.0"

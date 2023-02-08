@@ -8,7 +8,7 @@
 		"ecmaVersion": 8
 	},
 	"plugins": ["prettier"],
-	"ignorePatterns": ["node_modules/*", ".next/*", ".out/*"],
+	"ignorePatterns": ["node_modules/*", ".next/*", ".out/*", "isolation-dist/*"],
 	"extends": ["eslint:recommended"],
 	"overrides": [
 		{
