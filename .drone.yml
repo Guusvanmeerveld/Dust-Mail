@@ -1,0 +1,22 @@
+kind: pipeline
+type: docker
+name: Deploy commit
+
+services:
+  - name: greenmail
+    image: 'greenmail/standalone:1.6.12'
+    environment:
+      GREENMAIL_OPTS: "-Dgreenmail.verbose -Dgreenmail.setup.test.pop3 -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=test:localhost"
+
+steps:
+  - name: Run pop3 tests
+    image: rust:1.61
+    pull: if-not-exists
+    environment:
+      SERVER: "greenmail"
+      PORT: "3110"
+      USERNAME: "test"
+      PASSWORD: "localhost"
+    commands:
+      - cargo fetch --locked
+      - cargo test
