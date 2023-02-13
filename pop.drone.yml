@@ -19,4 +19,4 @@ steps:
       PASSWORD: "localhost"
     commands:
       - cargo fetch --locked
-      - cargo test
+      - cargo test --package pop3
