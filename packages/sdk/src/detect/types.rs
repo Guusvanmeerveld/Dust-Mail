@@ -40,6 +40,10 @@ impl ServerConfig {
         }
     }
 
+    pub fn r#type(&self) -> &ServerConfigType {
+        &self.r#type
+    }
+
     pub fn port(&self) -> &u16 {
         &self.port
     }

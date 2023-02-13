@@ -142,13 +142,41 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
                     ConnectionSecurity::Tls,
                 ),
                 (pop_domain.clone(), secure_pop_port, ConnectionSecurity::Tls),
-                (mail_domain, pop_port, ConnectionSecurity::Plain),
+                (mail_domain.clone(), pop_port, ConnectionSecurity::Plain),
                 (pop_domain, pop_port, ConnectionSecurity::Plain),
             ];
 
             let check_pop_sockets = spawn(check_sockets(sockets_to_check, &ServerConfigType::Pop));
 
             check_socket_threads.push(check_pop_sockets);
+        }
+
+        #[cfg(feature = "smtp")]
+        {
+            let secure_smpt_port: u16 = 587;
+            let smpt_port: u16 = 25;
+
+            let smpt_domain = format!("smtp.{}", domain);
+
+            let sockets_to_check: Vec<Socket> = vec![
+                (
+                    mail_domain.clone(),
+                    secure_smpt_port,
+                    ConnectionSecurity::StartTls,
+                ),
+                (
+                    smpt_domain.clone(),
+                    secure_smpt_port,
+                    ConnectionSecurity::StartTls,
+                ),
+                (mail_domain, smpt_port, ConnectionSecurity::Plain),
+                (smpt_domain, smpt_port, ConnectionSecurity::Plain),
+            ];
+
+            let check_smtp_sockets =
+                spawn(check_sockets(sockets_to_check, &ServerConfigType::Smtp));
+
+            check_socket_threads.push(check_smtp_sockets);
         }
 
         let check_sockets_results = join_all(check_socket_threads).await;
@@ -173,7 +201,11 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
                     vec![AuthenticationType::ClearText],
                 );
 
-                incoming_configs.push(config);
+                if config.r#type() == &ServerConfigType::Smtp {
+                    outgoing_configs.push(config);
+                } else {
+                    incoming_configs.push(config);
+                }
             }
         }
 

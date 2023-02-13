@@ -19,9 +19,10 @@ use super::types::ServerConfigType;
 
 const IMAP_GREETING: &str = "* ok";
 
-#[cfg(feature = "imap")]
-/// This function assumes the given stream is a freshly opened imap connection
-fn detect_imap_from_stream<S: Read + Write + BufRead>(stream: &mut S) -> types::Result<bool> {
+/// This function assumes the given stream is a freshly opened connection
+fn detect_from_stream<S: Read + Write + BufRead>(
+    stream: &mut S,
+) -> types::Result<Option<ServerConfigType>> {
     let mut response = String::new();
 
     stream
@@ -30,17 +31,17 @@ fn detect_imap_from_stream<S: Read + Write + BufRead>(stream: &mut S) -> types::
 
     response.make_ascii_lowercase();
 
-    let mut is_imap = true;
-
-    if !response.starts_with(IMAP_GREETING) {
-        is_imap = false;
+    let config_type = if response.starts_with(IMAP_GREETING) {
+        Some(ServerConfigType::Imap)
+    } else if response.contains("imap") {
+        Some(ServerConfigType::Imap)
+    } else if response.contains("smtp") {
+        Some(ServerConfigType::Smtp)
+    } else {
+        None
     };
 
-    if !response.contains("imap") {
-        is_imap = false;
-    };
-
-    Ok(is_imap)
+    Ok(config_type)
 }
 
 /// Fetch the service type from a given server address. e.g I have a server at 192.168.0.1:993, this function could tell me that it is an Imap server.
@@ -63,14 +64,14 @@ pub fn from_server(
 
                 let mut bufstream = BufStream::new(tls_stream);
 
-                detect_imap_from_stream(&mut bufstream)?
+                detect_from_stream(&mut bufstream)? == Some(ServerConfigType::Imap)
             }
             _ => {
                 let tcp_stream = create_tcp_stream(addr, connect_timeout)?;
 
                 let mut bufstream = BufStream::new(tcp_stream);
 
-                detect_imap_from_stream(&mut bufstream)?
+                detect_from_stream(&mut bufstream)? == Some(ServerConfigType::Imap)
             }
         };
 
@@ -97,6 +98,29 @@ pub fn from_server(
             return Ok(Some(ServerConfigType::Pop));
         }
     }
+    #[cfg(feature = "smtp")]
+    {
+        let is_smtp = match security {
+            ConnectionSecurity::Tls => {
+                let tls_stream = create_tls_stream(addr, domain, connect_timeout)?;
+
+                let mut bufstream = BufStream::new(tls_stream);
+
+                detect_from_stream(&mut bufstream)? == Some(ServerConfigType::Smtp)
+            }
+            _ => {
+                let tcp_stream = create_tcp_stream(addr, connect_timeout)?;
+
+                let mut bufstream = BufStream::new(tcp_stream);
+
+                detect_from_stream(&mut bufstream)? == Some(ServerConfigType::Smtp)
+            }
+        };
+
+        if is_smtp {
+            return Ok(Some(ServerConfigType::Smtp));
+        }
+    }
 
     Ok(None)
 }
@@ -111,6 +135,7 @@ mod test {
     fn client_type() {
         let domain = "outlook.office365.com";
         let imap_port = 993;
+        let smtp_port = 587;
         let pop_port = 995;
 
         #[cfg(feature = "imap")]
@@ -136,6 +161,19 @@ mod test {
             assert_ne!(
                 from_server(domain, &imap_port, &ConnectionSecurity::Tls).unwrap(),
                 Some(ServerConfigType::Pop),
+            );
+        }
+
+        #[cfg(feature = "imap")]
+        {
+            assert_eq!(
+                from_server(domain, &smtp_port, &ConnectionSecurity::StartTls).unwrap(),
+                Some(ServerConfigType::Smtp),
+            );
+
+            assert_ne!(
+                from_server(domain, &imap_port, &ConnectionSecurity::Tls).unwrap(),
+                Some(ServerConfigType::Smtp),
             );
         }
     }
