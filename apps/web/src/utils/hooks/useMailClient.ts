@@ -73,7 +73,7 @@ const useMailClient = (): MailClient => {
 			throw NotImplemented;
 		},
 		async login(options) {
-			options = LoginOptions.parse(options);
+			options = parseZodOutput(LoginOptions.safeParse(options));
 
 			if (isTauri) {
 				return invoke("login", { options })

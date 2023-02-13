@@ -225,7 +225,7 @@ const UnMemoizedServerConfigColumn: FC<{
 					required
 					onChange={(e) =>
 						setSetting(type, selectedMailServerType)("port")(
-							e.currentTarget.value
+							parseInt(e.currentTarget.value)
 						)
 					}
 					value={port}
