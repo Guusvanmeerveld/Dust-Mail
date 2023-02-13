@@ -13,17 +13,6 @@
 !/packages/tsconfig/*
 !/packages/typings/*
 
-!/packages/autodiscover/src
-!/packages/autodiscover/package.json
-!/packages/autodiscover/rollup.config.ts
-!/packages/autodiscover/tsconfig.json
-
-!/apps/server/src
-!/apps/server/public
-!/apps/server/package.json
-!/apps/server/tsconfig.build.json
-!/apps/server/tsconfig.json
-
 !/apps/web/src
 !/apps/web/public
 !/apps/web/.env
