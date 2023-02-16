@@ -11,6 +11,7 @@ const AT_SYMBOL: char = '@';
 const EMAIL_REGEX: &str =
     r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})";
 
+/// Given an email providers domain, try to connect to autoconfig servers for that provider and return the config.
 pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
     let client = Client::new();
 
@@ -26,7 +27,7 @@ pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
         format!("https://autoconfig.thunderbird.net/v1.1/{}", domain),
     ];
 
-    let config_unparsed: Option<String> = request_urls(&client, urls);
+    let config_unparsed: Option<String> = client.request_urls(urls);
 
     match config_unparsed {
         Some(config_unparsed) => {
@@ -38,6 +39,7 @@ pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
     }
 }
 
+/// Given an email address, try to connect to the email providers autoconfig servers and return the config that was found.
 pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
     let email_regex = Regex::new(EMAIL_REGEX).unwrap();
 
@@ -66,35 +68,5 @@ pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
     from_domain(domain)
 }
 
-fn request_urls(client: &Client, urls: Vec<String>) -> Option<String> {
-    // Fetch every given url
-    for url in urls {
-        match client.get(url) {
-            Ok(response) => return Some(response),
-            Err(_) => {}
-        }
-    }
-
-    // Return nothing if all of the requests failed
-    return None;
-}
-
 #[cfg(test)]
-mod tests {
-    use std::collections::HashMap;
-
-    #[test]
-    fn from_addr() {
-        let mut addresses = HashMap::new();
-
-        addresses.insert("guusvanmeerveld@outlook.com", "outlook.com");
-        addresses.insert("guusvanmeerveld@gmail.com", "googlemail.com");
-        addresses.insert("contact@guusvanmeerveld.dev", "guusvanmeerveld.dev");
-
-        for (addr, id) in addresses.iter() {
-            let config = super::from_addr(addr).unwrap().unwrap();
-
-            assert_eq!(id, &config.email_provider().id());
-        }
-    }
-}
+mod test;

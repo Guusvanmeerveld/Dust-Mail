@@ -16,7 +16,7 @@ impl Client {
     }
 
     /// Fetches a given url and returns the XML response (if there is one)
-    pub fn get<S: Into<String>>(&self, uri: S) -> types::Result<String> {
+    fn get<S: Into<String>>(&self, uri: S) -> types::Result<String> {
         let response = self.http_client.get(uri.into()).send().map_err(|e| {
             types::Error::new(
                 types::ErrorKind::Http,
@@ -69,5 +69,18 @@ impl Client {
         } else {
             return Ok(body);
         };
+    }
+
+    pub fn request_urls(&self, urls: Vec<String>) -> Option<String> {
+        // Fetch every given url
+        for url in urls {
+            match self.get(url) {
+                Ok(response) => return Some(response),
+                Err(_) => {}
+            }
+        }
+
+        // Return nothing if all of the requests failed
+        return None;
     }
 }

@@ -9,6 +9,7 @@ pub fn from_str(string: &str) -> types::Result<Config> {
     Ok(config)
 }
 
+#[cfg(test)]
 mod tests {
     #[test]
     fn test_parser() {
