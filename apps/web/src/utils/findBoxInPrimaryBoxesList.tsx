@@ -4,6 +4,7 @@ import Dangerous from "@mui/icons-material/Dangerous";
 import Delete from "@mui/icons-material/Delete";
 import Drafts from "@mui/icons-material/Drafts";
 import Forum from "@mui/icons-material/Forum";
+import Google from "@mui/icons-material/Google";
 import Inbox from "@mui/icons-material/Inbox";
 import Unread from "@mui/icons-material/MarkEmailUnread";
 import People from "@mui/icons-material/People";
@@ -33,7 +34,8 @@ const DEFAULT_PRIMARY_BOXES: {
 	{ name: "Personal", id: ["CATEGORY_PERSONAL", "Personal"], icon: <Person /> },
 	{ name: "Promotions", id: "CATEGORY_PROMOTIONS", icon: <Promotions /> },
 	{ name: "Social", id: "CATEGORY_SOCIAL", icon: <People /> },
-	{ name: "Updates", id: "CATEGORY_UPDATES", icon: <Updates /> }
+	{ name: "Updates", id: "CATEGORY_UPDATES", icon: <Updates /> },
+	{ name: "Gmail", id: ["[Gmail]", "Gmail"], icon: <Google /> }
 ];
 
 interface PrimaryBox {

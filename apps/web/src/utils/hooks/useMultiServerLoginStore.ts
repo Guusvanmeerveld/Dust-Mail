@@ -43,7 +43,7 @@ type Store = Record<
 		setLoginOptions: (
 			type: ServerType,
 			mailType: MailServerType,
-			options: MultiServerLoginOptions
+			options: Partial<MultiServerLoginOptions>
 		) => void;
 		resetToDefaults: () => void;
 		setLoginOptionsProperty: (
@@ -107,7 +107,7 @@ const defaultSmtpConfig: MultiServerLoginOptions = {
 	loginType: defaultLoginTypes
 };
 
-const defaultConfigs = {
+export const defaultConfigs = {
 	incoming: {
 		Imap: defaultImapConfig,
 		Exchange: defaultExchangeConfig,
@@ -138,7 +138,12 @@ const useMultiServerLoginStore = create<Store>((set) => ({
 			}
 		})),
 	setLoginOptions: (type, mailType, options) => {
-		set((state) => ({ [type]: { ...state[type], [mailType]: options } }));
+		set((state) => ({
+			[type]: {
+				...state[type],
+				[mailType]: options
+			}
+		}));
 	},
 	resetToDefaults: () =>
 		set({

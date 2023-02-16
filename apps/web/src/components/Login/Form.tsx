@@ -54,7 +54,9 @@ import scrollbarStyles from "@styles/scrollbar";
 
 import { useMailLogin } from "@utils/hooks/useLogin";
 import useMailClient from "@utils/hooks/useMailClient";
-import useMultiServerLoginStore from "@utils/hooks/useMultiServerLoginStore";
+import useMultiServerLoginStore, {
+	defaultConfigs
+} from "@utils/hooks/useMultiServerLoginStore";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 import parseEmail from "@utils/parseEmail";
@@ -469,6 +471,33 @@ const LoginForm: FC<{
 
 		setFetching(false);
 
+		const emailAddressResult = parseEmail(username);
+
+		if (!emailAddressResult.ok) {
+			setError(errorToString(emailAddressResult.error));
+			return;
+		}
+
+		const mailDomain = `mail.${emailAddressResult.data.domain}`;
+
+		incomingMailServerTypeList.forEach((loginType) =>
+			setLoginOptions("incoming", loginType, {
+				...defaultConfigs["incoming"][loginType],
+				domain: mailDomain,
+				username,
+				password
+			})
+		);
+
+		outgoingMailServerTypeList.forEach((loginType) =>
+			setLoginOptions("outgoing", loginType, {
+				...defaultConfigs["outgoing"][loginType],
+				domain: mailDomain,
+				username,
+				password
+			})
+		);
+
 		if (!configResult) return;
 
 		if (!configResult.ok) {
@@ -478,16 +507,6 @@ const LoginForm: FC<{
 				);
 
 				setShowLoginOptionsMenu(true);
-
-				const emailAddressResult = parseEmail(username);
-
-				if (!emailAddressResult.ok) {
-					setError(errorToString(emailAddressResult.error));
-				}
-
-				// incomingMailServerTypeList.forEach((loginType) =>
-				// 	setLoginOptions("incoming", loginType, {domain: `${}`})
-				// );
 			} else {
 				const message = errorToString(configResult.error);
 
