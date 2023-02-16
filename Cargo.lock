@@ -781,7 +781,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bd4b30a6560bbd9b4620f4de34c3f14f60848e58a9b7216801afcb4c7b31c3c"
 
 [[package]]
-name = "dust-mail"
+name = "dust-mail-client"
 version = "0.1.4"
 dependencies = [
  "base64 0.21.0",
@@ -3034,10 +3034,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "server-rs"
-version = "0.1.0"
 
 [[package]]
 name = "servo_arc"
