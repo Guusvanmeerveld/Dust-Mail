@@ -1,6 +1,6 @@
 kind: pipeline
 type: docker
-name: Deploy commit
+name: test-pop
 
 platform:
   os: linux
@@ -27,6 +27,31 @@ steps:
     commands:
       - cargo fetch --locked
       - cargo test --package pop3
+
+volumes:
+  - name: cache
+    host:
+      path: /tmp/drone/cache/dust-mail/target
+
+---
+kind: pipeline
+type: docker
+name: test-autoconfig
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: Run autoconfig tests
+    image: rust:1.61
+    pull: if-not-exists
+    volumes:
+      - name: cache
+        path: /drone/src/target
+    commands:
+      - cargo fetch --locked
+      - cargo test --package autoconfig
 
 volumes:
   - name: cache
