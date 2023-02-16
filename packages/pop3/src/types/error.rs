@@ -21,23 +21,23 @@ pub enum ErrorKind {
 
 #[derive(Serialize, Debug)]
 pub struct Error {
-    msg: String,
+    message: String,
     kind: ErrorKind,
 }
 
 impl Error {
-    pub fn new<S>(error_kind: ErrorKind, msg: S) -> Self
+    pub fn new<S>(error_kind: ErrorKind, message: S) -> Self
     where
         String: From<S>,
     {
         Self {
-            msg: msg.into(),
+            message: message.into(),
             kind: error_kind,
         }
     }
 
     pub fn message(&self) -> &str {
-        &self.msg
+        &self.message
     }
 
     pub fn kind(&self) -> &ErrorKind {
@@ -47,12 +47,12 @@ impl Error {
 
 impl Into<String> for Error {
     fn into(self) -> String {
-        self.msg
+        self.message
     }
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.msg)
+        write!(f, "{}", self.message)
     }
 }

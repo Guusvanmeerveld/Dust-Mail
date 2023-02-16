@@ -1,12 +1,10 @@
-use std::cmp::Ordering;
-
 use serde::Serialize;
 
 use crate::parse;
 
 use super::{Flag, Headers};
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct Address {
     name: Option<String>,
     address: Option<String>,
@@ -97,7 +95,7 @@ impl Preview {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Content {
     text: Option<String>,
     html: Option<String>,

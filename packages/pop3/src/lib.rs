@@ -556,6 +556,7 @@ mod test {
 
     use dotenv::dotenv;
     use either::Either::{Left, Right};
+    // use native_tls::{TlsConnector, TlsStream};
 
     use crate::ClientState;
 
@@ -594,6 +595,23 @@ mod test {
 
         client
     }
+
+    // fn create_logged_in_client_tls() -> Client<TlsStream<TcpStream>> {
+    //     let client_info = create_client_info();
+    //     let server = client_info.server.as_ref();
+    //     let port = client_info.port;
+
+    //     let username = client_info.username.as_ref();
+    //     let password = client_info.password.as_ref();
+
+    //     let tls = TlsConnector::new().unwrap();
+
+    //     let mut client = super::connect((server, port), server, &tls, None).unwrap();
+
+    //     client.login(username, password).unwrap();
+
+    //     client
+    // }
 
     #[test]
     fn connect() {
@@ -667,7 +685,7 @@ mod test {
 
     // #[test]
     // fn retr() {
-    //     let mut client = create_logged_in_client();
+    //     let mut client = create_logged_in_client_tls();
 
     //     let bytes = client.retr(1).unwrap();
 

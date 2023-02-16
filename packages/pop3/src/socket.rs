@@ -89,9 +89,9 @@ impl<T: Read + Write> Socket<T> {
                 None => {}
             };
 
-            let last_three_bytes = buf.get(buf.len().saturating_sub(3)..).unwrap();
+            let last_five_bytes = buf.get(buf.len().saturating_sub(5)..).unwrap();
 
-            if last_three_bytes == EOF {
+            if last_five_bytes == EOF {
                 // Remove the last 3 bytes which should be `[DOT, CR, LF]` as they are not part of the message
                 buf.truncate(buf.len().saturating_sub(3));
 
