@@ -1,11 +1,11 @@
 [package]
-name = "dust-mail"
+name = "dust-mail-client"
 version = "0.1.4"
 description = "A simple material mail client"
 authors = ["Guus van Meerveld"]
 license = "MIT"
 repository = "https://github.com/Guusvanmeerveld/Dust-Mail"
-default-run = "dust-mail"
+default-run = "dust-mail-client"
 edition = "2021"
 rust-version = "1.61"
 

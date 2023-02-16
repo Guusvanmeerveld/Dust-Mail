@@ -5,20 +5,24 @@ import { LoginOptions } from "@models/login";
 import { MailBoxList, MailBox } from "@models/mailbox";
 import { Version } from "@models/version";
 
+import { Result } from "@interfaces/result";
+
 // TODO: Fully implement api specification
 
 export default interface MailClient {
-	getVersion: () => Promise<z.infer<typeof Version>>;
-	detectConfig: (emailAddress: string) => Promise<z.infer<typeof MailConfig>>;
-	login: (options: z.infer<typeof LoginOptions>) => Promise<string>;
-	get: (boxId?: string) => Promise<z.infer<typeof MailBox>>;
-	list: () => Promise<z.infer<typeof MailBoxList>>;
+	getVersion: () => Promise<Result<z.infer<typeof Version>>>;
+	detectConfig: (
+		emailAddress: string
+	) => Promise<Result<z.infer<typeof MailConfig>>>;
+	login: (options: z.infer<typeof LoginOptions>) => Promise<Result<string>>;
+	get: (boxId?: string) => Promise<Result<z.infer<typeof MailBox>>>;
+	list: () => Promise<Result<z.infer<typeof MailBoxList>>>;
 	messageList: (
 		page: number,
 		boxId?: string
-	) => Promise<z.infer<typeof Preview>>;
+	) => Promise<Result<z.infer<typeof Preview>>>;
 	getMessage: (
 		messageId?: string,
 		boxId?: string
-	) => Promise<z.infer<typeof Message>>;
+	) => Promise<Result<z.infer<typeof Message>>>;
 }

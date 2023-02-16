@@ -127,7 +127,6 @@ importers:
       vite-tsconfig-paths: ^3.4.1
       vitest: ^0.20.3
       workbox-window: ^6.5.3
-      xoauth2: ^1.2.0
       zod: ^3.20.2
       zustand: ^4.0.0-rc.1
     dependencies:
@@ -149,7 +148,6 @@ importers:
       slate: 0.81.3
       slate-react: 0.81.0_njwfekudbehx2lwpmvgkrdxmhi
       use-local-storage-state: 17.2.0_biqbaboplfbrettd7655fr4n2y
-      xoauth2: 1.2.0
       zod: 3.20.2
       zustand: 4.0.0_react@18.2.0
     devDependencies:
@@ -10009,10 +10007,6 @@ packages:
       utf-8-validate:
         optional: true
     dev: true
-
-  /xoauth2/1.2.0:
-    resolution: {integrity: sha512-hKuNbkj3q/ifCcfWnW6KURP+6ExSuLdLG007gasNhMEMKlLaejNkIA6eu5Ol1xPP0/kzTuA87XHDaAcUw5k73Q==}
-    dev: false
 
   /xtend/4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}

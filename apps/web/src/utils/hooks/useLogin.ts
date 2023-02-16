@@ -7,16 +7,22 @@ import { useNavigate } from "react-router-dom";
 
 import { VersionResponse } from "@dust-mail/typings";
 
-import { Error as ErrorModel } from "@models/error";
 import { LoginOptions } from "@models/login";
 
+import { Result } from "@interfaces/result";
+
 import useStore from "@utils/hooks/useStore";
+import {
+	createBaseError,
+	createErrorFromUnknown,
+	parseError
+} from "@utils/parseError";
 
 // TODO: Fix this mess of a file.
 
 export const useMailLogin = (): ((
 	config: z.infer<typeof LoginOptions>
-) => Promise<void>) => {
+) => Promise<Result<void>>) => {
 	const appVersion = useStore((state) => state.appVersion);
 	const setFetching = useStore((state) => state.setFetching);
 
@@ -27,7 +33,11 @@ export const useMailLogin = (): ((
 	const mailClient = useMailClient();
 
 	return async (config) => {
-		if (config.length < 1) return;
+		if (config.length < 1)
+			return createBaseError({
+				kind: "ConfigNotComplete",
+				message: "Config is missing items"
+			});
 
 		// Show the fetching animation
 		setFetching(true);
@@ -35,59 +45,56 @@ export const useMailLogin = (): ((
 		if (!isTauri) {
 			console.log("Checking if server version matches with client version...");
 
-			const versionResponse = await mailClient
+			const versionResponseResult = await mailClient
 				.getVersion()
-				.catch((e: z.infer<typeof ErrorModel>) => {
-					setFetching(false);
+				.catch((error) => createBaseError(createErrorFromUnknown(error)));
 
-					throw e;
-				});
-
-			if (!versionResponse) return;
+			if (!versionResponseResult.ok) {
+				return versionResponseResult;
+			}
 
 			const {
 				version: serverVersion,
 				type: serverVersionType
-			}: VersionResponse = versionResponse;
+			}: VersionResponse = versionResponseResult.data;
 
 			if (serverVersion != appVersion.title) {
 				setFetching(false);
 
-				throw {
+				return createBaseError({
 					message: `Server and client versions did not match, server has version ${serverVersion} (${serverVersionType}) while client has version ${appVersion.title} (${appVersion.type})`,
 					kind: "VersionMismatch"
-				};
+				});
 			}
 		}
 
 		console.log("Sending login request...");
 
 		// Request the login token
-		const data = await mailClient
+		const loginResult = await mailClient
 			.login(config)
 			// If there was anything wrong with the request, catch it
-			.catch((error: z.infer<typeof ErrorModel>) => {
-				// Hide the fetching animation
-				setFetching(false);
+			.catch(parseError);
 
-				console.log("An error occured when requesting the login token");
+		if (!loginResult.ok) {
+			setFetching(false);
 
-				throw error;
-			});
+			return loginResult;
+		}
 
 		const incomingConfig = config.find(
 			(item) => typeof item.clientType != "string" && item.clientType.incoming
 		);
 
-		if (!incomingConfig) return;
-
-		login(data, {
-			username: incomingConfig.username,
+		login(loginResult.data, {
+			username: incomingConfig?.username,
 			redirectToDashboard: true,
 			setAsDefault: true
 		});
 
 		setFetching(false);
+
+		return { ok: true, data: undefined };
 	};
 };
 
@@ -98,7 +105,7 @@ const useLoginFromToken = (): ((
 		redirectToDashboard?: boolean;
 		setAsDefault?: boolean;
 	}
-) => Promise<void>) => {
+) => void) => {
 	const modifyUser = useModifyUser();
 	const [, setCurrentUser] = useCurrentUser();
 
@@ -106,7 +113,7 @@ const useLoginFromToken = (): ((
 
 	const navigate = useNavigate();
 
-	return async (token, options) => {
+	return (token, options) => {
 		const username = options?.username ?? user?.username;
 
 		if (!username) return;

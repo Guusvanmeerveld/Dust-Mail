@@ -415,9 +415,19 @@ const UnMemoizedMessageOverview: FC = () => {
 									data.content.text
 								) && (
 									<Typography sx={{ m: 1 }}>
-										{showTextOnly && data.content.html
-											? "You need to allow html to view this email"
-											: "No message content "}
+										{showTextOnly && data.content.html ? (
+											<>
+												You need to allow html to view this email.{" "}
+												<Link
+													sx={{ cursor: "pointer" }}
+													onClick={() => setShowTextOnly(false)}
+												>
+													Enable now
+												</Link>
+											</>
+										) : (
+											"No message content "
+										)}
 									</Typography>
 								)}
 							</>

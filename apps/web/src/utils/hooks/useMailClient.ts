@@ -6,30 +6,35 @@ import useUser from "./useUser";
 import { messageCountForPage } from "@src/constants";
 
 import { MailConfig } from "@models/config";
-import { Error } from "@models/error";
 import { LoginOptions } from "@models/login";
 import { MailBox, MailBoxList } from "@models/mailbox";
 import { Message } from "@models/message";
 import { Preview } from "@models/preview";
 
 import MailClient from "@interfaces/client";
+import { Error } from "@interfaces/result";
 
+import parseEmail from "@utils/parseEmail";
+import { createBaseError, parseError } from "@utils/parseError";
 import parseZodOutput from "@utils/parseZodOutput";
 
-const NotLoggedIn: z.infer<typeof Error> = {
-	kind: "NotLoggedIn",
-	message: "Could not find session token in local storage"
-};
+const NotLoggedIn = (): Error =>
+	createBaseError({
+		kind: "NotLoggedIn",
+		message: "Could not find session token in local storage"
+	});
 
-const NotImplemented: z.infer<typeof Error> = {
-	kind: "NotImplemented",
-	message: "This feature is not yet implemented"
-};
+const NotImplemented = (): Error =>
+	createBaseError({
+		kind: "NotImplemented",
+		message: "This feature is not yet implemented"
+	});
 
-const MissingRequiredParam: z.infer<typeof Error> = {
-	kind: "MissingRequiredParam",
-	message: "Missing a required parameter"
-};
+const MissingRequiredParam = (): Error =>
+	createBaseError({
+		kind: "MissingRequiredParam",
+		message: "Missing a required parameter"
+	});
 
 const useMailClient = (): MailClient => {
 	const isTauri: boolean = "__TAURI__" in window;
@@ -37,153 +42,132 @@ const useMailClient = (): MailClient => {
 	const user = useUser();
 
 	return {
-		getVersion() {
+		async getVersion() {
 			if (isTauri) {
-				throw {
+				return createBaseError({
 					message: "Version check is not needed in Tauri application",
 					kind: "Unsupported"
-				};
+				});
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		},
 		async detectConfig(emailAddress) {
-			const { success: isEmailAddress } = z
-				.string()
-				.email()
-				.safeParse(emailAddress);
+			const emailAddressParsed = parseEmail(emailAddress);
 
-			if (!isEmailAddress)
-				throw { message: "Email address is invalid", kind: "InvalidInput" };
+			if (!emailAddressParsed.ok) {
+				return emailAddressParsed;
+			}
+
+			emailAddress = emailAddressParsed.data.full;
 
 			if (isTauri) {
 				return invoke("detect_config", { emailAddress })
-					.catch((error: unknown) => {
-						const output = Error.safeParse(error);
-
-						throw parseZodOutput(output);
-					})
 					.then((data: unknown) => {
 						const output = MailConfig.safeParse(data);
 
 						return parseZodOutput(output);
-					});
+					})
+					.catch(parseError);
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		},
 		async login(options) {
-			options = parseZodOutput(LoginOptions.safeParse(options));
+			const optionsResult = parseZodOutput(LoginOptions.safeParse(options));
+
+			if (!optionsResult.ok) {
+				return optionsResult;
+			}
 
 			if (isTauri) {
-				return invoke("login", { options })
-					.catch((error: unknown) => {
-						const output = Error.safeParse(error);
-
-						throw parseZodOutput(output);
-					})
+				return invoke("login", { options: optionsResult.data })
 					.then((data: unknown) => {
 						const output = z.string().safeParse(data);
 
 						return parseZodOutput(output);
-					});
+					})
+					.catch(parseError);
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		},
 		async get(boxId) {
 			const token = user?.token;
 
-			if (!token) throw NotLoggedIn;
+			if (token === undefined) return NotLoggedIn();
 
-			if (!boxId) throw MissingRequiredParam;
+			if (boxId === undefined) return MissingRequiredParam();
 
 			if (isTauri) {
 				return invoke("get", { token, boxId })
-					.catch((error: unknown) => {
-						const output = Error.safeParse(error);
-
-						throw parseZodOutput(output);
-					})
 					.then((data: unknown) => {
 						const output = MailBox.safeParse(data);
 
 						return parseZodOutput(output);
-					});
+					})
+					.catch(parseError);
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		},
 		async list() {
 			const token = user?.token;
 
-			if (!token) throw NotLoggedIn;
+			if (!token) return NotLoggedIn();
 
 			if (isTauri) {
 				return invoke("list", { token })
-					.catch((error: unknown) => {
-						const output = Error.safeParse(error);
-
-						throw parseZodOutput(output);
-					})
 					.then((data: unknown) => {
 						const output = MailBoxList.safeParse(data);
 
 						return parseZodOutput(output);
-					});
+					})
+					.catch(parseError);
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		},
 		async messageList(page, boxId) {
 			const token = user?.token;
 
-			if (!token) throw NotLoggedIn;
+			if (!token) return NotLoggedIn();
 
-			if (!boxId) throw MissingRequiredParam;
+			if (!boxId) return MissingRequiredParam();
 
 			const start = page * messageCountForPage;
 			const end = page * messageCountForPage + messageCountForPage;
 
 			if (isTauri) {
 				return invoke("messages", { token, boxId, start, end })
-					.catch((error: unknown) => {
-						const output = Error.safeParse(error);
-
-						throw parseZodOutput(output);
-					})
 					.then((data: unknown) => {
 						const output = Preview.array().safeParse(data);
 
 						return parseZodOutput(output);
-					});
+					})
+					.catch(parseError);
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		},
 		async getMessage(messageId, boxId) {
 			const token = user?.token;
 
-			if (!token) throw NotLoggedIn;
+			if (!token) return NotLoggedIn();
 
-			if (!boxId || !messageId) throw MissingRequiredParam;
+			if (!boxId || !messageId) return MissingRequiredParam();
 
 			if (isTauri) {
 				return invoke("get_message", { token, boxId, messageId })
-					.catch((error: unknown) => {
-						console.log(error);
-						const output = Error.safeParse(error);
-
-						throw parseZodOutput(output);
-					})
 					.then((data: unknown) => {
 						const output = Message.safeParse(data);
 
 						return parseZodOutput(output);
-					});
+					})
+					.catch(parseError);
 			}
 
-			throw NotImplemented;
+			return NotImplemented();
 		}
 	};
 };

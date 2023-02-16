@@ -11,8 +11,6 @@ import {
 } from "react";
 import { useInfiniteQuery } from "react-query";
 
-import { IncomingMessage } from "@dust-mail/typings";
-
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -45,7 +43,11 @@ import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useSelectedMessage from "@utils/hooks/useSelectedMessage";
 import useStore from "@utils/hooks/useStore";
 import useUser from "@utils/hooks/useUser";
-import { errorToString } from "@utils/parseError";
+import {
+	createBaseError,
+	createErrorFromUnknown,
+	errorToString
+} from "@utils/parseError";
 
 import MessageListItem from "@components/Message/ListItem";
 
@@ -196,14 +198,19 @@ const UnMemoizedMessageList: FC = () => {
 		refetch
 	} = useInfiniteQuery<z.infer<typeof Preview>[], z.infer<typeof Error>>(
 		["messageList", selectedBox?.id, filter],
-		({ pageParam = 0 }) => {
+		async ({ pageParam = 0 }) => {
 			if (pageParam === false) {
 				return [];
 			}
 
 			if (!selectedBox?.id) return [];
 
-			return mailClient.messageList(pageParam, selectedBox.id);
+			const result = await mailClient
+				.messageList(pageParam, selectedBox.id)
+				.catch((error) => createBaseError(createErrorFromUnknown(error)));
+
+			if (result.ok) return result.data;
+			else throw result.error;
 		},
 		{
 			getNextPageParam: (lastPage, pages) => {

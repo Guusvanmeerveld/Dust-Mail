@@ -57,7 +57,12 @@ import useMailClient from "@utils/hooks/useMailClient";
 import useMultiServerLoginStore from "@utils/hooks/useMultiServerLoginStore";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
-import { errorIsOfErrorKind, errorToString } from "@utils/parseError";
+import parseEmail from "@utils/parseEmail";
+import {
+	createErrorFromUnknown,
+	errorIsOfErrorKind,
+	errorToString
+} from "@utils/parseError";
 
 const Credentials: FC<{
 	setError: (error?: string) => void;
@@ -325,14 +330,16 @@ const LoginOptionsMenu: FC = () => {
 		];
 
 		await login(options)
-			.then(() => {
-				onClose();
-			})
-			.catch((error: z.infer<typeof ErrorModel>) => {
-				const message = errorToString(error);
+			.then((result) => {
+				if (result.ok) {
+					onClose();
+				} else {
+					const message = errorToString(result.error);
 
-				setError(message);
-			});
+					setError(message);
+				}
+			})
+			.catch(createErrorFromUnknown);
 	};
 
 	return (
@@ -456,24 +463,41 @@ const LoginForm: FC<{
 
 		setFetching(true);
 
-		const config = await mailClient
+		const configResult = await mailClient
 			.detectConfig(username)
-			.catch((error: z.infer<typeof ErrorModel>) => {
-				if (errorIsOfErrorKind(error, "ConfigNotFound")) {
-					setMultiServerLoginError(
-						"Could not automagically detect your login servers, please fill the information in manually or try again."
-					);
-					setShowLoginOptionsMenu(true);
-				} else {
-					const message = errorToString(error);
-
-					setError(message);
-				}
-			});
+			.catch((error: unknown) => setError(JSON.stringify(error)));
 
 		setFetching(false);
 
-		if (!config) return;
+		if (!configResult) return;
+
+		if (!configResult.ok) {
+			if (errorIsOfErrorKind(configResult.error, "ConfigNotFound")) {
+				setMultiServerLoginError(
+					"Could not automagically detect your login servers, please fill the information in manually or try again."
+				);
+
+				setShowLoginOptionsMenu(true);
+
+				const emailAddressResult = parseEmail(username);
+
+				if (!emailAddressResult.ok) {
+					setError(errorToString(emailAddressResult.error));
+				}
+
+				// incomingMailServerTypeList.forEach((loginType) =>
+				// 	setLoginOptions("incoming", loginType, {domain: `${}`})
+				// );
+			} else {
+				const message = errorToString(configResult.error);
+
+				setError(message);
+			}
+
+			return;
+		}
+
+		const config = configResult.data;
 
 		if (
 			typeof config.type != "string" &&

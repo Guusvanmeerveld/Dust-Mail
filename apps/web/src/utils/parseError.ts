@@ -1,8 +1,12 @@
 import z from "zod";
 
-import { Error } from "@models/error";
+import parseZodOutput from "./parseZodOutput";
 
-export const errorToString = (error: z.infer<typeof Error>): string => {
+import { Error as ErrorModel } from "@models/error";
+
+import { Error } from "@interfaces/result";
+
+export const errorToString = (error: z.infer<typeof ErrorModel>): string => {
 	const messages: string[] = [];
 
 	if (typeof error.kind != "string") {
@@ -16,8 +20,36 @@ export const errorToString = (error: z.infer<typeof Error>): string => {
 	return messages.join(": ");
 };
 
+export const parseError = (
+	error: unknown
+): { ok: false; error: z.infer<typeof ErrorModel> } => {
+	const errorParsed = ErrorModel.safeParse(error);
+
+	const errorResult = parseZodOutput(errorParsed);
+
+	if (errorResult.ok) {
+		return { ok: false, error: errorResult.data };
+	} else {
+		return errorResult;
+	}
+};
+
+export const createBaseError = (error: z.infer<typeof ErrorModel>): Error => ({
+	ok: false,
+	error
+});
+
+export const createErrorFromUnknown = (
+	unknown: unknown
+): z.infer<typeof ErrorModel> => {
+	return {
+		kind: "Unknown",
+		message: JSON.stringify(unknown)
+	};
+};
+
 export const errorIsOfErrorKind = (
-	error: z.infer<typeof Error>,
+	error: z.infer<typeof ErrorModel>,
 	kind: string
 ): boolean => {
 	if (typeof error.kind != "string") {

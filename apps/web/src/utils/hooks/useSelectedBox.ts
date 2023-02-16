@@ -12,7 +12,11 @@ import { MailBox } from "@models/mailbox";
 import Box from "@interfaces/box";
 
 import findBoxInPrimaryBoxesList from "@utils/findBoxInPrimaryBoxesList";
-import { errorToString } from "@utils/parseError";
+import {
+	createBaseError,
+	createErrorFromUnknown,
+	errorToString
+} from "@utils/parseError";
 
 interface UseSelectedBox {
 	box: Box | void;
@@ -45,9 +49,20 @@ const useSelectedBox = (): UseSelectedBox => {
 	const { data, error } = useQuery<
 		z.infer<typeof MailBox>,
 		z.infer<typeof Error>
-	>(["box", boxId], () => mailClient.get(boxId), {
-		enabled: boxId != undefined
-	});
+	>(
+		["box", boxId],
+		async () => {
+			const result = await mailClient
+				.get(boxId)
+				.catch((error) => createBaseError(createErrorFromUnknown(error)));
+
+			if (result.ok) return result.data;
+			else throw result.error;
+		},
+		{
+			enabled: boxId !== undefined
+		}
+	);
 
 	const selectedBox: UseSelectedBox = useMemo(() => {
 		const primaryBoxData = data

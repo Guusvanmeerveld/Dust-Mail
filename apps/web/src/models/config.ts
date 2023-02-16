@@ -3,8 +3,6 @@ import z from "zod";
 import {
 	ConnectionSecurity,
 	IncomingMailServerType,
-	IncomingServerType,
-	OutgoingServerType,
 	OutgoingMailServerType,
 	IncomingServerTypeString,
 	OutgoingServerTypeString

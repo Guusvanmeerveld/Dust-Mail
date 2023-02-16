@@ -1,15 +1,20 @@
 import z from "zod";
 
-const parseZodOutput = <T>(output: z.SafeParseReturnType<T, T>): T => {
+import { Result } from "@interfaces/result";
+
+const parseZodOutput = <T>(output: z.SafeParseReturnType<T, T>): Result<T> => {
 	if (!output.success) {
 		const errorList = output.error.format();
 
-		throw {
-			message: `Error parsing server response: ${JSON.stringify(errorList)}`,
-			kind: "ZodError"
+		return {
+			ok: false,
+			error: {
+				message: `Error parsing server response: ${JSON.stringify(errorList)}`,
+				kind: "ZodError"
+			}
 		};
 	} else {
-		return output.data;
+		return { ok: true, data: output.data };
 	}
 };
 

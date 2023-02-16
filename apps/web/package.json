@@ -50,7 +50,6 @@
 		"slate": "^0.81.1",
 		"slate-react": "^0.81.0",
 		"use-local-storage-state": "^17.2.0",
-		"xoauth2": "^1.2.0",
 		"zod": "^3.20.2",
 		"zustand": "^4.0.0-rc.1"
 	},
