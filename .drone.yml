@@ -2,6 +2,10 @@ kind: pipeline
 type: docker
 name: Deploy commit
 
+platform:
+  os: linux
+  arch: amd64
+
 services:
   - name: greenmail
     image: 'greenmail/standalone:1.6.12'
@@ -12,6 +16,9 @@ steps:
   - name: Run pop3 tests
     image: rust:1.61
     pull: if-not-exists
+    volumes:
+      - name: cache
+        path: /drone/src/target
     environment:
       SERVER: "greenmail"
       PORT: "3110"
@@ -20,3 +27,8 @@ steps:
     commands:
       - cargo fetch --locked
       - cargo test --package pop3
+
+volumes:
+  - name: cache
+    host:
+      path: /tmp/drone/cache/dust-mail/target
