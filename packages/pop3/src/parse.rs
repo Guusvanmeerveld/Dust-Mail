@@ -95,7 +95,10 @@ pub fn parse_server_response<'a>(full_response: &'a str) -> Result<&'a str> {
     if full_response.starts_with(OK) {
         // We add one so we also remove the space
 
-        let Some(response) = full_response.get(ok_size..) else { unreachable!() };
+        let response = match full_response.get(ok_size..) {
+            Some(response) => response,
+            _ => unreachable!(),
+        };
 
         Ok(response.trim())
     } else if full_response.starts_with(ERR) {
