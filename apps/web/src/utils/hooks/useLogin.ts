@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import { VersionResponse } from "@dust-mail/typings";
 
-import { LoginOptions } from "@models/login";
+import { LoginOptions, ServerType } from "@models/login";
 
 import { Result } from "@interfaces/result";
 
@@ -86,8 +86,26 @@ export const useMailLogin = (): ((
 			(item) => typeof item.clientType != "string" && item.clientType.incoming
 		);
 
+		const outgoingConfig = config.find(
+			(item) => typeof item.clientType != "string" && item.clientType.outgoing
+		);
+
+		if (incomingConfig === undefined || outgoingConfig === undefined)
+			return createBaseError({
+				kind: "ConfigNotComplete",
+				message: "Config is missing items"
+			});
+
+		const id = btoa(
+			`${incomingConfig.username}@${incomingConfig.domain}|${outgoingConfig.username}@${outgoingConfig.domain}`
+		);
+
 		login(loginResult.data, {
-			username: incomingConfig?.username,
+			id,
+			usernames: {
+				incoming: incomingConfig.username,
+				outgoing: outgoingConfig.username
+			},
 			redirectToDashboard: true,
 			setAsDefault: true
 		});
@@ -101,7 +119,8 @@ export const useMailLogin = (): ((
 const useLoginFromToken = (): ((
 	token: string,
 	options?: {
-		username?: string;
+		id: string;
+		usernames: Record<z.infer<typeof ServerType>, string>;
 		redirectToDashboard?: boolean;
 		setAsDefault?: boolean;
 	}
@@ -114,15 +133,16 @@ const useLoginFromToken = (): ((
 	const navigate = useNavigate();
 
 	return (token, options) => {
-		const username = options?.username ?? user?.username;
+		const id = options?.id ?? user?.id;
+		const usernames = options?.usernames ?? user?.usernames;
 
-		if (!username) return;
+		if (id === undefined || usernames === undefined) return;
 
 		console.log("Successfully authorized with mail servers");
 
-		modifyUser(username, { token, username });
+		modifyUser(id, { token, id, usernames });
 
-		setCurrentUser(username);
+		setCurrentUser(id);
 
 		if (options?.redirectToDashboard) navigate(`/dashboard`);
 	};

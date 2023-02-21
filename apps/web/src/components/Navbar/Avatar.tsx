@@ -22,7 +22,6 @@ import User from "@interfaces/user";
 
 import useAvatar from "@utils/hooks/useAvatar";
 import useLogout from "@utils/hooks/useLogout";
-import useSelectedStore from "@utils/hooks/useSelected";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 import useUser, { useCurrentUser, useUsers } from "@utils/hooks/useUser";
@@ -49,16 +48,13 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 
 	const [currentUser, setCurrentUser] = useCurrentUser();
 
-	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
-
-	const avatar = useAvatar(user.username);
+	const avatar = useAvatar(user.usernames.incoming);
 
 	return (
 		<MenuItem
 			onClick={() => {
-				if (currentUser?.username != user.username) {
-					setCurrentUser(user.username);
-					setSelectedBox();
+				if (currentUser?.id != user.id) {
+					setCurrentUser(user.id);
 				}
 			}}
 		>
@@ -71,10 +67,10 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 						mr: 1
 					}}
 					src={avatar?.data}
-					alt={user.username.toUpperCase()}
+					alt={user.usernames.incoming.toUpperCase()}
 				/>
 			</ListItemIcon>
-			<ListItemText>{user.username}</ListItemText>
+			<ListItemText>{user.usernames.incoming}</ListItemText>
 		</MenuItem>
 	);
 };
@@ -86,15 +82,13 @@ const AccountList: FC = () => {
 
 	return (
 		<>
-			{currentUser && (
-				<AccountListItem key={currentUser.username} user={currentUser} />
-			)}
+			{currentUser && <AccountListItem user={currentUser} />}
 			<Divider />
 			{users
-				?.filter((user) => user.username != currentUser?.username)
+				?.filter((user) => user.id != currentUser?.id)
 				.slice(0, 5)
 				.map((user) => (
-					<AccountListItem key={user.username} user={user} />
+					<AccountListItem key={user.id} user={user} />
 				))}
 		</>
 	);
@@ -125,7 +119,7 @@ const UnMemoizedAvatar: FC = () => {
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
 
-	const avatar = useAvatar(user?.username ?? null);
+	const avatar = useAvatar(user?.usernames.incoming ?? null);
 
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
@@ -162,7 +156,7 @@ const UnMemoizedAvatar: FC = () => {
 				<MUIAvatar
 					sx={{ bgcolor: theme.palette.secondary.main }}
 					src={avatar?.data}
-					alt={user?.username.toUpperCase()}
+					alt={user?.usernames.incoming.toUpperCase()}
 				/>
 			</IconButton>
 

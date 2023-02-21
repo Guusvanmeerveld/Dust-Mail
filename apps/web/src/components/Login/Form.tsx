@@ -424,6 +424,7 @@ const LoginForm: FC<{
 
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
+	const [displayName, setDisplayName] = useState("");
 
 	const setLoginOptions = useMultiServerLoginStore(
 		(state) => state.setLoginOptions
@@ -566,6 +567,19 @@ const LoginForm: FC<{
 			<form onSubmit={onSubmit}>
 				<Stack direction="column" spacing={2}>
 					{children}
+
+					<TextField
+						onChange={(e) => {
+							setError(undefined);
+							setDisplayName(e.currentTarget.value);
+						}}
+						id="display-name"
+						value={displayName}
+						label="Display name"
+						placeholder="The name shown when you send a message"
+						variant="outlined"
+						type="text"
+					/>
 
 					<Credentials
 						identifier="initial-login"

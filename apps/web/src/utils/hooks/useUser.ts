@@ -1,5 +1,7 @@
 import useLocalStorageState from "use-local-storage-state";
 
+import useSelectedStore from "./useSelected";
+
 import { useCallback, useMemo } from "react";
 
 import User from "@interfaces/user";
@@ -23,18 +25,28 @@ export const useUsers = (): [
 
 export const useCurrentUser = (): [
 	currentUser: User | undefined,
-	setCurrentUser: (username?: string) => void
+	setCurrentUser: (id?: string) => void
 ] => {
 	const [users] = useUsers();
 
-	const [currentUsername, setUsername] =
+	const [currentUserId, setUsername] =
 		useLocalStorageState<string>("currentUser");
 
-	const [currentUser, setCurrentUser] = useMemo(() => {
-		const user = users?.find((user) => user.username == currentUsername);
+	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
 
-		return [user, setUsername];
-	}, [currentUsername, users]);
+	const setUser = useCallback(
+		(id?: string) => {
+			setUsername(id);
+			setSelectedBox();
+		},
+		[setSelectedBox]
+	);
+
+	const [currentUser, setCurrentUser] = useMemo(() => {
+		const user = users?.find((user) => user.id == currentUserId);
+
+		return [user, setUser];
+	}, [currentUserId, users]);
 
 	return [currentUser, setCurrentUser];
 };
@@ -49,34 +61,31 @@ export const useAddUser = (): ((user: User) => void) => {
 	};
 };
 
-export const useRemoveUser = (): ((username: string) => void) => {
+export const useRemoveUser = (): ((id: string) => void) => {
 	const [users, setUsers] = useUsers();
 
 	return useCallback(
-		(username) => {
+		(id) => {
 			if (!users) return;
 
 			setUsers(
 				[],
-				users.filter((user) => user.username != username)
+				users.filter((user) => user.id != id)
 			);
 		},
 		[users, setUsers]
 	);
 };
 
-export const useModifyUser = (): ((
-	username: string,
-	newUser: User
-) => void) => {
+export const useModifyUser = (): ((id: string, newUser: User) => void) => {
 	const [users, setUsers] = useUsers();
 
-	return (username, newUser) => {
+	return (id, newUser) => {
 		if (!users) return;
 
 		setUsers(
 			[newUser],
-			users.filter((user) => user.username != username)
+			users.filter((user) => user.id != id)
 		);
 	};
 };

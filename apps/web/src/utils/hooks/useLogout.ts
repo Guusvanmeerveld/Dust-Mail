@@ -21,15 +21,15 @@ const useLogout = (): (() => void) => {
 
 		if (!currentUser || !users) return;
 
-		removeUser(currentUser?.username);
+		removeUser(currentUser?.id);
 
 		const newCurrentUser = users
-			.filter((user) => user.username != currentUser.username)
+			.filter((user) => user.id != currentUser.id)
 			?.shift();
 
-		setCurrentUser(newCurrentUser?.username);
+		setCurrentUser(newCurrentUser?.id);
 
-		if (newCurrentUser?.username) setSelectedBox();
+		if (newCurrentUser?.id) setSelectedBox();
 	}, [users, currentUser, setFetching]);
 
 	return logout;

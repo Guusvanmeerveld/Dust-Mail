@@ -10,7 +10,11 @@ import { Error } from "@models/error";
 import { MailBox, MailBoxList } from "@models/mailbox";
 
 import findBoxFromBoxes from "@utils/findBox";
-import { createErrorFromUnknown, errorToString } from "@utils/parseError";
+import {
+	createBaseError,
+	createErrorFromUnknown,
+	errorToString
+} from "@utils/parseError";
 
 type UseBoxes = {
 	boxes: z.infer<typeof MailBoxList> | void;
@@ -26,20 +30,19 @@ const useBoxes = (): UseBoxes => {
 	const { data: boxes, error } = useQuery<
 		z.infer<typeof MailBoxList>,
 		z.infer<typeof Error>
-	>(["boxes", user?.username], () =>
-		mailClient
+	>(["boxes", user?.id], async () => {
+		const result = await mailClient
 			.list()
-			.then((result) => {
-				if (!result.ok) {
-					throw result.error;
-				} else {
-					return result.data;
-				}
-			})
-			.catch((error: unknown) => {
-				throw createErrorFromUnknown(error);
-			})
-	);
+			.catch((error: unknown) =>
+				createBaseError(createErrorFromUnknown(error))
+			);
+
+		if (result.ok) {
+			return result.data;
+		} else {
+			throw result.error;
+		}
+	});
 
 	const findBox = useCallback(
 		(id: string) => {
