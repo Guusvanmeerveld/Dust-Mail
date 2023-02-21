@@ -3,8 +3,8 @@ use std::io::{Read, Write};
 use bufstream::BufStream;
 
 use crate::{
-    constants::{DOT, END_OF_LINE, EOF, ERR, LF, OK},
-    parse::map_write_error_to_error,
+    constants::{DOT, END_OF_LINE, EOF, LF},
+    parse::{map_write_error_to_error, parse_server_response, parse_utf8_bytes},
     types,
 };
 
@@ -19,49 +19,45 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn send_command(&mut self, command: &[u8]) -> types::Result<String> {
+    pub fn send_command(
+        &mut self,
+        command: &[u8],
+        multi_line_response: bool,
+    ) -> types::Result<String> {
         self.send_bytes(command)?;
 
-        self.read_response()
+        self.read_response(multi_line_response)
     }
 
-    pub fn read_response_from_string(&mut self, response: String) -> types::Result<String> {
-        if response.len() < OK.len() {
-            return Err(types::Error::new(
-                types::ErrorKind::InvalidResponse,
-                "Response is too short",
-            ));
-        };
-
-        if response.starts_with(OK) {
-            let ok_size = OK.len() + 1;
-
-            let left_over = response.get(ok_size..).unwrap();
-
-            Ok(left_over.trim().to_owned())
-        } else if response.starts_with(ERR) {
-            let left_over = response.get((ERR.len() + 1)..).unwrap();
-
-            Err(types::Error::new(
-                types::ErrorKind::ServerError,
-                format!("Server error: {}", left_over.trim()),
-            ))
-        } else {
-            Err(types::Error::new(
-                types::ErrorKind::InvalidResponse,
-                format!("Response is invalid: '{}'", response),
-            ))
-        }
-    }
-
-    pub fn read_response(&mut self) -> types::Result<String> {
+    pub fn read_response(&mut self, multi_line_response: bool) -> types::Result<String> {
         let mut response: Vec<u8> = Vec::new();
 
-        self.read_line(&mut response)?;
+        if multi_line_response {
+            self.read_multi_line(&mut response)?;
 
-        let response_string = String::from_utf8(response).unwrap();
+            let line_break_index = response
+                .iter()
+                .position(|item| item == &LF)
+                .unwrap_or(response.len());
 
-        self.read_response_from_string(response_string)
+            let status_response = match response.get(..line_break_index) {
+                Some(bytes) => parse_utf8_bytes(Vec::from(bytes))?,
+                None => String::new(),
+            };
+
+            parse_server_response(&status_response)?;
+
+            match response.get(line_break_index..) {
+                Some(bytes) => parse_utf8_bytes(Vec::from(bytes)),
+                None => Ok(String::new()),
+            }
+        } else {
+            self.read_line(&mut response)?;
+
+            let response = parse_utf8_bytes(response)?;
+
+            parse_server_response(&response).map(|response| response.to_string())
+        }
     }
 
     pub fn read_multi_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
@@ -100,7 +96,7 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn read_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
+    fn read_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
         use std::io::BufRead;
 
         match self.stream.read_until(LF, buf) {

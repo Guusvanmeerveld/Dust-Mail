@@ -179,7 +179,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = b"NOOP";
 
-        socket.send_command(command)?;
+        socket.send_command(command, false)?;
 
         Ok(())
     }
@@ -190,33 +190,26 @@ impl<S: Read + Write> Client<S> {
     ) -> types::Result<Either<Vec<UniqueID>, UniqueID>> {
         self.has_capability_else_err(vec![Capability::Uidl])?;
 
-        if msg_number.is_some() {
+        let response_is_multi_line = msg_number.is_none();
+
+        if !response_is_multi_line {
             self.is_deleted_else_err(msg_number.as_ref().unwrap())?;
         }
 
         let socket = self.get_socket_mut()?;
 
-        let is_single = msg_number.is_some();
-
         let arguments = Some(vec![msg_number]);
 
         let command = create_command("UIDL", &arguments)?;
 
-        let response = socket.send_command(command.as_bytes())?;
+        let response = socket.send_command(command.as_bytes(), response_is_multi_line)?;
 
-        if is_single {
-            let parser = Parser::new(response);
+        let parser = Parser::new(response);
 
-            Ok(Right(parser.to_unique_id()))
-        } else {
-            let mut response: Vec<u8> = Vec::new();
-
-            socket.read_multi_line(&mut response)?;
-
-            let response = String::from_utf8(response).unwrap();
-            let parser = Parser::new(response);
-
+        if response_is_multi_line {
             Ok(Left(parser.to_unique_id_list()))
+        } else {
+            Ok(Right(parser.to_unique_id()))
         }
     }
 
@@ -229,7 +222,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("TOP {} {}", msg_number, lines);
 
-        socket.send_command(command.as_bytes())?;
+        socket.send_command(command.as_bytes(), false)?;
 
         let mut response: Vec<u8> = Vec::new();
 
@@ -290,7 +283,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("DELE {}", msg_number);
 
-        socket.send_command(command.as_bytes())?;
+        socket.send_command(command.as_bytes(), false)?;
 
         Ok(())
     }
@@ -313,7 +306,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = b"RSET";
 
-        socket.send_command(command)?;
+        socket.send_command(command, false)?;
 
         Ok(())
     }
@@ -350,7 +343,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = create_command("RETR", &arguments)?;
 
-        socket.send_command(command.as_bytes())?;
+        socket.send_bytes(command.as_bytes())?;
 
         let mut response: Vec<u8> = Vec::new();
 
@@ -366,28 +359,22 @@ impl<S: Read + Write> Client<S> {
 
         let socket = self.get_socket_mut()?;
 
-        let is_single = msg_number.is_some();
+        let response_is_multi_line = msg_number.is_none();
 
         let arguments = Some(vec![msg_number]);
 
         let command = create_command("LIST", &arguments)?;
 
-        let response = socket.send_command(command.as_bytes())?;
+        let response = socket.send_command(command.as_bytes(), response_is_multi_line)?;
 
-        if is_single {
-            let parser = Parser::new(response);
+        let parser = Parser::new(response);
 
-            Ok(Right(parser.to_stats()))
-        } else {
-            let mut response: Vec<u8> = Vec::new();
-
-            socket.read_multi_line(&mut response)?;
-
-            let response = String::from_utf8(response).unwrap();
-
-            let parser = Parser::new(response);
+        if response_is_multi_line {
+            // println!("{}", response);
 
             Ok(Left(parser.to_stats_list()))
+        } else {
+            Ok(Right(parser.to_stats()))
         }
     }
 
@@ -396,7 +383,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = b"STAT";
 
-        let response = socket.send_command(command)?;
+        let response = socket.send_command(command, false)?;
 
         let parser = Parser::new(response);
 
@@ -414,7 +401,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("APOP {} {}", name, digest);
 
-        socket.send_command(command.as_bytes())?;
+        socket.send_command(command.as_bytes(), false)?;
 
         self.state = ClientState::Transaction;
         Ok(())
@@ -434,11 +421,11 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("USER {}", user);
 
-        socket.send_command(command.as_bytes())?;
+        socket.send_command(command.as_bytes(), false)?;
 
         let command = format!("PASS {}", password);
 
-        socket.send_command(command.as_bytes())?;
+        socket.send_command(command.as_bytes(), false)?;
 
         self.capabilities = self.capa()?;
 
@@ -452,7 +439,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = b"QUIT";
 
-        socket.send_command(command)?;
+        socket.send_command(command, false)?;
 
         self.state = ClientState::Update;
         self.socket = None;
@@ -501,13 +488,7 @@ impl<S: Read + Write> Client<S> {
 
         let command = b"CAPA";
 
-        socket.send_command(command)?;
-
-        let mut response: Vec<u8> = Vec::new();
-
-        socket.read_multi_line(&mut response)?;
-
-        let response = String::from_utf8(response).unwrap();
+        let response = socket.send_command(command, true)?;
 
         Ok(parse_capabilities(&response))
     }
@@ -531,7 +512,7 @@ impl<S: Read + Write> Client<S> {
             Err(err) => return Err(err),
         };
 
-        let response = socket.read_response();
+        let response = socket.read_response(false);
 
         match response {
             Ok(greeting) => {
@@ -551,182 +532,4 @@ impl<S: Read + Write> Client<S> {
 }
 
 #[cfg(test)]
-mod test {
-    use std::{env, net::TcpStream};
-
-    use dotenv::dotenv;
-    use either::Either::{Left, Right};
-    // use native_tls::{TlsConnector, TlsStream};
-
-    use crate::ClientState;
-
-    use super::Client;
-
-    #[derive(Debug)]
-    struct ClientInfo {
-        server: String,
-        port: u16,
-        username: String,
-        password: String,
-    }
-
-    fn create_client_info() -> ClientInfo {
-        dotenv().ok();
-
-        ClientInfo {
-            server: env::var("SERVER").unwrap().to_owned(),
-            port: env::var("PORT").unwrap().parse().unwrap(),
-            username: env::var("USERNAME").unwrap().to_owned(),
-            password: env::var("PASSWORD").unwrap().to_owned(),
-        }
-    }
-
-    fn create_logged_in_client() -> Client<TcpStream> {
-        let client_info = create_client_info();
-        let server = client_info.server.as_ref();
-        let port = client_info.port;
-
-        let username = client_info.username.as_ref();
-        let password = client_info.password.as_ref();
-
-        let mut client = super::connect_plain((server, port), None).unwrap();
-
-        client.login(username, password).unwrap();
-
-        client
-    }
-
-    // fn create_logged_in_client_tls() -> Client<TlsStream<TcpStream>> {
-    //     let client_info = create_client_info();
-    //     let server = client_info.server.as_ref();
-    //     let port = client_info.port;
-
-    //     let username = client_info.username.as_ref();
-    //     let password = client_info.password.as_ref();
-
-    //     let tls = TlsConnector::new().unwrap();
-
-    //     let mut client = super::connect((server, port), server, &tls, None).unwrap();
-
-    //     client.login(username, password).unwrap();
-
-    //     client
-    // }
-
-    #[test]
-    fn connect() {
-        let client_info = create_client_info();
-
-        let server = client_info.server.as_ref();
-        let port = client_info.port;
-
-        let mut client = super::connect_plain((server, port), None).unwrap();
-
-        let greeting = client.greeting().unwrap();
-
-        assert_eq!(greeting, "POP3 GreenMail Server v1.6.12 ready");
-
-        client.quit().unwrap()
-    }
-
-    #[test]
-    fn login() {
-        let mut client = create_logged_in_client();
-
-        assert_eq!(client.state, ClientState::Transaction);
-
-        client.quit().unwrap();
-    }
-
-    #[test]
-    fn noop() {
-        let mut client = create_logged_in_client();
-
-        assert_eq!(client.noop().unwrap(), ());
-
-        client.quit().unwrap();
-    }
-
-    #[test]
-    fn stat() {
-        let mut client = create_logged_in_client();
-
-        let stats = client.stat().unwrap();
-
-        assert_eq!(stats, (0, 0));
-
-        client.quit().unwrap();
-    }
-
-    #[test]
-    fn list() {
-        let mut client = create_logged_in_client();
-
-        // let list = client.list(Some(4)).unwrap();
-
-        // match list {
-        //     Right(list_item) => {
-        //         println!("{}", list_item.0);
-        //     }
-        //     _ => {}
-        // };
-
-        let list = client.list(None).unwrap();
-
-        match list {
-            Left(list) => {
-                assert_eq!(list, Vec::new());
-            }
-            _ => {}
-        };
-
-        client.quit().unwrap();
-    }
-
-    // #[test]
-    // fn retr() {
-    //     let mut client = create_logged_in_client_tls();
-
-    //     let bytes = client.retr(1).unwrap();
-
-    //     println!("{}", String::from_utf8(bytes).unwrap());
-
-    //     client.quit().unwrap();
-    // }
-
-    // #[test]
-    // fn top() {
-    //     let mut client = create_logged_in_client();
-
-    //     let bytes = client.top(1, 0).unwrap();
-
-    //     println!("{}", String::from_utf8(bytes).unwrap());
-
-    //     client.quit().unwrap();
-    // }
-
-    // #[test]
-    // fn uidl() {
-    //     let mut client = create_logged_in_client();
-
-    //     let uidl = client.uidl(Some(1)).unwrap();
-
-    //     match uidl {
-    //         Right(unique_id) => {
-    //             println!("{}", unique_id.1);
-    //         }
-    //         _ => {}
-    //     };
-
-    //     let uidl = client.uidl(None).unwrap();
-
-    //     match uidl {
-    //         Left(list) => {
-    //             println!("{}", list.len());
-    //         }
-    //         _ => {}
-    //     };
-
-    //     client.quit().unwrap();
-    // }
-}
+mod test;

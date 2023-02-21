@@ -5,8 +5,8 @@ use std::{
 };
 
 use crate::{
-    constants::{LF, SPACE},
-    types::{self, Capabilities, Capability, Stats, UniqueID},
+    constants::{ERR, LF, OK, SPACE},
+    types::{self, Capabilities, Capability, Error, ErrorKind, Result, Stats, UniqueID},
 };
 
 /// A simple struct to parse responses from the server
@@ -67,6 +67,49 @@ impl Parser {
         split
             .map(|line| Self::parse_unique_id_from_string(line))
             .collect()
+    }
+}
+
+pub fn parse_utf8_bytes(bytes: Vec<u8>) -> Result<String> {
+    String::from_utf8(bytes).map_err(|err| {
+        Error::new(
+            ErrorKind::InvalidResponse,
+            format!(
+                "Failed to parse server response into utf8 encoded string: {}",
+                err
+            ),
+        )
+    })
+}
+
+pub fn parse_server_response<'a>(full_response: &'a str) -> Result<&'a str> {
+    let ok_size = OK.len().saturating_add(1);
+
+    if full_response.len() < ok_size {
+        return Err(types::Error::new(
+            types::ErrorKind::InvalidResponse,
+            "Response is too short",
+        ));
+    };
+
+    if full_response.starts_with(OK) {
+        // We add one so we also remove the space
+
+        let Some(response) = full_response.get(ok_size..) else { unreachable!() };
+
+        Ok(response.trim())
+    } else if full_response.starts_with(ERR) {
+        let left_over = full_response.get((ERR.len() + 1)..).unwrap();
+
+        Err(types::Error::new(
+            types::ErrorKind::ServerError,
+            format!("Server error: {}", left_over.trim()),
+        ))
+    } else {
+        Err(types::Error::new(
+            types::ErrorKind::InvalidResponse,
+            format!("Response is invalid: '{}'", full_response),
+        ))
     }
 }
 
