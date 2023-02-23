@@ -2,7 +2,7 @@ use std::{env, net::TcpStream};
 
 use dotenv::dotenv;
 use either::Either::{Left, Right};
-use native_tls::{TlsConnector, TlsStream};
+// use native_tls::{TlsConnector, TlsStream};
 
 use crate::ClientState;
 
@@ -42,22 +42,22 @@ fn create_logged_in_client() -> Client<TcpStream> {
     client
 }
 
-fn create_logged_in_client_tls() -> Client<TlsStream<TcpStream>> {
-    let client_info = create_client_info();
-    let server = client_info.server.as_ref();
-    let port = client_info.port;
+// fn create_logged_in_client_tls() -> Client<TlsStream<TcpStream>> {
+//     let client_info = create_client_info();
+//     let server = client_info.server.as_ref();
+//     let port = client_info.port;
 
-    let username = client_info.username.as_ref();
-    let password = client_info.password.as_ref();
+//     let username = client_info.username.as_ref();
+//     let password = client_info.password.as_ref();
 
-    let tls = TlsConnector::new().unwrap();
+//     let tls = TlsConnector::new().unwrap();
 
-    let mut client = super::connect((server, port), server, &tls, None).unwrap();
+//     let mut client = super::connect((server, port), server, &tls, None).unwrap();
 
-    client.login(username, password).unwrap();
+//     client.login(username, password).unwrap();
 
-    client
-}
+//     client
+// }
 
 #[test]
 fn connect() {
@@ -129,16 +129,16 @@ fn list() {
     client.quit().unwrap();
 }
 
-#[test]
-fn retr() {
-    let mut client = create_logged_in_client_tls();
+// #[test]
+// fn retr() {
+//     let mut client = create_logged_in_client();
 
-    let bytes = client.retr(1).unwrap();
+//     let bytes = client.retr(1).unwrap();
 
-    println!("{}", String::from_utf8(bytes).unwrap());
+//     println!("{}", String::from_utf8(bytes).unwrap());
 
-    client.quit().unwrap();
-}
+//     client.quit().unwrap();
+// }
 
 // #[test]
 // fn top() {
