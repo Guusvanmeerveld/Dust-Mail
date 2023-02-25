@@ -52,6 +52,13 @@ async fn check_sockets<'a>(
 
 /// Automatically detect an email providers config for a given email address
 pub async fn from_email(email_address: &str) -> Result<Config> {
+    if !autoconfig::validate_email(email_address) {
+        return Err(Error::new(
+            ErrorKind::ParseAddress,
+            "Given email address is invalid",
+        ));
+    };
+
     let mut config: Option<Config> = None;
 
     let mut split = email_address.split(AT_SYMBOL);

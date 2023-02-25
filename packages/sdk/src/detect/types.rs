@@ -13,7 +13,7 @@ pub enum ServerConfigType {
     Exchange,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerConfig {
     r#type: ServerConfigType,
@@ -61,7 +61,7 @@ impl ServerConfig {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub enum AuthenticationType {
     ClearText,
     Encrypted,
@@ -70,7 +70,7 @@ pub enum AuthenticationType {
     Unknown,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum ConfigType {
     MultiServer {
@@ -85,7 +85,7 @@ impl ConfigType {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     r#type: ConfigType,

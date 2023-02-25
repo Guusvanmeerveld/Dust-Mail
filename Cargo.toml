@@ -2,6 +2,7 @@
 
 members = [
     "apps/web/src-tauri",
+    "apps/server",
     "packages/sdk",
     "packages/autoconfig",
     "packages/pop3"

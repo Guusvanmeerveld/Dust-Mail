@@ -1,15 +1,14 @@
 use http::Client;
-use regex::Regex;
 use types::config::Config;
 
 mod http;
 mod parse;
 pub mod types;
+mod utils;
+
+pub use utils::validate_email;
 
 const AT_SYMBOL: char = '@';
-
-const EMAIL_REGEX: &str =
-    r"^([a-z0-9_+]([a-z0-9_+.]*[a-z0-9_+])?)@([a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6})";
 
 /// Given an email providers domain, try to connect to autoconfig servers for that provider and return the config.
 pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
@@ -41,9 +40,7 @@ pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
 
 /// Given an email address, try to connect to the email providers autoconfig servers and return the config that was found.
 pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
-    let email_regex = Regex::new(EMAIL_REGEX).unwrap();
-
-    if !email_regex.is_match(email_address) {
+    if !utils::validate_email(email_address) {
         return Err(types::Error::new(
             types::ErrorKind::BadInput,
             "Given email address is invalid",
