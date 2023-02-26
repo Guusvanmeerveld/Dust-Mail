@@ -72,7 +72,7 @@ steps:
         path: "/drone/src/.pnpm-store"
     commands:
       - corepack enable
-      - corepack prepare pnpm@latest-7 --activate
+      - corepack prepare pnpm@latest --activate
       - pnpm config set store-dir /drone/src/.pnpm-store
       - pnpm install
       - pnpm run deploy
