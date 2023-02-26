@@ -57,3 +57,30 @@ volumes:
   - name: cache
     host:
       path: /tmp/drone/cache/dust-mail/target
+
+---
+kind: pipeline
+name: test-web 
+type: docker 
+
+steps:
+  - name: Test web app
+    image: node:lts 
+    pull: if-not-exists
+    volumes:
+      - name: cache
+        path: "~/.pnpm-store"
+    commands:
+      - corepack enable
+      - corepack prepare pnpm@latest-7 --activate
+      - pnpm config set store-dir ~/.pnpm-store
+      - pnpm install
+      - pnpm run deploy
+
+
+
+volumes:
+  - name: cache
+    host: 
+      path: /tmp/drone/cache/dust-mail/pnpm-store
+     
