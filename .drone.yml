@@ -69,11 +69,11 @@ steps:
     pull: if-not-exists
     volumes:
       - name: cache
-        path: "~/.pnpm-store"
+        path: "/drone/src/.pnpm-store"
     commands:
       - corepack enable
       - corepack prepare pnpm@latest-7 --activate
-      - pnpm config set store-dir ~/.pnpm-store
+      - pnpm config set store-dir /drone/src/.pnpm-store
       - pnpm install
       - pnpm run deploy
 
