@@ -73,8 +73,8 @@ steps:
     commands:
       - corepack enable
       - corepack prepare pnpm@v7.28.0 --activate
-      - pnpm install
-      - pnpm run deploy
+      - pnpm install --frozen-lockfile
+      - pnpm run deploy --filter @dust-mail/web
 
 volumes:
   - name: cache
