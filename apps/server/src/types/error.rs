@@ -1,7 +1,7 @@
 use rocket::serde::Serialize;
 use sdk::types::Error as SdkError;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[serde(crate = "rocket::serde")]
 pub enum ErrorKind {
     SdkError(SdkError),
@@ -10,7 +10,7 @@ pub enum ErrorKind {
     InternalError,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[serde(crate = "rocket::serde")]
 pub struct Error {
     message: String,
