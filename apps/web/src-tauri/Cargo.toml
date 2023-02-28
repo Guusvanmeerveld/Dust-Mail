@@ -24,6 +24,7 @@ open = "3.0"
 base64 = "0.21"
 directories = "4.0"
 futures = "0.3"
+dashmap = "5.4.0"
 
 [features]
 # by default Tauri runs in production mode

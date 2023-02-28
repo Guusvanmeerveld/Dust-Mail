@@ -1,11 +1,9 @@
 mod utils;
 
+use dashmap::DashMap;
 pub use utils::get_nonce_and_key_from_token;
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use sdk::{
     types::{ConnectionSecurity, LoginOptions as ClientLoginOptions},
@@ -57,11 +55,11 @@ pub fn get_incoming_session_from_login_options(
 
 type ThreadSafeSession = Arc<Mutex<Box<dyn IncomingSession + Send>>>;
 
-pub struct Sessions(Arc<Mutex<HashMap<String, ThreadSafeSession>>>);
+pub struct Sessions(Arc<DashMap<String, ThreadSafeSession>>);
 
 impl Sessions {
     pub fn new() -> Self {
-        Self(Arc::new(Mutex::new(HashMap::new())))
+        Self(Arc::new(DashMap::new()))
     }
 
     pub fn insert_session(
@@ -73,11 +71,9 @@ impl Sessions {
 
         let key = format!("{}-incoming", nonce_base64);
 
-        let mut map_lock = self.0.lock().unwrap();
-
         let thread_safe_session = Arc::new(Mutex::new(session));
 
-        map_lock.insert(key, thread_safe_session);
+        self.0.insert(key, thread_safe_session);
 
         Ok(())
     }
@@ -87,9 +83,7 @@ impl Sessions {
 
         let key = format!("{}-incoming", nonce_base64);
 
-        let mut map_lock = self.0.lock().unwrap();
-
-        match map_lock.get(&key) {
+        match self.0.get(&key) {
             // Return the current session
             Some(session) => Ok(session.clone()),
             None => {
@@ -100,13 +94,13 @@ impl Sessions {
 
                     match session {
                         Some(session) => {
-                            map_lock.insert(key.clone(), Arc::new(Mutex::new(session)));
+                            self.0.insert(key.clone(), Arc::new(Mutex::new(session)));
                         }
                         None => {}
                     }
                 }
 
-                match map_lock.get(&key) {
+                match self.0.get(&key) {
                     Some(session) => Ok(session.clone()),
                     None => Err(Error::new(
                         ErrorKind::NotLoggedIn,

@@ -5,6 +5,7 @@ use sdk::types::Error as SdkError;
 #[serde(crate = "rocket::serde")]
 pub enum ErrorKind {
     SdkError(SdkError),
+    TooManyRequests,
     NotFound,
     Parse,
     InternalError,
@@ -24,5 +25,9 @@ impl Error {
 
             message: message.into(),
         }
+    }
+
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
     }
 }

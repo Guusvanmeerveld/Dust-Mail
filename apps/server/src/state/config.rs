@@ -1,6 +1,6 @@
 use rocket::serde::{Deserialize, Serialize};
 
-use std::env;
+use std::{env, time::Duration};
 
 use crate::constants;
 
@@ -13,6 +13,8 @@ pub struct Config {
     host: String,
     #[serde(default = "behind_proxy")]
     behind_proxy: bool,
+    #[serde(default)]
+    rate_limit: RateLimit,
     appearance: Option<Appearance>,
     auth: Option<Authorization>,
 }
@@ -30,6 +32,10 @@ impl Config {
         &self.behind_proxy
     }
 
+    pub fn rate_limit(&self) -> &RateLimit {
+        &self.rate_limit
+    }
+
     pub fn appearance(&self) -> Option<&Appearance> {
         self.appearance.as_ref()
     }
@@ -44,11 +50,48 @@ impl Default for Config {
         Self {
             appearance: None,
             auth: None,
+            rate_limit: RateLimit::default(),
             behind_proxy: behind_proxy(),
             host: default_host(),
             port: default_port(),
         }
     }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
+pub struct RateLimit {
+    #[serde(default = "default_max_queries")]
+    max_queries: usize,
+    #[serde(default = "default_time_span")]
+    time_span: u64,
+}
+
+impl RateLimit {
+    pub fn max_queries(&self) -> &usize {
+        &self.max_queries
+    }
+
+    pub fn time_span(&self) -> Duration {
+        Duration::from_secs(self.time_span.clone())
+    }
+}
+
+impl Default for RateLimit {
+    fn default() -> Self {
+        Self {
+            max_queries: default_max_queries(),
+            time_span: default_time_span(),
+        }
+    }
+}
+
+fn default_max_queries() -> usize {
+    8
+}
+
+fn default_time_span() -> u64 {
+    10
 }
 
 #[derive(Deserialize, Serialize)]

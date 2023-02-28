@@ -1,4 +1,7 @@
-use rocket::serde::{json::Json, Serialize};
+use rocket::{
+    http::Status,
+    serde::{json::Json, Serialize},
+};
 
 use super::{Error, ErrorKind};
 
@@ -23,14 +26,31 @@ pub struct ErrResponse {
 }
 
 impl ErrResponse {
-    pub fn from_err(error: Error) -> Json<Self> {
-        Json(Self { ok: false, error })
+    pub fn from_err(error: Error) -> (Status, Json<Self>) {
+        let status = Self::find_status_from_error_kind(error.kind());
+        let json = Json(Self { ok: false, error });
+
+        (status, json)
     }
 
-    pub fn new<S: Into<String>>(kind: ErrorKind, msg: S) -> Json<Self> {
-        Json(Self {
+    fn find_status_from_error_kind(error_kind: &ErrorKind) -> Status {
+        match error_kind {
+            ErrorKind::TooManyRequests => Status::TooManyRequests,
+            ErrorKind::InternalError => Status::InternalServerError,
+            ErrorKind::NotFound => Status::NotFound,
+            ErrorKind::Parse => Status::BadRequest,
+            ErrorKind::SdkError(_) => Status::InternalServerError,
+        }
+    }
+
+    pub fn new<S: Into<String>>(kind: ErrorKind, msg: S) -> (Status, Json<Self>) {
+        let status = Self::find_status_from_error_kind(&kind);
+
+        let json = Json(Self {
             ok: false,
             error: Error::new(kind, msg),
-        })
+        });
+
+        (status, json)
     }
 }
