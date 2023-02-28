@@ -46,11 +46,13 @@ fn rocket() -> _ {
         config.rate_limit().time_span(),
     );
 
+    let cache_state = cache::ConfigCache::new(config.cache().timeout());
+
     rocket::custom(figment)
         .register("/", catchers![not_found, internal_error])
         .manage(config)
         .manage(ip_state)
-        .manage(cache::ConfigCache::new())
+        .manage(cache_state)
         .mount(
             "/",
             routes![routes::auto_detect_config_handler, routes::login_handler],

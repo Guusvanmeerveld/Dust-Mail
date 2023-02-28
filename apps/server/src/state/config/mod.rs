@@ -1,5 +1,6 @@
 mod appearance;
 mod authorization;
+mod cache;
 mod limit;
 
 use rocket::serde::{Deserialize, Serialize};
@@ -8,6 +9,7 @@ use std::env;
 
 use appearance::Appearance;
 use authorization::Authorization;
+use cache::Cache;
 use limit::RateLimit;
 
 #[derive(Deserialize, Serialize)]
@@ -21,7 +23,11 @@ pub struct Config {
     behind_proxy: bool,
     #[serde(default)]
     rate_limit: RateLimit,
+    #[serde(default)]
     appearance: Appearance,
+    #[serde(default)]
+    cache: Cache,
+    #[serde(default)]
     auth: Authorization,
 }
 
@@ -42,6 +48,10 @@ impl Config {
         &self.rate_limit
     }
 
+    pub fn cache(&self) -> &Cache {
+        &self.cache
+    }
+
     pub fn appearance(&self) -> &Appearance {
         &self.appearance
     }
@@ -57,6 +67,7 @@ impl Default for Config {
             appearance: Appearance::default(),
             auth: Authorization::default(),
             rate_limit: RateLimit::default(),
+            cache: Cache::default(),
             behind_proxy: behind_proxy(),
             host: default_host(),
             port: default_port(),

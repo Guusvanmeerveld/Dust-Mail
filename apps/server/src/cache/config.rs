@@ -8,12 +8,14 @@ use sdk::detect::Config;
 use super::CachedItem;
 
 pub struct ConfigCache {
+    cache_timeout: u64,
     configs: DashMap<String, CachedItem<Config>>,
 }
 
 impl ConfigCache {
-    pub fn new() -> Self {
+    pub fn new(cache_timeout: &u64) -> Self {
         Self {
+            cache_timeout: cache_timeout.clone(),
             configs: DashMap::new(),
         }
     }
@@ -23,8 +25,10 @@ impl ConfigCache {
 
         let now = Instant::now();
 
-        self.configs
-            .insert(String::from(domain), CachedItem::new(config));
+        self.configs.insert(
+            String::from(domain),
+            CachedItem::new(config, &self.cache_timeout),
+        );
 
         Ok(())
     }

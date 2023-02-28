@@ -10,6 +10,9 @@ time_span = 10
 name = "Dust-Mail-server"
 description = "A Dust-Mail backend server"
 
+[cache]
+timeout = 300
+
 [auth]
 admins = []
 allow_registration = true
