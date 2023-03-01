@@ -19,6 +19,14 @@ fn not_found() -> (Status, Json<ErrResponse>) {
     ErrResponse::new(ErrorKind::NotFound, "Route could not be found")
 }
 
+#[catch(429)]
+fn too_many_requests() -> (Status, Json<ErrResponse>) {
+    ErrResponse::new(
+        ErrorKind::TooManyRequests,
+        "Received too many requests from your ip",
+    )
+}
+
 #[catch(500)]
 fn internal_error() -> (Status, Json<ErrResponse>) {
     ErrResponse::new(ErrorKind::InternalError, "Internal server error")
@@ -49,7 +57,7 @@ fn rocket() -> _ {
     let cache_state = cache::ConfigCache::new(config.cache().timeout());
 
     rocket::custom(figment)
-        .register("/", catchers![not_found, internal_error])
+        .register("/", catchers![not_found, internal_error, too_many_requests])
         .manage(config)
         .manage(ip_state)
         .manage(cache_state)

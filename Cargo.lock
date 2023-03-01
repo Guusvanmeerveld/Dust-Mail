@@ -967,6 +967,7 @@ dependencies = [
  "dashmap",
  "directories",
  "dotenv",
+ "rand 0.8.5",
  "rocket",
  "sdk",
  "toml 0.7.2",

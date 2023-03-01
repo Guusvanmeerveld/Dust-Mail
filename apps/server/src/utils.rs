@@ -1,6 +1,8 @@
+use rand::{distributions::Alphanumeric, Rng};
+
 use crate::{
     constants,
-    state::Config,
+    state::{AuthType, Config},
     types::{Error, ErrorKind, Result},
 };
 use directories::BaseDirs;
@@ -26,6 +28,18 @@ pub fn get_domain_from_email<'a>(email: &'a str) -> Result<&'a str> {
         Some(domain) => Ok(domain),
         None => Err(create_mail_parse_error()),
     }
+}
+
+pub fn generate_random_string(n: usize) -> String {
+    let mut rng = rand::thread_rng();
+
+    let random_chars: String = rng
+        .sample_iter(&Alphanumeric)
+        .take(n)
+        .map(char::from)
+        .collect();
+
+    random_chars
 }
 
 fn config_file() -> PathBuf {
@@ -63,6 +77,26 @@ pub fn read_config() -> Config {
     let config_string = read_to_string(config_location).expect("Failed to read config file");
 
     let config: Config = toml::from_str(&config_string).expect("Failed to parse config");
+
+    match config.authorization() {
+        Some(auth_config) => match auth_config.auth_type() {
+            AuthType::User => {
+                if !cfg!(debug_assertions) {
+                    panic!("User authentication is not yet available");
+                }
+
+                if auth_config.user().is_none() {
+                    panic!("The user config must be specified if the auth type is set to 'user'")
+                }
+            }
+            AuthType::Password => {
+                if auth_config.password().is_none() {
+                    panic!("The password config must be specified if the auth type is set to 'password'")
+                }
+            }
+        },
+        None => {}
+    }
 
     config
 }

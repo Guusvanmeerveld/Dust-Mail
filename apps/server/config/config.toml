@@ -14,5 +14,8 @@ description = "A Dust-Mail backend server"
 timeout = 300
 
 [auth]
-admins = []
-allow_registration = true
+secret = "RU0EcqdiDC7KKGYVx003MW3xDFubAdwE"
+type = "password"
+
+[auth.password]
+password = "aSJE8XN5boaiWiHgsn4960o4vQp7Z8on"

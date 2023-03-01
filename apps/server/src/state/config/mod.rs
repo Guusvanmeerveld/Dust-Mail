@@ -12,6 +12,8 @@ use authorization::Authorization;
 use cache::Cache;
 use limit::RateLimit;
 
+pub use authorization::AuthType;
+
 #[derive(Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
 pub struct Config {
@@ -27,8 +29,7 @@ pub struct Config {
     appearance: Appearance,
     #[serde(default)]
     cache: Cache,
-    #[serde(default)]
-    auth: Authorization,
+    auth: Option<Authorization>,
 }
 
 impl Config {
@@ -56,16 +57,22 @@ impl Config {
         &self.appearance
     }
 
-    pub fn authorization(&self) -> &Authorization {
-        &self.auth
+    pub fn authorization(&self) -> Option<&Authorization> {
+        self.auth.as_ref()
     }
 }
 
 impl Default for Config {
     fn default() -> Self {
+        let auth = if cfg!(debug_assertions) {
+            Some(Authorization::default())
+        } else {
+            None
+        };
+
         Self {
             appearance: Appearance::default(),
-            auth: Authorization::default(),
+            auth,
             rate_limit: RateLimit::default(),
             cache: Cache::default(),
             behind_proxy: behind_proxy(),
