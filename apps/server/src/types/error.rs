@@ -6,6 +6,7 @@ use sdk::types::Error as SdkError;
 pub enum ErrorKind {
     SdkError(SdkError),
     Unauthorized,
+    BadRequest,
     TooManyRequests,
     NotFound,
     Parse,
@@ -23,7 +24,6 @@ impl Error {
     pub fn new<S: Into<String>>(kind: ErrorKind, message: S) -> Self {
         Self {
             kind,
-
             message: message.into(),
         }
     }

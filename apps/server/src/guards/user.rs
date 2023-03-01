@@ -6,7 +6,21 @@ use rocket::{
 
 use crate::types::{ErrResponse, ErrorKind};
 
-pub struct User {}
+pub struct User {
+    token: String,
+}
+
+impl User {
+    pub fn new<S: Into<String>>(token: S) -> Self {
+        User {
+            token: token.into(),
+        }
+    }
+
+    pub fn token(&self) -> &str {
+        &self.token
+    }
+}
 
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for User {
@@ -20,11 +34,11 @@ impl<'r> FromRequest<'r> for User {
             None => {
                 return Outcome::Failure(ErrResponse::new(
                     ErrorKind::Unauthorized,
-                    "Missing authorization cookie",
+                    "You are not logged in",
                 ))
             }
         };
 
-        Outcome::Success(User {})
+        Outcome::Success(User::new(token))
     }
 }

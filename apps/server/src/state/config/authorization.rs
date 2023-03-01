@@ -2,7 +2,7 @@ use std::env;
 
 use rocket::serde::{Deserialize, Serialize};
 
-use crate::utils;
+use crate::utils::{self, generate_random_hex};
 
 #[derive(Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -52,7 +52,7 @@ impl Default for Authorization {
         };
 
         Self {
-            secret: generate_random_password(),
+            secret: generate_random_hex(32),
             expires: default_expiry_time(),
             user,
             password,
@@ -126,16 +126,12 @@ impl Default for Password {
     }
 }
 
-fn default_expiry_time() -> i64 {
+pub fn default_expiry_time() -> i64 {
     7 * 24 * 60 * 60
 }
 
 fn generate_random_password() -> String {
     env::var("PASSWORD").unwrap_or(utils::generate_random_string(32))
-}
-
-fn enabled() -> bool {
-    cfg!(debug_attributes)
 }
 
 fn allow_registration() -> bool {

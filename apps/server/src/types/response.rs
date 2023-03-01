@@ -36,6 +36,7 @@ impl ErrResponse {
     fn find_status_from_error_kind(error_kind: &ErrorKind) -> Status {
         match error_kind {
             ErrorKind::Unauthorized => Status::Unauthorized,
+            ErrorKind::BadRequest => Status::BadRequest,
             ErrorKind::TooManyRequests => Status::TooManyRequests,
             ErrorKind::InternalError => Status::InternalServerError,
             ErrorKind::NotFound => Status::NotFound,

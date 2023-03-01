@@ -31,7 +31,7 @@ pub fn get_domain_from_email<'a>(email: &'a str) -> Result<&'a str> {
 }
 
 pub fn generate_random_string(n: usize) -> String {
-    let mut rng = rand::thread_rng();
+    let rng = rand::thread_rng();
 
     let random_chars: String = rng
         .sample_iter(&Alphanumeric)
@@ -40,6 +40,18 @@ pub fn generate_random_string(n: usize) -> String {
         .collect();
 
     random_chars
+}
+
+pub fn generate_random_hex(n: usize) -> String {
+    let random_string = generate_random_string(n);
+
+    let mut hex_string = String::new();
+
+    for byte in random_string.bytes() {
+        hex_string.push_str(&format!("{:02x}", byte));
+    }
+
+    hex_string
 }
 
 fn config_file() -> PathBuf {

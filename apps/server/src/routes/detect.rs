@@ -1,6 +1,6 @@
 use crate::{
     cache::ConfigCache,
-    guards::RateLimiter,
+    guards::{RateLimiter, User},
     types::{ErrResponse, ErrorKind, OkResponse, ResponseResult},
 };
 
@@ -10,6 +10,7 @@ use sdk::detect::{self, Config};
 #[get("/detect/<email>")]
 pub async fn auto_detect_config(
     email: &str,
+    _user: User,
     _rate_limiter: RateLimiter,
     cache: &State<ConfigCache>,
 ) -> ResponseResult<Config> {

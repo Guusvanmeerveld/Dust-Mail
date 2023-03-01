@@ -7,15 +7,19 @@ use rocket::{
 
 use crate::{
     guards::RateLimiter,
-    state::{AuthType, Config},
+    state::{default_expiry_time, AuthType, Config},
     types::{ErrResponse, ErrorKind, OkResponse, ResponseResult},
     utils::generate_random_string,
 };
 
 #[derive(FromForm)]
 pub struct LoginForm<'r> {
-    password: &'r str,
+    password: Option<&'r str>,
     username: Option<&'r str>,
+}
+
+fn check_password(user_input: &str, password: &str) -> bool {
+    password.eq(user_input)
 }
 
 #[post("/login", data = "<login_body>")]
@@ -25,8 +29,25 @@ pub fn login(
     _rate_limiter: RateLimiter,
     app_config: &State<Config>,
 ) -> ResponseResult<String> {
-    let auth_config = match app_config.authorization() {
+    if cookies.get_private("login").is_some() {
+        return Err(ErrResponse::new(
+            ErrorKind::BadRequest,
+            "You are already logged in",
+        ));
+    }
+
+    let token_duration = match app_config.authorization() {
         Some(auth_config) => {
+            let user_password = match login_body.password {
+                Some(password) => password,
+                None => {
+                    return Err(ErrResponse::new(
+                        ErrorKind::BadRequest,
+                        "Missing required password parameter in the body data",
+                    ))
+                }
+            };
+
             match auth_config.auth_type() {
                 AuthType::Password => {
                     let password = match auth_config.password() {
@@ -35,7 +56,7 @@ pub fn login(
                         None => unreachable!(),
                     };
 
-                    if !login_body.password.eq(password) {
+                    if !check_password(user_password, password) {
                         return Err(ErrResponse::new(
                             ErrorKind::Unauthorized,
                             "Incorrect password",
@@ -45,17 +66,10 @@ pub fn login(
                 AuthType::User => {}
             };
 
-            auth_config
+            Duration::new(*auth_config.expires(), 0)
         }
-        None => {
-            return Err(ErrResponse::new(
-                ErrorKind::InternalError,
-                "Login is disabled",
-            ))
-        }
+        None => Duration::new(default_expiry_time(), 0),
     };
-
-    let token_duration = Duration::new(*auth_config.expires(), 0);
 
     let random_token = generate_random_string(64);
 

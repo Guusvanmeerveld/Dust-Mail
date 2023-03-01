@@ -12,7 +12,7 @@ use authorization::Authorization;
 use cache::Cache;
 use limit::RateLimit;
 
-pub use authorization::AuthType;
+pub use authorization::{default_expiry_time, AuthType};
 
 #[derive(Deserialize, Serialize)]
 #[serde(crate = "rocket::serde")]
@@ -64,7 +64,7 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let auth = if cfg!(debug_assertions) {
+        let auth = if !cfg!(debug_assertions) {
             Some(Authorization::default())
         } else {
             None

@@ -12,7 +12,7 @@ extern crate rocket;
 
 use rocket::{figment::Figment, http::Status, serde::json::Json};
 use types::{ErrResponse, ErrorKind};
-use utils::read_config;
+use utils::{generate_random_hex, read_config};
 
 #[catch(404)]
 fn not_found() -> (Status, Json<ErrResponse>) {
@@ -47,7 +47,14 @@ fn rocket() -> _ {
 
     let figment = Figment::from(rocket::Config::default())
         .merge(("port", config.port()))
-        .merge(("address", config.host()));
+        .merge(("address", config.host()))
+        .merge((
+            "secret_key",
+            config
+                .authorization()
+                .map(|auth_config| auth_config.secret().to_string())
+                .unwrap_or_else(|| generate_random_hex(32)),
+        ));
 
     let ip_state = state::IpState::new(
         config.rate_limit().max_queries(),
@@ -63,6 +70,10 @@ fn rocket() -> _ {
         .manage(cache_state)
         .mount(
             "/",
-            routes![routes::auto_detect_config_handler, routes::login_handler],
+            routes![
+                routes::auto_detect_config_handler,
+                routes::login_handler,
+                routes::logout_handler
+            ],
         )
 }
