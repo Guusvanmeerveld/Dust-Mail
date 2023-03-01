@@ -278,8 +278,5 @@ pub fn get_boxes_from_names(imap_boxes: &Vec<(&ImapBox, Option<Counts>)>) -> Vec
         }
     }
 
-    folders
-        .into_iter()
-        .map(|(_, value)| value.to_mailbox())
-        .collect()
+    folders.into_iter().map(|(_, value)| value.into()).collect()
 }

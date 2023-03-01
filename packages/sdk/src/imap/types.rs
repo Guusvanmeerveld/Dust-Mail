@@ -22,24 +22,6 @@ impl MailBoxTree {
         &self.id
     }
 
-    /// Convert this mailbox tree to a normal mailbox struct.
-    pub fn to_mailbox(self) -> MailBox {
-        let children = self
-            .children
-            .into_iter()
-            .map(|(_, value)| value.to_mailbox())
-            .collect();
-
-        MailBox::new(
-            self.counts,
-            self.delimiter,
-            children,
-            self.selectable,
-            self.id,
-            self.name,
-        )
-    }
-
     pub fn new<S: Into<String>>(
         counts: Option<Counts>,
         delimiter: Option<String>,
@@ -56,5 +38,24 @@ impl MailBoxTree {
             id: id.into(),
             name: name.into(),
         }
+    }
+}
+
+impl Into<MailBox> for MailBoxTree {
+    fn into(self) -> MailBox {
+        let children: Vec<MailBox> = self
+            .children
+            .into_iter()
+            .map(|(_, value)| value.into())
+            .collect();
+
+        MailBox::new(
+            self.counts,
+            self.delimiter,
+            children,
+            self.selectable,
+            self.id,
+            self.name,
+        )
     }
 }
