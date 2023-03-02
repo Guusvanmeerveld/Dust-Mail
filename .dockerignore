@@ -7,6 +7,8 @@
 !/pnpm-workspace.yaml
 !/turbo.json
 !/.npmrc
+!/Cargo.toml
+!/Cargo.lock
 
 !/entrypoint.sh
 
@@ -22,3 +24,16 @@
 !/apps/web/tsconfig.node.json
 !/apps/web/vite.config.ts
 !/apps/web/package.json
+!/apps/web/src-tauri
+
+!/apps/server/src
+!/apps/server/Cargo.toml
+
+!/packages/autoconfig/src
+!/packages/autoconfig/Cargo.toml
+
+!/packages/pop3/src
+!/packages/pop3/Cargo.toml
+
+!/packages/sdk/src
+!/packages/sdk/Cargo.toml

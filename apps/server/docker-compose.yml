@@ -1,0 +1,10 @@
+version: "3.3"
+
+services:
+  api:
+    container_name: dust-mail-api
+    image: guusvanmeerveld/dust-mail-server
+    ports:
+      - 8080:8080
+    volumes:
+      - ./config/config.toml:/home/dust-mail/.config/dust-mail-server/config.toml
