@@ -15,7 +15,7 @@ pub async fn auto_detect_config(
     cache: &State<ConfigCache>,
 ) -> ResponseResult<Config> {
     match cache.get(email) {
-        Some(config) => Ok(OkResponse::new(config)),
+        Some(cached) => Ok(OkResponse::new(cached.item().clone())),
         None => match detect::from_email(email).await {
             Ok(config) => {
                 cache.set(email, &config).map_err(ErrResponse::from_err)?;

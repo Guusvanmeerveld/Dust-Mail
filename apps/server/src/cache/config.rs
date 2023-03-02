@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{types::Result, utils::get_domain_from_email};
 
-use dashmap::DashMap;
+use dashmap::{mapref::one::Ref, DashMap};
 use sdk::detect::Config;
 
 use super::CachedItem;
@@ -33,7 +33,7 @@ impl ConfigCache {
         Ok(())
     }
 
-    pub fn get(&self, email: &str) -> Option<Config> {
+    pub fn get(&self, email: &str) -> Option<Ref<String, CachedItem<Config>>> {
         let domain = get_domain_from_email(email).ok()?;
 
         match self.configs.get(domain) {
@@ -42,9 +42,7 @@ impl ConfigCache {
                     return None;
                 }
 
-                let config = entry.item();
-
-                Some(config)
+                Some(entry)
             }
             None => None,
         }

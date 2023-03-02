@@ -29,7 +29,7 @@ impl<'r> FromRequest<'r> for User {
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         let cookies = req.cookies();
 
-        let token = match cookies.get_private("login") {
+        let token = match cookies.get_private("session") {
             Some(cookie) => cookie.value().to_string(),
             None => {
                 return Outcome::Failure(ErrResponse::new(

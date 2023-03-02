@@ -63,11 +63,14 @@ fn rocket() -> _ {
 
     let cache_state = cache::ConfigCache::new(config.cache().timeout());
 
+    let mail_sessions_state = state::GlobalUserSessions::new();
+
     rocket::custom(figment)
         .register("/", catchers![not_found, internal_error, too_many_requests])
         .manage(config)
         .manage(ip_state)
         .manage(cache_state)
+        .manage(mail_sessions_state)
         .mount(
             "/",
             routes![
@@ -76,4 +79,5 @@ fn rocket() -> _ {
                 routes::logout_handler
             ],
         )
+        .mount("/mail/", routes![routes::mail_login_handler])
 }

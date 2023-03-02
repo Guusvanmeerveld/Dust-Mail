@@ -7,7 +7,7 @@ use rocket::{
 
 use crate::{
     guards::RateLimiter,
-    state::{default_expiry_time, AuthType, Config},
+    state::{default_expiry_time, AuthType, Config, GlobalUserSessions},
     types::{ErrResponse, ErrorKind, OkResponse, ResponseResult},
     utils::generate_random_string,
 };
@@ -26,10 +26,11 @@ fn check_password(user_input: &str, password: &str) -> bool {
 pub fn login(
     login_body: Form<LoginForm<'_>>,
     cookies: &CookieJar<'_>,
+    mail_sessions: &State<GlobalUserSessions>,
     _rate_limiter: RateLimiter,
     app_config: &State<Config>,
 ) -> ResponseResult<String> {
-    if cookies.get_private("login").is_some() {
+    if cookies.get_private("session").is_some() {
         return Err(ErrResponse::new(
             ErrorKind::BadRequest,
             "You are already logged in",
@@ -73,7 +74,9 @@ pub fn login(
 
     let random_token = generate_random_string(64);
 
-    let cookie = Cookie::build("login", random_token)
+    mail_sessions.insert(&random_token);
+
+    let cookie = Cookie::build("session", random_token)
         .expires(OffsetDateTime::now_utc().saturating_add(token_duration))
         .finish();
 

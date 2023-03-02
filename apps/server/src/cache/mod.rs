@@ -2,7 +2,7 @@ mod config;
 
 use std::time::{Duration, Instant};
 
-struct CachedItem<T> {
+pub struct CachedItem<T> {
     cache_timeout: Duration,
     item: T,
     time: Instant,
@@ -17,8 +17,8 @@ impl<T: Clone> CachedItem<T> {
         }
     }
 
-    pub fn item(&self) -> T {
-        self.item.clone()
+    pub fn item(&self) -> &T {
+        &self.item
     }
 
     pub fn expired(&self) -> bool {
