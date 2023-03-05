@@ -21,13 +21,15 @@ export const OutgoingServerType = z.literal(OutgoingServerTypeString);
 
 export const ServerType = z.union([IncomingServerType, OutgoingServerType]);
 
-export const LoginOptions = z
-	.object({
-		username: z.string(),
-		password: z.string(),
-		domain: z.string(),
-		port: z.number(),
-		clientType: z.union([z.string(), z.record(ServerType, MailServerType)]),
-		security: ConnectionSecurity
-	})
-	.array();
+export const LoginOptions = z.object({
+	username: z.string(),
+	password: z.string(),
+	domain: z.string(),
+	port: z.number(),
+	security: ConnectionSecurity
+});
+
+export const Credentials = z.object({
+	incoming: LoginOptions,
+	incoming_type: IncomingMailServerType
+});

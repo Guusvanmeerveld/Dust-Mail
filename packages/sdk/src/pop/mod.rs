@@ -9,7 +9,7 @@ use crate::{
     client::incoming::Session,
     parse::{map_pop_error, parse_headers, parse_rfc822},
     tls::create_tls_connector,
-    types::{Counts, Error, ErrorKind, Flag, LoginOptions, MailBox, Message, Preview, Result},
+    types::{ConnectOptions, Counts, Error, ErrorKind, Flag, MailBox, Message, Preview, Result},
 };
 
 use parse::parse_address;
@@ -28,7 +28,7 @@ pub struct PopSession<S: Read + Write> {
     unique_id_map: HashMap<String, u32>,
 }
 
-pub fn connect(options: LoginOptions) -> Result<PopClient<TlsStream<TcpStream>>> {
+pub fn connect(options: ConnectOptions) -> Result<PopClient<TlsStream<TcpStream>>> {
     let tls = create_tls_connector()?;
 
     let server = options.server();
@@ -39,7 +39,7 @@ pub fn connect(options: LoginOptions) -> Result<PopClient<TlsStream<TcpStream>>>
     Ok(PopClient { session })
 }
 
-pub fn connect_plain(options: LoginOptions) -> Result<PopClient<TcpStream>> {
+pub fn connect_plain(options: ConnectOptions) -> Result<PopClient<TcpStream>> {
     let server = options.server();
     let port = *options.port();
 
@@ -276,7 +276,7 @@ mod test {
 
     use super::PopSession;
 
-    use crate::{client::incoming::Session, types::LoginOptions};
+    use crate::{client::incoming::Session, types::ConnectOptions};
 
     use dotenv::dotenv;
     use native_tls::TlsStream;
@@ -291,7 +291,7 @@ mod test {
         let server = env::var("POP_SERVER").unwrap();
         let port: u16 = 995;
 
-        let options = LoginOptions::new(&server, &port);
+        let options = ConnectOptions::new(&server, &port);
 
         let client = super::connect(options).unwrap();
 

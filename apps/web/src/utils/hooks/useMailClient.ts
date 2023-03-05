@@ -6,7 +6,7 @@ import useUser from "./useUser";
 import { messageCountForPage } from "@src/constants";
 
 import { MailConfig } from "@models/config";
-import { LoginOptions } from "@models/login";
+import { Credentials } from "@models/login";
 import { MailBox, MailBoxList } from "@models/mailbox";
 import { Message } from "@models/message";
 import { Preview } from "@models/preview";
@@ -74,14 +74,14 @@ const useMailClient = (): MailClient => {
 			return NotImplemented();
 		},
 		async login(options) {
-			const optionsResult = parseZodOutput(LoginOptions.safeParse(options));
+			const optionsResult = parseZodOutput(Credentials.safeParse(options));
 
 			if (!optionsResult.ok) {
 				return optionsResult;
 			}
 
 			if (isTauri) {
-				return invoke("login", { options: optionsResult.data })
+				return invoke("login", { credentials: optionsResult.data })
 					.then((data: unknown) => {
 						const output = z.string().safeParse(data);
 

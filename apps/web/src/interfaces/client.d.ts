@@ -1,7 +1,7 @@
 import z from "zod";
 
 import { MailConfig } from "@models/config";
-import { LoginOptions } from "@models/login";
+import { Credentials } from "@models/login";
 import { MailBoxList, MailBox } from "@models/mailbox";
 import { Version } from "@models/version";
 
@@ -14,7 +14,7 @@ export default interface MailClient {
 	detectConfig: (
 		emailAddress: string
 	) => Promise<Result<z.infer<typeof MailConfig>>>;
-	login: (options: z.infer<typeof LoginOptions>) => Promise<Result<string>>;
+	login: (options: z.infer<typeof Credentials>) => Promise<Result<string>>;
 	get: (boxId?: string) => Promise<Result<z.infer<typeof MailBox>>>;
 	list: () => Promise<Result<z.infer<typeof MailBoxList>>>;
 	messageList: (

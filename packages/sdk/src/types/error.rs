@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{error, fmt};
 
 #[cfg(feature = "pop")]
 use pop3::types::Error as PopError;
@@ -29,6 +29,8 @@ pub enum ErrorKind {
     ParseDate,
     /// Failed to parse the emails message body.
     ParseMessage,
+    /// Failed to parse provided login config.
+    InvalidLoginConfig,
     /// Failed to serialize the given data to JSON.
     SerializeJSON,
     /// Something went wrong when fetching the email provider config for a given email address.
@@ -53,6 +55,21 @@ impl Error {
 
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self.kind() {
+            ErrorKind::PopError(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<PopError> for Error {
+    fn from(pop_error: PopError) -> Self {
+       Self::new(ErrorKind::PopError(pop_error), "Error from pop server")
     }
 }
 

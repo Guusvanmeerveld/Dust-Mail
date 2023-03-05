@@ -10,7 +10,7 @@ pub struct MailBox {
     name: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Serialize, PartialEq, Eq)]
 pub struct Counts {
     unseen: u32,
     total: u32,
@@ -85,15 +85,6 @@ impl MailBox {
     /// The mailbox name.
     pub fn name(&self) -> &str {
         &self.name
-    }
-}
-
-impl Default for Counts {
-    fn default() -> Self {
-        Self {
-            total: 0,
-            unseen: 0,
-        }
     }
 }
 

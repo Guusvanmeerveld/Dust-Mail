@@ -1,11 +1,4 @@
-use std::io::{Read, Write};
-
 use serde::{Deserialize, Serialize};
-
-#[cfg(feature = "imap")]
-use crate::imap::ImapClient;
-#[cfg(feature = "pop")]
-use crate::pop::PopClient;
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub enum IncomingClientType {
@@ -17,15 +10,6 @@ pub enum IncomingClientType {
 
 #[derive(Debug, PartialEq, Eq, Deserialize, Serialize, Clone)]
 pub enum OutgoingClientType {
+    #[cfg(feature = "smtp")]
     Smtp,
-}
-
-pub enum IncomingClientTypeWithClient<S>
-where
-    S: Read + Write,
-{
-    #[cfg(feature = "imap")]
-    Imap(ImapClient<S>),
-    #[cfg(feature = "pop")]
-    Pop(PopClient<S>),
 }

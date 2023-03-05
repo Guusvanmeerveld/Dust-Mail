@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import { VersionResponse } from "@dust-mail/typings";
 
-import { LoginOptions, ServerType } from "@models/login";
+import { Credentials, ServerType } from "@models/login";
 
 import { Result } from "@interfaces/result";
 
@@ -21,7 +21,7 @@ import {
 // TODO: Fix this mess of a file.
 
 export const useMailLogin = (): ((
-	config: z.infer<typeof LoginOptions>
+	config: z.infer<typeof Credentials>
 ) => Promise<Result<void>>) => {
 	const appVersion = useStore((state) => state.appVersion);
 	const setFetching = useStore((state) => state.setFetching);
@@ -33,12 +33,6 @@ export const useMailLogin = (): ((
 	const mailClient = useMailClient();
 
 	return async (config) => {
-		if (config.length < 1)
-			return createBaseError({
-				kind: "ConfigNotComplete",
-				message: "Config is missing items"
-			});
-
 		// Show the fetching animation
 		setFetching(true);
 
@@ -82,13 +76,9 @@ export const useMailLogin = (): ((
 			return loginResult;
 		}
 
-		const incomingConfig = config.find(
-			(item) => typeof item.clientType != "string" && item.clientType.incoming
-		);
-
-		const outgoingConfig = config.find(
-			(item) => typeof item.clientType != "string" && item.clientType.outgoing
-		);
+		const incomingConfig = config.incoming;
+		// Outgoing config is incoming because there is no support for outgoing servers yet.
+		const outgoingConfig = config.incoming;
 
 		if (incomingConfig === undefined || outgoingConfig === undefined)
 			return createBaseError({

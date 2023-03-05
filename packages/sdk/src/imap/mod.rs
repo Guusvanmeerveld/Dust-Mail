@@ -13,10 +13,10 @@ use crate::client::incoming::Session;
 use crate::parse::map_imap_error;
 use crate::tls::create_tls_connector;
 use crate::types::{
+    ConnectOptions,
     // Counts,
     Error,
     ErrorKind,
-    LoginOptions,
     MailBox,
     Message,
     Preview,
@@ -44,7 +44,7 @@ pub struct ImapSession<S: Read + Write> {
     selected_box: Option<(String, ImapMailbox)>,
 }
 
-pub fn connect(options: LoginOptions) -> Result<ImapClient<TlsStream<TcpStream>>> {
+pub fn connect(options: ConnectOptions) -> Result<ImapClient<TlsStream<TcpStream>>> {
     let tls = create_tls_connector()?;
 
     let domain = options.server();
@@ -57,7 +57,7 @@ pub fn connect(options: LoginOptions) -> Result<ImapClient<TlsStream<TcpStream>>
     Ok(imap_client)
 }
 
-pub fn connect_plain(options: LoginOptions) -> Result<ImapClient<TcpStream>> {
+pub fn connect_plain(options: ConnectOptions) -> Result<ImapClient<TcpStream>> {
     let domain = options.server();
     let port = *options.port();
 
@@ -389,7 +389,7 @@ mod tests {
 
     use native_tls::TlsStream;
 
-    use super::{ImapSession, LoginOptions};
+    use super::{ConnectOptions, ImapSession};
 
     use crate::client::incoming::Session;
 
@@ -406,7 +406,7 @@ mod tests {
         let server = env::var("IMAP_SERVER").unwrap();
         let port: u16 = 993;
 
-        let options = LoginOptions::new(server, &port);
+        let options = ConnectOptions::new(server, &port);
 
         let client = super::connect(options).unwrap();
 

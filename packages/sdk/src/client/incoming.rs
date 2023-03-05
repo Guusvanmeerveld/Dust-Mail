@@ -6,14 +6,22 @@ use std::{
 use native_tls::TlsStream;
 
 #[cfg(feature = "imap")]
-use crate::imap;
+use crate::imap::{self, ImapClient};
 
 #[cfg(feature = "pop")]
-use crate::pop;
+use crate::pop::{self, PopClient};
 
-use crate::types::{
-    self, IncomingClientType, IncomingClientTypeWithClient, LoginOptions, MailBox, Message, Preview,
-};
+use crate::types::{self, ConnectOptions, IncomingClientType, MailBox, Message, Preview};
+
+enum IncomingClientTypeWithClient<S>
+where
+    S: Read + Write,
+{
+    #[cfg(feature = "imap")]
+    Imap(ImapClient<S>),
+    #[cfg(feature = "pop")]
+    Pop(PopClient<S>),
+}
 
 pub struct IncomingClient<S: Read + Write> {
     client: IncomingClientTypeWithClient<S>,
@@ -69,7 +77,7 @@ pub struct ClientConstructor;
 /// Check whether the login options exist if they are needed for a given client type.
 fn check_options(
     client_type: &IncomingClientType,
-    options: &Option<LoginOptions>,
+    options: &Option<ConnectOptions>,
 ) -> types::Result<()> {
     match client_type {
         #[cfg(feature = "imap")]
@@ -99,7 +107,7 @@ impl ClientConstructor {
     /// Creates a new client over a secure tcp connection.
     pub fn new(
         client_type: &IncomingClientType,
-        options: Option<LoginOptions>,
+        options: Option<ConnectOptions>,
     ) -> types::Result<IncomingClient<TlsStream<TcpStream>>> {
         check_options(&client_type, &options)?;
 
@@ -137,7 +145,7 @@ impl ClientConstructor {
     /// # Do not use this in a production environment as it will send your credentials to the server without any encryption!
     pub fn new_plain(
         client_type: &IncomingClientType,
-        options: Option<LoginOptions>,
+        options: Option<ConnectOptions>,
     ) -> types::Result<IncomingClient<TcpStream>> {
         check_options(&client_type, &options)?;
 
@@ -172,7 +180,7 @@ impl ClientConstructor {
 
 #[cfg(test)]
 mod tests {
-    use crate::types::LoginOptions;
+    use crate::types::ConnectOptions;
 
     use std::env;
 
@@ -189,7 +197,7 @@ mod tests {
         let server = env::var("IMAP_SERVER").unwrap();
         let port: u16 = 993;
 
-        let options = LoginOptions::new(server, &port);
+        let options = ConnectOptions::new(server, &port);
 
         let client =
             super::ClientConstructor::new(&IncomingClientType::Imap, Some(options)).unwrap();

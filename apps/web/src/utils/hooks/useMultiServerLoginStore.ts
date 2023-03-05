@@ -184,7 +184,6 @@ const useMultiServerLoginStore = create<Store>((set) => ({
 							}
 						}
 					};
-					break;
 			}
 		})
 }));

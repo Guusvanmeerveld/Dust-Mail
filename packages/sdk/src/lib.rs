@@ -14,6 +14,8 @@ mod pop;
 
 pub mod types;
 
+pub mod session;
+
 pub use client::incoming::{
     ClientConstructor as IncomingClientConstructor, Session as IncomingSession,
 };

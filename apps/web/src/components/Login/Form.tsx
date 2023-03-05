@@ -34,10 +34,9 @@ import Typography from "@mui/material/Typography";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import { Error as ErrorModel } from "@models/error";
 import {
 	incomingMailServerTypeList,
-	LoginOptions,
+	Credentials as CredentialsModel,
 	outgoingMailServerTypeList
 } from "@models/login";
 
@@ -320,16 +319,10 @@ const LoginOptionsMenu: FC = () => {
 			return;
 		}
 
-		const options: z.infer<typeof LoginOptions> = [
-			{
-				...incoming,
-				clientType: { incoming: selectedMailServerTypes.incoming }
-			},
-			{
-				...outgoing,
-				clientType: { outgoing: selectedMailServerTypes.outgoing }
-			}
-		];
+		const options: z.infer<typeof CredentialsModel> = {
+			incoming,
+			incoming_type: selectedMailServerTypes.incoming
+		};
 
 		await login(options)
 			.then((result) => {
