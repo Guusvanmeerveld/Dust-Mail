@@ -242,8 +242,10 @@ impl<S: Read + Write> Session for ImapSession<S> {
             if let Some(found_mailbox) = utils::find_box_in_list(cached_box_list, box_id) {
                 found_mailbox
             } else {
-                // The mailbox has to be in the local list because when we run the box_list function, it will retrieve ALL mailboxes
-                unreachable!()
+                return Err(Error::new(
+                    ErrorKind::MailBoxNotFound,
+                    format!("Could not find a mailbox with id '{}'", box_id),
+                ));
             }
         // Otherwise retrieve them from the server
         } else {

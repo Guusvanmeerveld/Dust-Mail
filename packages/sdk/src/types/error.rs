@@ -37,6 +37,7 @@ pub enum ErrorKind {
     FetchConfigFailed,
     /// Could not detect a config from the given email address.
     ConfigNotFound,
+    MailBoxNotFound,
 }
 
 #[derive(Debug, Serialize)]
@@ -69,7 +70,7 @@ impl error::Error for Error {
 
 impl From<PopError> for Error {
     fn from(pop_error: PopError) -> Self {
-       Self::new(ErrorKind::PopError(pop_error), "Error from pop server")
+        Self::new(ErrorKind::PopError(pop_error), "Error from pop server")
     }
 }
 
