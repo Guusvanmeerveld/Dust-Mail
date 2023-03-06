@@ -51,8 +51,25 @@ impl Credentials {
     }
 }
 
+impl Into<String> for Credentials {
+    /// Creates an identifiable string from the credentials, excluding the password.
+    fn into(self) -> String {
+        let incoming = self.incoming_options();
+
+        format!(
+            "{}@{}:{}",
+            incoming.username(),
+            incoming.domain(),
+            incoming.port()
+        )
+    }
+}
+
 pub async fn create_sessions(credentials: &Credentials) -> Result<MailSessions> {
-    let incoming_credentials = (credentials.incoming_options().clone(), credentials.incoming_type().clone());
+    let incoming_credentials = (
+        credentials.incoming_options().clone(),
+        credentials.incoming_type().clone(),
+    );
 
     // Try to get a session for all of the given login options
     let incoming_login_thread = spawn_blocking(move || {
