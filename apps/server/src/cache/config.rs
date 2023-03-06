@@ -1,15 +1,15 @@
-use std::time::Instant;
+use std::sync::Arc;
 
 use crate::{types::Result, utils::get_domain_from_email};
 
-use dashmap::{mapref::one::Ref, DashMap};
+use dashmap::DashMap;
 use sdk::detect::Config;
 
 use super::CachedItem;
 
 pub struct ConfigCache {
     cache_timeout: u64,
-    configs: DashMap<String, CachedItem<Config>>,
+    configs: DashMap<String, Arc<CachedItem<Config>>>,
 }
 
 impl ConfigCache {
@@ -23,17 +23,14 @@ impl ConfigCache {
     pub fn set(&self, email: &str, config: &Config) -> Result<()> {
         let domain = get_domain_from_email(email)?;
 
-        let now = Instant::now();
+        let cached_item = Arc::new(CachedItem::new(config, &self.cache_timeout));
 
-        self.configs.insert(
-            String::from(domain),
-            CachedItem::new(config, &self.cache_timeout),
-        );
+        self.configs.insert(String::from(domain), cached_item);
 
         Ok(())
     }
 
-    pub fn get(&self, email: &str) -> Option<Ref<String, CachedItem<Config>>> {
+    pub fn get(&self, email: &str) -> Option<Arc<CachedItem<Config>>> {
         let domain = get_domain_from_email(email).ok()?;
 
         match self.configs.get(domain) {
@@ -42,7 +39,7 @@ impl ConfigCache {
                     return None;
                 }
 
-                Some(entry)
+                Some(Arc::clone(entry.value()))
             }
             None => None,
         }

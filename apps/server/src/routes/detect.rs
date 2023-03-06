@@ -9,16 +9,18 @@ use sdk::detect::{self, Config};
 
 #[get("/detect/<email>")]
 pub async fn auto_detect_config(
-    email: &str,
+    email: String,
     _user: User,
     _rate_limiter: RateLimiter,
     cache: &State<ConfigCache>,
 ) -> ResponseResult<Config> {
-    match cache.get(email) {
+    match cache.get(&email) {
         Some(cached) => Ok(OkResponse::new(cached.item().clone())),
-        None => match detect::from_email(email).await {
+        None => match detect::from_email(&email).await {
             Ok(config) => {
-                cache.set(email, &config).map_err(ErrResponse::from_err)?;
+                cache
+                    .set(&email, &config)
+                    .map_err(|err| ErrResponse::from(err).into())?;
 
                 Ok(OkResponse::new(config))
             }

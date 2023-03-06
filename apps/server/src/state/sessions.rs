@@ -1,12 +1,12 @@
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::Arc;
 
-use dashmap::{mapref::one::Ref, DashMap};
-use sdk::IncomingSession;
+use dashmap::DashMap;
+use sdk::session::{MailSessions, ThreadSafeIncomingSession};
 
-type ThreadSafeIncomingMailSession = Arc<Mutex<Box<dyn IncomingSession + Send>>>;
+use crate::types::{Error, ErrorKind, Result};
 
 pub struct GlobalUserSessions {
-    sessions: DashMap<String, UserSession>,
+    sessions: DashMap<String, Arc<UserSession>>,
 }
 
 impl GlobalUserSessions {
@@ -16,13 +16,21 @@ impl GlobalUserSessions {
         }
     }
 
-    pub fn insert<S: AsRef<str>>(&self, user_token: S) {
-        self.sessions
-            .insert(user_token.as_ref().to_string(), UserSession::new());
+    pub fn get<S: AsRef<str>>(&self, user_token: S) -> Arc<UserSession> {
+        match self.sessions.get(user_token.as_ref()) {
+            Some(session) => session.clone(),
+            None => {
+                self.insert(user_token.as_ref());
+                self.get(user_token)
+            }
+        }
     }
 
-    pub fn get<S: AsRef<str>>(&self, user_token: S) -> Option<Ref<String, UserSession>> {
-        self.sessions.get(user_token.as_ref())
+    pub fn insert<S: AsRef<str>>(&self, user_token: S) {
+        self.sessions.insert(
+            String::from(user_token.as_ref()),
+            Arc::new(UserSession::new()),
+        );
     }
 
     pub fn remove<S: AsRef<str>>(&self, user_token: S) {
@@ -30,8 +38,9 @@ impl GlobalUserSessions {
     }
 }
 
+/// A struct containing all of the users mail sessions.
 pub struct UserSession {
-    session: DashMap<String, ThreadSafeIncomingMailSession>,
+    session: DashMap<String, Arc<MailSessions>>,
 }
 
 impl UserSession {
@@ -41,40 +50,33 @@ impl UserSession {
         }
     }
 
-    pub fn insert<S: AsRef<str>>(
-        &self,
-        session_token: S,
-        mail_session: Box<dyn IncomingSession + Send>,
-    ) {
-        self.session.insert(
-            session_token.as_ref().to_string(),
-            Arc::new(Mutex::new(mail_session)),
-        );
+    pub fn insert<S: AsRef<str>>(&self, session_token: S, mail_sessions: MailSessions) {
+        self.session
+            .insert(session_token.as_ref().to_string(), Arc::new(mail_sessions));
     }
 
-    pub fn get<S: AsRef<str>>(
+    pub fn remove<S: AsRef<str>>(&self, session_token: S) {
+        self.session.remove(session_token.as_ref());
+    }
+
+    pub fn get<S: AsRef<str>>(&self, session_token: S) -> Option<Arc<MailSessions>> {
+        self.session
+            .get(session_token.as_ref())
+            .map(|sessions| sessions.clone())
+    }
+
+    pub fn get_incoming<S: AsRef<str>>(
         &self,
         session_token: S,
-    ) -> Option<Ref<String, ThreadSafeIncomingMailSession>> {
-        self.session.get(session_token.as_ref())
+    ) -> Result<ThreadSafeIncomingSession> {
+        self.session
+            .get(session_token.as_ref())
+            .map(|mail_sessions| mail_sessions.clone().incoming().clone())
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::BadRequest,
+                    "Could not find requested mail sessions",
+                )
+            })
     }
 }
-
-// pub struct IncomingMailSession {
-//     mail_session: ThreadSafeIncomingMailSession,
-// }
-
-// impl IncomingMailSession {
-//     pub fn new(mail_session: Box<dyn IncomingSession + Send>) -> Self {
-//         Self {
-//             mail_session: Arc::new(Mutex::new(mail_session)),
-//         }
-//     }
-
-//     pub fn get<'a>(&'a self) -> MutexGuard<'a, Box<dyn IncomingSession + Send>> {
-//         let rw_lock = self.mail_session.lock().unwrap();
-
-//         rw_lock
-//     }
-
-// }

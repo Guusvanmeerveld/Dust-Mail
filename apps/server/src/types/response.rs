@@ -26,13 +26,6 @@ pub struct ErrResponse {
 }
 
 impl ErrResponse {
-    pub fn from_err(error: Error) -> (Status, Json<Self>) {
-        let status = Self::find_status_from_error_kind(error.kind());
-        let json = Json(Self { ok: false, error });
-
-        (status, json)
-    }
-
     fn find_status_from_error_kind(error_kind: &ErrorKind) -> Status {
         match error_kind {
             ErrorKind::Unauthorized => Status::Unauthorized,
@@ -52,6 +45,21 @@ impl ErrResponse {
             ok: false,
             error: Error::new(kind, msg),
         });
+
+        (status, json)
+    }
+}
+
+impl From<Error> for ErrResponse {
+    fn from(error: Error) -> Self {
+        Self { ok: false, error }
+    }
+}
+
+impl Into<(Status, Json<ErrResponse>)> for ErrResponse {
+    fn into(self) -> (Status, Json<ErrResponse>) {
+        let status = Self::find_status_from_error_kind(self.error.kind());
+        let json = Json(self);
 
         (status, json)
     }

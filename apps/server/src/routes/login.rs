@@ -26,7 +26,7 @@ fn check_password(user_input: &str, password: &str) -> bool {
 pub fn login(
     login_body: Form<LoginForm<'_>>,
     cookies: &CookieJar<'_>,
-    mail_sessions: &State<GlobalUserSessions>,
+    user_sessions: &State<GlobalUserSessions>,
     _rate_limiter: RateLimiter,
     app_config: &State<Config>,
 ) -> ResponseResult<String> {
@@ -74,7 +74,7 @@ pub fn login(
 
     let random_token = generate_random_string(64);
 
-    mail_sessions.insert(&random_token);
+    user_sessions.insert(&random_token);
 
     let cookie = Cookie::build("session", random_token)
         .expires(OffsetDateTime::now_utc().saturating_add(token_duration))

@@ -12,3 +12,10 @@ description = "A Dust-Mail backend server"
 
 [cache]
 timeout = 300
+
+[auth]
+secret = "PjpAaGLCobyeVX69A+J5D04Cax0azqes0T/+yFNNdso="
+type = "password"
+
+[auth.password]
+password = "yeet"

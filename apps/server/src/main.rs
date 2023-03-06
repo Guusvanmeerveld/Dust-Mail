@@ -79,5 +79,8 @@ fn rocket() -> _ {
                 routes::logout_handler
             ],
         )
-        .mount("/mail/", routes![routes::mail_login_handler])
+        .mount(
+            "/mail/",
+            routes![routes::mail_login_handler, routes::mail_logout_handler],
+        )
 }
