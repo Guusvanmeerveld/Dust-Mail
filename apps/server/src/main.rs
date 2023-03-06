@@ -81,6 +81,15 @@ fn rocket() -> _ {
         )
         .mount(
             "/mail/",
-            routes![routes::mail_login_handler, routes::mail_logout_handler],
+            routes![routes::mail_login_handler, routes::mail_logout_handler,],
+        )
+        .mount(
+            "/mail/boxes",
+            routes![
+                routes::mail_box_list_handler,
+                routes::mail_get_box_handler,
+                routes::mail_box_messages_handler,
+                routes::mail_box_message_handler
+            ],
         )
 }

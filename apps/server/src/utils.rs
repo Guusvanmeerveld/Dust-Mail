@@ -54,6 +54,16 @@ pub fn generate_random_hex(n: usize) -> String {
     hex_string
 }
 
+use base64::Engine;
+const BASE64_ENGINE: base64::engine::GeneralPurpose = base64::engine::GeneralPurpose::new(
+    &base64::alphabet::URL_SAFE,
+    base64::engine::general_purpose::NO_PAD,
+);
+
+pub fn base64_encode<S: Into<String>>(to_encode: S) -> String {
+    BASE64_ENGINE.encode::<String>(to_encode.into())
+}
+
 fn config_file() -> PathBuf {
     let base_dirs = BaseDirs::new().expect("Failed to retrieve home directory from os");
 

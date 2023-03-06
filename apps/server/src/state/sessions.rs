@@ -59,6 +59,10 @@ impl UserSession {
         self.session.remove(session_token.as_ref());
     }
 
+    pub fn count(&self) -> usize {
+        self.session.iter().count()
+    }
+
     pub fn get<S: AsRef<str>>(&self, session_token: S) -> Option<Arc<MailSessions>> {
         self.session
             .get(session_token.as_ref())
@@ -71,11 +75,11 @@ impl UserSession {
     ) -> Result<ThreadSafeIncomingSession> {
         self.session
             .get(session_token.as_ref())
-            .map(|mail_sessions| mail_sessions.clone().incoming().clone())
+            .map(|mail_sessions| mail_sessions.incoming().clone())
             .ok_or_else(|| {
                 Error::new(
                     ErrorKind::BadRequest,
-                    "Could not find requested mail sessions",
+                    "Could not find requested mail session",
                 )
             })
     }

@@ -4,12 +4,14 @@ use rocket::serde::{Deserialize, Serialize};
 
 use crate::utils::{self, generate_random_hex};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct Authorization {
     secret: String,
     #[serde(default = "default_expiry_time")]
     expires: i64,
+    #[serde(default = "default_connection_limit")]
+    connection_limit: usize,
     user: Option<User>,
     password: Option<Password>,
     r#type: AuthType,
@@ -30,6 +32,10 @@ impl Authorization {
 
     pub fn password(&self) -> Option<&Password> {
         self.password.as_ref()
+    }
+
+    pub fn connection_limit(&self) -> &usize {
+        &self.connection_limit
     }
 
     pub fn auth_type(&self) -> &AuthType {
@@ -54,6 +60,7 @@ impl Default for Authorization {
         Self {
             secret: generate_random_hex(32),
             expires: default_expiry_time(),
+            connection_limit: default_connection_limit(),
             user,
             password,
             r#type: auth_type,
@@ -61,7 +68,7 @@ impl Default for Authorization {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(crate = "rocket::serde", rename_all = "snake_case")]
 pub enum AuthType {
     Password,
@@ -74,7 +81,7 @@ impl Default for AuthType {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct User {
     #[serde(default = "empty_vec")]
@@ -106,7 +113,7 @@ impl Default for User {
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 #[serde(crate = "rocket::serde")]
 pub struct Password {
     password: String,
@@ -124,6 +131,10 @@ impl Default for Password {
             password: generate_random_password(),
         }
     }
+}
+
+pub fn default_connection_limit() -> usize {
+    5
 }
 
 pub fn default_expiry_time() -> i64 {
