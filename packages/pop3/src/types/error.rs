@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use std::fmt;
+use std::{error, fmt};
 
 #[derive(Debug, Serialize)]
 pub enum ErrorKind {
@@ -42,6 +42,18 @@ impl Error {
 
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        &self.message
+    }
+
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self.kind() {
+            _ => None,
+        }
     }
 }
 
