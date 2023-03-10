@@ -4,12 +4,11 @@ import { FC, memo, MouseEvent, useMemo, useState } from "react";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
-import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
 
 import { Preview } from "@models/preview";
 
-import useAvatar from "@utils/hooks/useAvatar";
+import createAvatarUrl from "@utils/avatarUrl";
 import { useSetSelectedMessage } from "@utils/hooks/useSelectedMessage";
 import useTheme from "@utils/hooks/useTheme";
 
@@ -55,7 +54,12 @@ const UnMemoizedMessageListItem: FC<{
 		[message]
 	);
 
-	const avatar = useAvatar(from.length != 0 ? message.from[0].address : null);
+	const primarySender = message.from[0] ?? null;
+
+	const avatar =
+		primarySender?.address !== null
+			? createAvatarUrl(primarySender.address)
+			: undefined;
 
 	const handleClick = useMemo(
 		() => (): void => {
@@ -110,22 +114,14 @@ const UnMemoizedMessageListItem: FC<{
 						></Box>
 					)}
 					<Box sx={{ m: 2, ml: 3 }}>
-						{avatar?.isLoading ? (
-							<Skeleton variant="rectangular">
-								<Avatar />
-							</Skeleton>
-						) : (
-							<Avatar
-								sx={{
-									bgcolor: !avatar?.data ? theme.palette.secondary.main : null
-								}}
-								variant="rounded"
-								src={avatar?.data}
-								alt={from.charAt(0).toUpperCase()}
-							>
-								{!avatar?.data && from.charAt(0).toUpperCase()}
-							</Avatar>
-						)}
+						<Avatar
+							sx={{
+								bgcolor: theme.palette.secondary.main
+							}}
+							variant="rounded"
+							src={avatar}
+							alt={from.charAt(0).toUpperCase()}
+						/>
 					</Box>
 					<Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
 						<Typography noWrap textOverflow="ellipsis" variant="body2">

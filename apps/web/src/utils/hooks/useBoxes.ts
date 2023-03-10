@@ -10,11 +10,7 @@ import { Error } from "@models/error";
 import { MailBox, MailBoxList } from "@models/mailbox";
 
 import findBoxFromBoxes from "@utils/findBox";
-import {
-	createBaseError,
-	createErrorFromUnknown,
-	errorToString
-} from "@utils/parseError";
+import { createResultFromUnknown, errorToString } from "@utils/parseError";
 
 type UseBoxes = {
 	boxes: z.infer<typeof MailBoxList> | void;
@@ -31,11 +27,7 @@ const useBoxes = (): UseBoxes => {
 		z.infer<typeof MailBoxList>,
 		z.infer<typeof Error>
 	>(["boxes", user?.id], async () => {
-		const result = await mailClient
-			.list()
-			.catch((error: unknown) =>
-				createBaseError(createErrorFromUnknown(error))
-			);
+		const result = await mailClient.list().catch(createResultFromUnknown);
 
 		if (result.ok) {
 			return result.data;

@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 import { Error as ErrorModel } from "@models/error";
 
 export interface Error {

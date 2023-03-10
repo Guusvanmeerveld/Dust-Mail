@@ -1,3 +1,4 @@
+import useMailClient from "./useMailClient";
 import useSelectedStore from "./useSelected";
 import { useCurrentUser, useRemoveUser, useUsers } from "./useUser";
 
@@ -12,14 +13,18 @@ const useLogout = (): (() => void) => {
 
 	const [currentUser, setCurrentUser] = useCurrentUser();
 
+	const mailClient = useMailClient();
+
 	const setSelectedBox = useSelectedStore((state) => state.setSelectedBox);
 
 	const setFetching = useStore((state) => state.setFetching);
 
-	const logout = useCallback((): void => {
+	const logout = useCallback(async (): Promise<void> => {
 		setFetching(false);
 
 		if (!currentUser || !users) return;
+
+		await mailClient.logout();
 
 		removeUser(currentUser?.id);
 

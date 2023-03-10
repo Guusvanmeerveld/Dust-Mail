@@ -20,7 +20,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 import User from "@interfaces/user";
 
-import useAvatar from "@utils/hooks/useAvatar";
+import createAvatarUrl from "@utils/avatarUrl";
 import useLogout from "@utils/hooks/useLogout";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -48,7 +48,10 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 
 	const [currentUser, setCurrentUser] = useCurrentUser();
 
-	const avatar = useAvatar(user.usernames.incoming);
+	const avatar =
+		user?.usernames.incoming !== undefined
+			? createAvatarUrl(user?.usernames.incoming)
+			: undefined;
 
 	return (
 		<MenuItem
@@ -66,7 +69,7 @@ const AccountListItem: FC<{ user: User }> = ({ user }) => {
 						width: theme.spacing(4),
 						mr: 1
 					}}
-					src={avatar?.data}
+					src={avatar}
 					alt={user.usernames.incoming.toUpperCase()}
 				/>
 			</ListItemIcon>
@@ -119,7 +122,10 @@ const UnMemoizedAvatar: FC = () => {
 
 	const setShowSettings = useStore((state) => state.setShowSettings);
 
-	const avatar = useAvatar(user?.usernames.incoming ?? null);
+	const avatar =
+		user?.usernames.incoming !== undefined
+			? createAvatarUrl(user?.usernames.incoming)
+			: undefined;
 
 	// const setShowMessageComposer = useStore(
 	// 	(state) => state.setShowMessageComposer
@@ -155,7 +161,7 @@ const UnMemoizedAvatar: FC = () => {
 			>
 				<MUIAvatar
 					sx={{ bgcolor: theme.palette.secondary.main }}
-					src={avatar?.data}
+					src={avatar}
 					alt={user?.usernames.incoming.toUpperCase()}
 				/>
 			</IconButton>

@@ -26,6 +26,8 @@
 !/apps/web/package.json
 !/apps/web/src-tauri
 
+!/target
+
 !/apps/server/src
 !/apps/server/Cargo.toml
 

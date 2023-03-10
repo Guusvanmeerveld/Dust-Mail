@@ -2,7 +2,12 @@ version: '3.3'
 
 services:
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: apps/server/Dockerfile
     container_name: dust-mail-development
+
+    volumes:
+      - ./apps/server/config/config.toml:/home/dust-mail/.config/dust-mail-server/config.toml
     ports:
-      - 3000:80
+      - 8080:8080

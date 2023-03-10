@@ -2,10 +2,6 @@ import create from "zustand";
 
 import { FC, memo, useState } from "react";
 
-import { AxiosError } from "axios";
-
-import { ErrorResponse } from "@dust-mail/typings";
-
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -14,7 +10,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
-import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 
@@ -29,8 +24,6 @@ export const deleteBoxStore = create<DeleteBoxStore>((set) => ({
 }));
 
 const UnMemoizedDeleteBox: FC = () => {
-	const fetcher = useHttpClient();
-
 	const openSnackbar = useSnackbar();
 
 	const showDeleteItemsDialog = useStore(
@@ -56,19 +49,19 @@ const UnMemoizedDeleteBox: FC = () => {
 	const deleteSelectedItems = async (): Promise<void> => {
 		setFetching(true);
 
-		await fetcher
-			.deleteBox(boxesToDelete)
-			.then(() => {
-				openSnackbar(`Folder(s) '${boxesToDelete.join("', '")}' deleted`);
+		// await fetcher
+		// 	.deleteBox(boxesToDelete)
+		// 	.then(() => {
+		// 		openSnackbar(`Folder(s) '${boxesToDelete.join("', '")}' deleted`);
 
-				deleteItemsDialogOnClose();
-				setBoxesToDelete([]);
-			})
-			.catch((error: AxiosError<ErrorResponse>) => {
-				const errorMessage = error.response?.data.message;
+		// 		deleteItemsDialogOnClose();
+		// 		setBoxesToDelete([]);
+		// 	})
+		// 	.catch((error: AxiosError<ErrorResponse>) => {
+		// 		const errorMessage = error.response?.data.message;
 
-				if (errorMessage) setError(errorMessage);
-			});
+		// 		if (errorMessage) setError(errorMessage);
+		// 	});
 
 		setFetching(false);
 	};

@@ -13,7 +13,7 @@ import { Message } from "@models/message";
 
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
-import { createBaseError, createErrorFromUnknown } from "@utils/parseError";
+import { createResultFromUnknown } from "@utils/parseError";
 
 interface UseSelectedMessage {
 	selectedMessage: z.infer<typeof Message> | undefined;
@@ -71,7 +71,7 @@ const useSelectedMessage = (): UseSelectedMessage => {
 		async () => {
 			const result = await mailClient
 				.getMessage(messageId, selectedBox?.id)
-				.catch((error) => createBaseError(createErrorFromUnknown(error)));
+				.catch(createResultFromUnknown);
 
 			if (result.ok) return result.data;
 			else throw result.error;

@@ -75,6 +75,8 @@ fn rocket() -> _ {
             "/",
             routes![
                 routes::auto_detect_config_handler,
+                routes::settings_handler,
+                routes::version_handler,
                 routes::login_handler,
                 routes::logout_handler
             ],

@@ -36,7 +36,8 @@ import { Address } from "@models/address";
 
 import scrollbarStyles from "@styles/scrollbar";
 
-import useAvatar from "@utils/hooks/useAvatar";
+import createAvatarUrl from "@utils/avatarUrl";
+// import useAvatar from "@utils/hooks/useAvatar";
 import useMessageActions from "@utils/hooks/useMessageActions";
 import useSelectedMessage, {
 	useSetSelectedMessage
@@ -50,7 +51,7 @@ const AddressListItem: FC<{ address: string | null; name: string | null }> = ({
 }) => {
 	const theme = useTheme();
 
-	const avatar = useAvatar(address);
+	const avatar = address !== null ? createAvatarUrl(address) : undefined;
 
 	const displayName = name || address || "Unknown";
 
@@ -65,13 +66,11 @@ const AddressListItem: FC<{ address: string | null; name: string | null }> = ({
 				<Avatar
 					sx={{
 						mr: 2,
-						bgcolor: !avatar ? theme.palette.secondary.main : null
+						bgcolor: theme.palette.secondary.main
 					}}
-					src={avatar?.data}
+					src={avatar}
 					alt={displayName.charAt(0).toUpperCase()}
-				>
-					{!avatar?.data && displayName.charAt(0).toLocaleUpperCase()}
-				</Avatar>
+				/>
 			}
 			label={
 				displayName == address ? displayName : `${displayName} <${address}>`

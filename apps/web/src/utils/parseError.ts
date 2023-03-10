@@ -48,6 +48,9 @@ export const createErrorFromUnknown = (
 	};
 };
 
+export const createResultFromUnknown = (unknown: unknown): Error =>
+	createBaseError(createErrorFromUnknown(unknown));
+
 export const errorIsOfErrorKind = (
 	error: z.infer<typeof ErrorModel>,
 	kind: string

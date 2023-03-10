@@ -3,12 +3,14 @@ use crate::{
     types::{ErrResponse, Error, OkResponse, ResponseResult},
 };
 
-#[post("/logout/<session_token>")]
+#[post("/logout?<session_token>")]
 pub fn logout(
     session_token: String,
     user: User,
     _rate_limiter: RateLimiter,
 ) -> ResponseResult<String> {
+    user.mail_sessions().remove(session_token.clone());
+
     let incoming_session = user
         .mail_sessions()
         .get_incoming(&session_token)
@@ -19,8 +21,6 @@ pub fn logout(
     incoming_session_lock
         .logout()
         .map_err(|err| ErrResponse::from(Error::from(err)).into())?;
-
-    user.mail_sessions().remove(session_token);
 
     Ok(OkResponse::new(String::from("Logout successfull")))
 }

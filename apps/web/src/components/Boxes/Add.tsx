@@ -25,7 +25,6 @@ import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
 
 import useBoxes from "@utils/hooks/useBoxes";
-import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
@@ -76,8 +75,6 @@ const UnMemoizedAddBox: FC = () => {
 	const setFetching = useStore((state) => state.setFetching);
 
 	const unifiedBoxes = checkedBoxesStore((state) => state.checkedBoxes);
-
-	const fetcher = useHttpClient();
 
 	const { boxes, error: boxesError, findBox } = useBoxes();
 
@@ -134,17 +131,17 @@ const UnMemoizedAddBox: FC = () => {
 		// if (!box.unifies) {
 		setFetching(true);
 
-		await fetcher
-			.createBox(box.id)
-			.then(() => {
-				showSnackbar(`Folder '${box.name}' created`);
-				setShowAddBox(false);
-			})
-			.catch((error: AxiosError<{ message: string }>) => {
-				const message = error.response?.data.message;
+		// await fetcher
+		// 	.createBox(box.id)
+		// 	.then(() => {
+		// 		showSnackbar(`Folder '${box.name}' created`);
+		// 		setShowAddBox(false);
+		// 	})
+		// 	.catch((error: AxiosError<{ message: string }>) => {
+		// 		const message = error.response?.data.message;
 
-				if (message) setError(message);
-			});
+		// 		if (message) setError(message);
+		// 	});
 
 		setFetching(false);
 		// }

@@ -2,10 +2,6 @@ import { FC, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import { useQuery } from "react-query";
 
-import { AxiosError } from "axios";
-
-import { PackageError } from "@dust-mail/typings";
-
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Modal from "@mui/material/Modal";
@@ -13,9 +9,10 @@ import Typography from "@mui/material/Typography";
 
 import modalStyles from "@styles/modal";
 
-import useHttpClient from "@utils/hooks/useFetch";
+import useApiClient from "@utils/hooks/useApiClient";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
+import { createResultFromUnknown, errorToString } from "@utils/parseError";
 
 const UnMemoizedChangelog: FC = () => {
 	const theme = useTheme();
@@ -23,12 +20,23 @@ const UnMemoizedChangelog: FC = () => {
 	const showChangelog = useStore((state) => state.showChangelog);
 	const setShowChangelog = useStore((state) => state.setShowChangelog);
 
-	const fetcher = useHttpClient();
+	const apiClient = useApiClient();
 
-	const { data, error, isFetching } = useQuery<
-		string,
-		AxiosError<PackageError>
-	>(["changelog"], () => fetcher.getChangelog(), { enabled: showChangelog });
+	const { data, error, isFetching } = useQuery<string, string>(
+		["changelog"],
+		async () => {
+			const result = await apiClient
+				.getChangelog()
+				.catch(createResultFromUnknown);
+
+			if (result.ok) {
+				return result.data;
+			} else {
+				throw errorToString(result.error);
+			}
+		},
+		{ enabled: showChangelog }
+	);
 
 	return (
 		<Modal onClose={() => setShowChangelog(false)} open={showChangelog}>
@@ -36,9 +44,7 @@ const UnMemoizedChangelog: FC = () => {
 				sx={{ ...modalStyles(theme), maxHeight: "75vh", overflowY: "scroll" }}
 			>
 				<Typography variant="h4">Changelog</Typography>
-				{error && error.response?.data.message && (
-					<Typography>{error.response.data.message}</Typography>
-				)}
+				{error !== null && <Typography>{error}</Typography>}
 				{isFetching && <CircularProgress />}
 				{data && <ReactMarkdown>{data}</ReactMarkdown>}
 			</Box>

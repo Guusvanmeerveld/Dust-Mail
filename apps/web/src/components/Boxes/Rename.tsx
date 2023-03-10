@@ -2,10 +2,6 @@ import create from "zustand";
 
 import { FC, memo, useState } from "react";
 
-import { AxiosError } from "axios";
-
-import { ErrorResponse } from "@dust-mail/typings";
-
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -16,7 +12,6 @@ import TextField from "@mui/material/TextField";
 
 import Box from "@interfaces/box";
 
-import useHttpClient from "@utils/hooks/useFetch";
 import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 
@@ -39,8 +34,6 @@ const UnMemoizedRenameBox: FC = () => {
 	const setFetching = useStore((state) => state.setFetching);
 
 	const boxToRename = renameBoxStore((state) => state.boxToRename);
-
-	const fetcher = useHttpClient();
 
 	const openSnackbar = useSnackbar();
 
@@ -71,22 +64,22 @@ const UnMemoizedRenameBox: FC = () => {
 
 		setFetching(true);
 
-		await fetcher
-			.renameBox(boxToRename.id, newBoxID)
-			.then(() => {
-				openSnackbar(`Folder '${boxToRename.name}' renamed to '${newName}'`);
+		// await fetcher
+		// 	.renameBox(boxToRename.id, newBoxID)
+		// 	.then(() => {
+		// 		openSnackbar(`Folder '${boxToRename.name}' renamed to '${newName}'`);
 
-				// const newBox: Box = { ...boxToRename, id: newBoxID, name: newName };
+		// 		// const newBox: Box = { ...boxToRename, id: newBoxID, name: newName };
 
-				// modifyBox(boxToRename.id, newBox);
+		// 		// modifyBox(boxToRename.id, newBox);
 
-				handleClose();
-			})
-			.catch((e: AxiosError<ErrorResponse>) => {
-				const errorMessage = e.response?.data.message;
+		// 		handleClose();
+		// 	})
+		// 	.catch((e: AxiosError<ErrorResponse>) => {
+		// 		const errorMessage = e.response?.data.message;
 
-				if (errorMessage) setError(errorMessage);
-			});
+		// 		if (errorMessage) setError(errorMessage);
+		// 	});
 
 		setFetching(false);
 	};
