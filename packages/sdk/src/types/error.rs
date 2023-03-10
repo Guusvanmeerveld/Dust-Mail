@@ -38,6 +38,7 @@ pub enum ErrorKind {
     /// Could not detect a config from the given email address.
     ConfigNotFound,
     MailBoxNotFound,
+    NoClientAvailable,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,6 +69,7 @@ impl error::Error for Error {
     }
 }
 
+#[cfg(feature = "pop")]
 impl From<PopError> for Error {
     fn from(pop_error: PopError) -> Self {
         Self::new(ErrorKind::PopError(pop_error), "Error from pop server")

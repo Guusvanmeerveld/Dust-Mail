@@ -11,7 +11,9 @@ use crate::imap::{self, ImapClient};
 #[cfg(feature = "pop")]
 use crate::pop::{self, PopClient};
 
-use crate::types::{self, ConnectOptions, IncomingClientType, MailBox, Message, Preview};
+use crate::types::{
+    self, ConnectOptions, Error, ErrorKind, IncomingClientType, MailBox, Message, Preview,
+};
 
 enum IncomingClientTypeWithClient<S>
 where
@@ -42,6 +44,10 @@ impl<S: Read + Write + 'static + Send> IncomingClient<S> {
 
                 Ok(Box::new(session))
             }
+            _ => Err(Error::new(
+                ErrorKind::NoClientAvailable,
+                "No valid mail client was found for the request configuration",
+            )),
         }
     }
 }
