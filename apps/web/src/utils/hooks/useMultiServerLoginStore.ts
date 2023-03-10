@@ -1,24 +1,19 @@
-import { z } from "zod";
 import create from "zustand";
 
-import { AuthType as AuthTypeModel } from "@models/config";
 import {
-	IncomingServerType as IncomingServerTypeModel,
-	OutgoingServerType as OutgoingServerTypeModel,
-	IncomingMailServerType as IncomingMailServerTypeModel,
-	OutgoingMailServerType as OutgoingMailServerTypeModel
-} from "@models/login";
-
-import MultiServerLoginOptions, {
-	ConnectionSecurity,
+	IncomingMailServerTypeModel,
+	OutgoingMailServerTypeModel,
 	IncomingMailServerType,
-	MailServerType,
 	OutgoingMailServerType,
-	ServerType
-} from "@interfaces/login";
+	IncomingServerType,
+	OutgoingServerType,
+	ServerType,
+	MailServerType,
+	ConnectionSecurity,
+	AuthType
+} from "@dust-mail/structures";
 
-type IncomingServerType = z.infer<typeof IncomingServerTypeModel>;
-type OutgoingServerType = z.infer<typeof OutgoingServerTypeModel>;
+import MultiServerLoginOptions from "@interfaces/login";
 
 type Store = Record<
 	IncomingServerType,
@@ -69,7 +64,7 @@ export const defaultPorts: Record<MailServerType, number> = {
 
 export const defaultSecuritySetting: ConnectionSecurity = "Tls";
 
-const defaultLoginTypes: z.infer<typeof AuthTypeModel>[] = ["ClearText"];
+const defaultLoginTypes: AuthType[] = ["ClearText"];
 
 const defaultImapConfig: MultiServerLoginOptions = {
 	password: defaultPassword,

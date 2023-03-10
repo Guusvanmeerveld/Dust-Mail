@@ -1,11 +1,7 @@
 {
-	"name": "@dust-mail/typings",
+	"name": "@dust-mail/structures",
 	"version": "0.0.0",
 	"private": true,
-	"files": [
-		"message.d.ts",
-		"responses.js"
-	],
 	"types": "dist/index.d.ts",
 	"main": "dist/index.cjs",
 	"module": "dist/index.ejs",
@@ -20,5 +16,8 @@
 		"rollup-plugin-ts": "^3.0.2",
 		"rollup-plugin-typescript2": "^0.31.1",
 		"typescript": "^4.7.4"
+	},
+	"dependencies": {
+		"zod": "^3.20.2"
 	}
 }

@@ -4,17 +4,20 @@ import z from "zod";
 import useFetchClient from "./useFetchClient";
 import useUser from "./useUser";
 
+import {
+	CredentialsModel,
+	MailBoxListModel,
+	MailBoxModel,
+	MailConfigModel,
+	MessageModel,
+	PreviewModel,
+	VersionModel
+} from "@dust-mail/structures";
+
 import { messageCountForPage } from "@src/constants";
 
-import { MailConfig } from "@models/config";
-import { Credentials } from "@models/login";
-import { MailBox, MailBoxList } from "@models/mailbox";
-import { Message } from "@models/message";
-import { Preview } from "@models/preview";
-import { Version as VersionModel } from "@models/version";
-
 import MailClient from "@interfaces/client";
-import { Error } from "@interfaces/result";
+import { ErrorResult } from "@interfaces/result";
 
 import parseEmail from "@utils/parseEmail";
 import {
@@ -24,7 +27,7 @@ import {
 } from "@utils/parseError";
 import parseZodOutput from "@utils/parseZodOutput";
 
-const NotLoggedIn = (): Error =>
+const NotLoggedIn = (): ErrorResult =>
 	createBaseError({
 		kind: "NotLoggedIn",
 		message: "Could not find session token in local storage"
@@ -38,7 +41,7 @@ const NotLoggedIn = (): Error =>
 // 		} is not yet implemented`
 // 	});
 
-const MissingRequiredParam = (): Error =>
+const MissingRequiredParam = (): ErrorResult =>
 	createBaseError({
 		kind: "MissingRequiredParam",
 		message: "Missing a required parameter"
@@ -88,7 +91,7 @@ const useMailClient = (): MailClient => {
 			if (isTauri) {
 				return invoke("detect_config", { emailAddress })
 					.then((data: unknown) => {
-						const output = MailConfig.safeParse(data);
+						const output = MailConfigModel.safeParse(data);
 
 						return parseZodOutput(output);
 					})
@@ -104,14 +107,14 @@ const useMailClient = (): MailClient => {
 						return response;
 					}
 
-					const output = MailConfig.safeParse(response.data);
+					const output = MailConfigModel.safeParse(response.data);
 
 					return parseZodOutput(output);
 				})
 				.catch(createResultFromUnknown);
 		},
 		async login(options) {
-			const optionsResult = parseZodOutput(Credentials.safeParse(options));
+			const optionsResult = parseZodOutput(CredentialsModel.safeParse(options));
 
 			if (!optionsResult.ok) {
 				return optionsResult;
@@ -174,7 +177,7 @@ const useMailClient = (): MailClient => {
 
 				return invoke("get", { token, boxId })
 					.then((data: unknown) => {
-						const output = MailBox.safeParse(data);
+						const output = MailBoxModel.safeParse(data);
 
 						return parseZodOutput(output);
 					})
@@ -187,7 +190,7 @@ const useMailClient = (): MailClient => {
 						return response;
 					}
 
-					const output = MailBox.safeParse(response.data);
+					const output = MailBoxModel.safeParse(response.data);
 
 					return parseZodOutput(output);
 				})
@@ -201,7 +204,7 @@ const useMailClient = (): MailClient => {
 
 				return invoke("list", { token })
 					.then((data: unknown) => {
-						const output = MailBoxList.safeParse(data);
+						const output = MailBoxListModel.safeParse(data);
 
 						return parseZodOutput(output);
 					})
@@ -214,7 +217,7 @@ const useMailClient = (): MailClient => {
 						return response;
 					}
 
-					const output = MailBoxList.safeParse(response.data);
+					const output = MailBoxListModel.safeParse(response.data);
 
 					return parseZodOutput(output);
 				})
@@ -233,7 +236,7 @@ const useMailClient = (): MailClient => {
 
 				return invoke("messages", { token, boxId, start, end })
 					.then((data: unknown) => {
-						const output = Preview.array().safeParse(data);
+						const output = PreviewModel.array().safeParse(data);
 
 						return parseZodOutput(output);
 					})
@@ -248,7 +251,7 @@ const useMailClient = (): MailClient => {
 						return response;
 					}
 
-					const output = Preview.array().safeParse(response.data);
+					const output = PreviewModel.array().safeParse(response.data);
 
 					return parseZodOutput(output);
 				})
@@ -264,7 +267,7 @@ const useMailClient = (): MailClient => {
 
 				return invoke("get_message", { token, boxId, messageId })
 					.then((data: unknown) => {
-						const output = Message.safeParse(data);
+						const output = MessageModel.safeParse(data);
 
 						return parseZodOutput(output);
 					})
@@ -277,7 +280,7 @@ const useMailClient = (): MailClient => {
 						return response;
 					}
 
-					const output = Message.safeParse(response.data);
+					const output = MessageModel.safeParse(response.data);
 
 					return parseZodOutput(output);
 				})

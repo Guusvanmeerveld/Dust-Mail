@@ -1,9 +1,8 @@
 import useLocalStorageState from "use-local-storage-state";
-import z from "zod";
 
 import { useEffect, useRef, useState, memo, FC, MouseEvent } from "react";
 
-import { Attachment } from "@dust-mail/typings";
+import { Address } from "@dust-mail/structures";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -31,8 +30,6 @@ import BrowserIcon from "@mui/icons-material/Language";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MoreIcon from "@mui/icons-material/MoreHoriz";
 import TextOnlyIcon from "@mui/icons-material/TextFields";
-
-import { Address } from "@models/address";
 
 import scrollbarStyles from "@styles/scrollbar";
 
@@ -82,7 +79,7 @@ const AddressListItem: FC<{ address: string | null; name: string | null }> = ({
 const ADDRESSES_TO_SHOW = 3;
 
 const AddressList: FC<{
-	data: z.infer<typeof Address>[];
+	data: Address[];
 	prefixText: string;
 }> = ({ data, prefixText }) => {
 	const [showMore, setShowMore] = useState(false);
@@ -159,27 +156,27 @@ const CloseButton: FC = () => {
 	);
 };
 
-const AttachmentList: FC<{
-	attachments: Attachment[];
-}> = ({ attachments }) => {
-	const [backendServer] = useLocalStorageState("customServerUrl");
+// const AttachmentList: FC<{
+// 	attachments: Attachment[];
+// }> = ({ attachments }) => {
+// 	const [backendServer] = useLocalStorageState("customServerUrl");
 
-	return (
-		<>
-			{attachments.map((attachment) => {
-				let url;
-				if (attachment.token)
-					url = `${backendServer}/mail/message/attachment?token=${attachment.token}`;
+// 	return (
+// 		<>
+// 			{attachments.map((attachment) => {
+// 				let url;
+// 				if (attachment.token)
+// 					url = `${backendServer}/mail/message/attachment?token=${attachment.token}`;
 
-				return (
-					<Link href={url} target="_blank" sx={{ mr: 2 }} key={attachment.id}>
-						{attachment.name}
-					</Link>
-				);
-			})}
-		</>
-	);
-};
+// 				return (
+// 					<Link href={url} target="_blank" sx={{ mr: 2 }} key={attachment.id}>
+// 						{attachment.name}
+// 					</Link>
+// 				);
+// 			})}
+// 		</>
+// 	);
+// };
 
 const UnMemoizedMessageOverview: FC = () => {
 	const theme = useTheme();

@@ -1,5 +1,3 @@
-import z from "zod";
-
 import {
 	useEffect,
 	useRef,
@@ -10,6 +8,8 @@ import {
 	FormEvent
 } from "react";
 import { useInfiniteQuery } from "react-query";
+
+import { Preview, AppError } from "@dust-mail/structures";
 
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -33,9 +33,6 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import SearchIcon from "@mui/icons-material/Search";
 
 import { messageCountForPage } from "@src/constants";
-
-import { Error } from "@models/error";
-import { Preview } from "@models/preview";
 
 import useMailClient from "@utils/hooks/useMailClient";
 import useMessageActions from "@utils/hooks/useMessageActions";
@@ -149,7 +146,7 @@ const UnMemoizedActionBar: FC<{
 const ActionBar = memo(UnMemoizedActionBar);
 
 const UnMemoizedMessageListItems: FC<{
-	data?: z.infer<typeof Preview>[][];
+	data?: Preview[][];
 	selectedMessageID?: string;
 	setRightClickMenuAnchor: (anchor: RightClickMenuAnchor) => void;
 }> = ({ data, selectedMessageID, setRightClickMenuAnchor }) => {
@@ -196,7 +193,7 @@ const UnMemoizedMessageList: FC = () => {
 		isFetching,
 		isFetchingNextPage,
 		refetch
-	} = useInfiniteQuery<z.infer<typeof Preview>[], z.infer<typeof Error>>(
+	} = useInfiniteQuery<Preview[], AppError>(
 		["messageList", selectedBox?.id, filter],
 		async ({ pageParam = 0 }) => {
 			if (pageParam === false) {

@@ -1,12 +1,10 @@
-import z from "zod";
-
 import parseZodOutput from "./parseZodOutput";
 
-import { Error as ErrorModel } from "@models/error";
+import { AppError, AppErrorModel } from "@dust-mail/structures";
 
-import { Error } from "@interfaces/result";
+import { ErrorResult } from "@interfaces/result";
 
-export const errorToString = (error: z.infer<typeof ErrorModel>): string => {
+export const errorToString = (error: AppError): string => {
 	const messages: string[] = [];
 
 	if (typeof error.kind != "string") {
@@ -20,10 +18,8 @@ export const errorToString = (error: z.infer<typeof ErrorModel>): string => {
 	return messages.join(": ");
 };
 
-export const parseError = (
-	error: unknown
-): { ok: false; error: z.infer<typeof ErrorModel> } => {
-	const errorParsed = ErrorModel.safeParse(error);
+export const parseError = (error: unknown): { ok: false; error: AppError } => {
+	const errorParsed = AppErrorModel.safeParse(error);
 
 	const errorResult = parseZodOutput(errorParsed);
 
@@ -34,27 +30,22 @@ export const parseError = (
 	}
 };
 
-export const createBaseError = (error: z.infer<typeof ErrorModel>): Error => ({
+export const createBaseError = (error: AppError): ErrorResult => ({
 	ok: false,
 	error
 });
 
-export const createErrorFromUnknown = (
-	unknown: unknown
-): z.infer<typeof ErrorModel> => {
+export const createErrorFromUnknown = (unknown: unknown): AppError => {
 	return {
 		kind: "Unknown",
 		message: JSON.stringify(unknown)
 	};
 };
 
-export const createResultFromUnknown = (unknown: unknown): Error =>
+export const createResultFromUnknown = (unknown: unknown): ErrorResult =>
 	createBaseError(createErrorFromUnknown(unknown));
 
-export const errorIsOfErrorKind = (
-	error: z.infer<typeof ErrorModel>,
-	kind: string
-): boolean => {
+export const errorIsOfErrorKind = (error: AppError, kind: string): boolean => {
 	if (typeof error.kind != "string") {
 		const isOfKindArray = Object.values(error.kind).map((error) =>
 			errorIsOfErrorKind(error, kind)

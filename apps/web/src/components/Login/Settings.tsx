@@ -5,6 +5,8 @@ import { repository } from "../../../package.json";
 import { FC, useCallback, useEffect } from "react";
 import { useState } from "react";
 
+import { AppError, ApiSettings } from "@dust-mail/structures";
+
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -24,9 +26,6 @@ import CheckIcon from "@mui/icons-material/Check";
 import ErrorIcon from "@mui/icons-material/Error";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SettingsIcon from "@mui/icons-material/Settings";
-
-import { ApiSettingsModel } from "@models/api/settings";
-import { Error as ErrorModel } from "@models/error";
 
 import { Result } from "@interfaces/result";
 
@@ -48,17 +47,13 @@ const LoginSettingsMenu: FC = () => {
 
 	const apiClient = useApiClient();
 
-	const [connectError, setConnectError] = useState<z.infer<
-		typeof ErrorModel
-	> | null>(null);
-	const [serverSettings, setServerSettings] = useState<z.infer<
-		typeof ApiSettingsModel
-	> | null>(null);
+	const [connectError, setConnectError] = useState<AppError | null>(null);
+	const [serverSettings, setServerSettings] = useState<ApiSettings | null>(
+		null
+	);
 	const [fetching, setFetching] = useState(false);
 
-	const [loginError, setLoginError] = useState<z.infer<
-		typeof ErrorModel
-	> | null>(null);
+	const [loginError, setLoginError] = useState<AppError | null>(null);
 
 	const fetchApiSettings = useCallback(
 		async (baseUrl: string): Promise<void> => {

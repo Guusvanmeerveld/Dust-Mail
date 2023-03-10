@@ -26,6 +26,7 @@ const UnMemoizedDrawer: FC<{
 
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
+	/// TODO: Use css for this
 	if (!isMobile) return <></>;
 
 	return (

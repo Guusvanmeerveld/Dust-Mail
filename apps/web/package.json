@@ -32,7 +32,7 @@
 		"tauri": "tauri"
 	},
 	"dependencies": {
-		"@dust-mail/typings": "workspace:*",
+		"@dust-mail/structures": "workspace:*",
 		"@emotion/react": "^11.9.3",
 		"@emotion/styled": "^11.9.3",
 		"@fontsource/roboto": "^4.5.7",

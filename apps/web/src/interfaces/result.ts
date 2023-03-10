@@ -1,15 +1,13 @@
-import { z } from "zod";
+import { AppError } from "@dust-mail/structures";
 
-import { Error as ErrorModel } from "@models/error";
-
-export interface Error {
+export interface ErrorResult {
 	ok: false;
-	error: z.infer<typeof ErrorModel>;
+	error: AppError;
 }
 
-export interface Ok<T> {
+export interface OkResult<T> {
 	ok: true;
 	data: T;
 }
 
-export type Result<T> = Ok<T> | Error;
+export type Result<T> = OkResult<T> | ErrorResult;

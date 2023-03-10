@@ -1,21 +1,18 @@
-import z from "zod";
-
 import useMailClient from "./useMailClient";
 import useUser from "./useUser";
 
 import { useCallback } from "react";
 import { useQuery } from "react-query";
 
-import { Error } from "@models/error";
-import { MailBox, MailBoxList } from "@models/mailbox";
+import { MailBox, MailBoxList, AppError } from "@dust-mail/structures";
 
 import findBoxFromBoxes from "@utils/findBox";
 import { createResultFromUnknown, errorToString } from "@utils/parseError";
 
 type UseBoxes = {
-	boxes: z.infer<typeof MailBoxList> | void;
+	boxes: MailBoxList | void;
 	error: string | void;
-	findBox: (id: string) => z.infer<typeof MailBox> | void;
+	findBox: (id: string) => MailBox | void;
 };
 
 const useBoxes = (): UseBoxes => {
@@ -23,18 +20,18 @@ const useBoxes = (): UseBoxes => {
 
 	const user = useUser();
 
-	const { data: boxes, error } = useQuery<
-		z.infer<typeof MailBoxList>,
-		z.infer<typeof Error>
-	>(["boxes", user?.id], async () => {
-		const result = await mailClient.list().catch(createResultFromUnknown);
+	const { data: boxes, error } = useQuery<MailBoxList, AppError>(
+		["boxes", user?.id],
+		async () => {
+			const result = await mailClient.list().catch(createResultFromUnknown);
 
-		if (result.ok) {
-			return result.data;
-		} else {
-			throw result.error;
+			if (result.ok) {
+				return result.data;
+			} else {
+				throw result.error;
+			}
 		}
-	});
+	);
 
 	const findBox = useCallback(
 		(id: string) => {

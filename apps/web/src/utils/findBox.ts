@@ -1,13 +1,8 @@
-import z from "zod";
-
 import findBoxInPrimaryBoxesList from "./findBoxInPrimaryBoxesList";
 
-import { MailBoxList, MailBox } from "@models/mailbox";
+import { MailBoxList, MailBox } from "@dust-mail/structures";
 
-const findBox = (
-	idToFind: string,
-	boxes: z.infer<typeof MailBoxList>
-): z.infer<typeof MailBox> | undefined => {
+const findBox = (idToFind: string, boxes: MailBoxList): MailBox | undefined => {
 	if (boxes.length < 1) return undefined;
 
 	const foundBox = boxes.find((mailbox) => mailbox.id == idToFind);

@@ -2,8 +2,6 @@ import create from "zustand";
 
 import { FC, memo, useEffect, useMemo, useState } from "react";
 
-import { AxiosError } from "axios";
-
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";

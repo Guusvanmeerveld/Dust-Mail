@@ -1,6 +1,4 @@
 // import useLocalStorageState from "use-local-storage-state";
-import z from "zod";
-
 import useMailClient from "./useMailClient";
 import useSelectedStore from "./useSelected";
 import useUser from "./useUser";
@@ -8,16 +6,15 @@ import useUser from "./useUser";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "react-query";
 
-import { Error } from "@models/error";
-import { Message } from "@models/message";
+import { AppError, Message } from "@dust-mail/structures";
 
 import useSelectedBox from "@utils/hooks/useSelectedBox";
 import useStore from "@utils/hooks/useStore";
 import { createResultFromUnknown } from "@utils/parseError";
 
 interface UseSelectedMessage {
-	selectedMessage: z.infer<typeof Message> | undefined;
-	selectedMessageError: z.infer<typeof Error> | null;
+	selectedMessage: Message | undefined;
+	selectedMessageError: AppError | null;
 	selectedMessageFetching: boolean;
 }
 
@@ -29,9 +26,7 @@ export const useSetSelectedMessage = (): ((id?: string) => void) => {
 	return setSelectedMessage;
 };
 
-const defaultMessage: (messageId: string) => z.infer<typeof Message> = (
-	messageId
-) => ({
+const defaultMessage: (messageId: string) => Message = (messageId) => ({
 	id: messageId,
 	bcc: [],
 	cc: [],
@@ -63,10 +58,7 @@ const useSelectedMessage = (): UseSelectedMessage => {
 
 	const messageId = useSelectedStore((state) => state.selectedMessage);
 
-	const { data, isFetching, error } = useQuery<
-		z.infer<typeof Message>,
-		z.infer<typeof Error>
-	>(
+	const { data, isFetching, error } = useQuery<Message, AppError>(
 		["message", messageId, selectedBox?.id],
 		async () => {
 			const result = await mailClient

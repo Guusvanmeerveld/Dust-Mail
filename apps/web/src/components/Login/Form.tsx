@@ -1,5 +1,3 @@
-import z from "zod";
-
 import React, {
 	useEffect,
 	useState,
@@ -10,6 +8,17 @@ import React, {
 	FormEventHandler,
 	useCallback
 } from "react";
+
+import {
+	incomingMailServerTypeList,
+	Credentials,
+	outgoingMailServerTypeList,
+	ServerType,
+	MailServerType,
+	ConnectionSecurity,
+	IncomingMailServerType,
+	OutgoingMailServerType
+} from "@dust-mail/structures";
 
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
@@ -34,19 +43,7 @@ import Typography from "@mui/material/Typography";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import {
-	incomingMailServerTypeList,
-	Credentials as CredentialsModel,
-	outgoingMailServerTypeList
-} from "@models/login";
-
-import MultiServerLoginOptions, {
-	ConnectionSecurity,
-	IncomingMailServerType,
-	MailServerType,
-	OutgoingMailServerType,
-	ServerType
-} from "@interfaces/login";
+import MultiServerLoginOptions from "@interfaces/login";
 
 import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
@@ -65,7 +62,7 @@ import {
 	errorToString
 } from "@utils/parseError";
 
-const Credentials: FC<{
+const CredentialsForm: FC<{
 	setError: (error?: string) => void;
 	identifier: string;
 	password: string;
@@ -251,7 +248,7 @@ const UnMemoizedServerConfigColumn: FC<{
 					type="number"
 				/>
 
-				<Credentials
+				<CredentialsForm
 					identifier={type}
 					username={username}
 					password={password}
@@ -319,7 +316,7 @@ const LoginOptionsMenu: FC = () => {
 			return;
 		}
 
-		const options: z.infer<typeof CredentialsModel> = {
+		const options: Credentials = {
 			incoming,
 			incoming_type: selectedMailServerTypes.incoming
 		};
@@ -574,7 +571,7 @@ const LoginForm: FC<{
 						type="text"
 					/>
 
-					<Credentials
+					<CredentialsForm
 						identifier="initial-login"
 						password={password}
 						username={username}

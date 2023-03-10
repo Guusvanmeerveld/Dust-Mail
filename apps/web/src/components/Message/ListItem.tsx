@@ -1,12 +1,10 @@
-import z from "zod";
-
 import { FC, memo, MouseEvent, useMemo, useState } from "react";
+
+import { Preview } from "@dust-mail/structures";
 
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-
-import { Preview } from "@models/preview";
 
 import createAvatarUrl from "@utils/avatarUrl";
 import { useSetSelectedMessage } from "@utils/hooks/useSelectedMessage";
@@ -35,7 +33,7 @@ import useTheme from "@utils/hooks/useTheme";
 // }));
 
 const UnMemoizedMessageListItem: FC<{
-	message: z.infer<typeof Preview>;
+	message: Preview;
 	selectedMessage: boolean;
 	setRightClickMenuAnchor: (anchor: {
 		x: number;

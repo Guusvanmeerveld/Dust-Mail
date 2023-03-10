@@ -1,6 +1,8 @@
 import z from "zod";
 
-export const Flag = z.union([
+export const FlagModel = z.union([
 	z.enum(["Read", "Deleted", "Answered", "Flagged", "Draft"]),
 	z.record(z.literal("Custom"), z.string().nullable())
 ]);
+
+export type Flag = z.infer<typeof FlagModel>;

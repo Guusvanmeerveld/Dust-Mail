@@ -1,13 +1,9 @@
-import { z } from "zod";
-
 import useMailClient from "./useMailClient";
 import useUser, { useCurrentUser, useModifyUser } from "./useUser";
 
 import { useNavigate } from "react-router-dom";
 
-import { VersionResponse } from "@dust-mail/typings";
-
-import { Credentials, ServerType } from "@models/login";
+import { Credentials, ServerType, Version } from "@dust-mail/structures";
 
 import { Result } from "@interfaces/result";
 
@@ -21,7 +17,7 @@ import {
 // TODO: Fix this mess of a file.
 
 export const useMailLogin = (): ((
-	config: z.infer<typeof Credentials>
+	config: Credentials
 ) => Promise<Result<void>>) => {
 	const appVersion = useStore((state) => state.appVersion);
 	const setFetching = useStore((state) => state.setFetching);
@@ -47,10 +43,8 @@ export const useMailLogin = (): ((
 				return versionResponseResult;
 			}
 
-			const {
-				version: serverVersion,
-				type: serverVersionType
-			}: VersionResponse = versionResponseResult.data;
+			const { version: serverVersion, type: serverVersionType }: Version =
+				versionResponseResult.data;
 
 			if (serverVersion != appVersion.title) {
 				setFetching(false);
@@ -110,7 +104,7 @@ const useLoginFromToken = (): ((
 	token: string,
 	options?: {
 		id: string;
-		usernames: Record<z.infer<typeof ServerType>, string>;
+		usernames: Record<ServerType, string>;
 		redirectToDashboard?: boolean;
 		setAsDefault?: boolean;
 	}

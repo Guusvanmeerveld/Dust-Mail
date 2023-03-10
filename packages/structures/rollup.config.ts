@@ -6,9 +6,9 @@ import typescript from "rollup-plugin-typescript2";
 import pkg from "./package.json";
 
 const options: RollupOptions = {
-	external: [],
+	external: ["zod"],
 	plugins: [typescript({ useTsconfigDeclarationDir: true })],
-	input: "src/index.ts"
+	input: "src/lib.ts"
 };
 
 const config: RollupOptions[] = [
@@ -16,7 +16,7 @@ const config: RollupOptions[] = [
 		output: {
 			file: pkg.types
 		},
-		input: "src/index.ts",
+		input: "src/lib.ts",
 		plugins: [ts()]
 	},
 	{

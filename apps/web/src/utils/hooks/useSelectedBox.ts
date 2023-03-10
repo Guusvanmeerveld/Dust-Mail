@@ -1,13 +1,10 @@
-import z from "zod";
-
 import useMailClient from "./useMailClient";
 import useSelectedStore from "./useSelected";
 
 import { useMemo } from "react";
 import { useQuery } from "react-query";
 
-import { Error } from "@models/error";
-import { MailBox } from "@models/mailbox";
+import { AppError, MailBox } from "@dust-mail/structures";
 
 import Box from "@interfaces/box";
 
@@ -46,10 +43,7 @@ const useSelectedBox = (): UseSelectedBox => {
 
 	const mailClient = useMailClient();
 
-	const { data, error } = useQuery<
-		z.infer<typeof MailBox>,
-		z.infer<typeof Error>
-	>(
+	const { data, error } = useQuery<MailBox, AppError>(
 		["box", boxId],
 		async () => {
 			const result = await mailClient
