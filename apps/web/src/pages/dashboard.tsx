@@ -18,7 +18,6 @@ import DeleteBox from "@components/Boxes/Delete";
 import BoxesList from "@components/Boxes/List";
 import RenameBox from "@components/Boxes/Rename";
 import Layout from "@components/Layout";
-import LoginStateHandler from "@components/LoginStateHandler";
 import MessageActionButton from "@components/Message/ActionButton";
 import MessageList from "@components/Message/List";
 import MessageOverview from "@components/Message/Overview";
@@ -68,7 +67,6 @@ const Dashboard: FC = () => {
 	return (
 		<>
 			{!isLoggedIn && <Navigate to="/" replace={true} />}
-			<LoginStateHandler />
 			<ParamStateHandler />
 			<Snackbar />
 			<Settings />

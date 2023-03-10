@@ -2,8 +2,6 @@ import create from "zustand";
 
 import { useEffect, useMemo, memo, FC, useState, MouseEvent } from "react";
 
-import Box from "@mui/material/Box";
-// import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -12,7 +10,6 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 
 import AddIcon from "@mui/icons-material/Add";
 import CheckBoxIcon from "@mui/icons-material/CheckBoxOutlineBlank";
@@ -29,6 +26,7 @@ import useBoxes from "@utils/hooks/useBoxes";
 import useDeleteBox from "@utils/hooks/useDeleteBox";
 import useRenameBox from "@utils/hooks/useRenameBox";
 import useSelectedBox from "@utils/hooks/useSelectedBox";
+import useSnackbar from "@utils/hooks/useSnackbar";
 import useStore from "@utils/hooks/useStore";
 
 import FolderTree, {
@@ -207,6 +205,14 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 
 	const [showSelector, setShowSelector] = useState(false);
 
+	const showSnackbar = useSnackbar();
+
+	useEffect(() => {
+		const errorVariant = "error";
+		if (selectedBoxError !== null) showSnackbar(selectedBoxError, errorVariant);
+		else if (boxesError !== null) showSnackbar(boxesError, errorVariant);
+	}, [boxesError, selectedBoxError]);
+
 	const [contextMenuAnchorEl, setContextMenuAnchorEl] =
 		useState<null | HTMLElement>(null);
 
@@ -279,19 +285,6 @@ const UnMemoizedBoxesList: FC<{ clickOnBox?: (e: MouseEvent) => void }> = ({
 				showSelector={showSelector}
 				setShowSelector={setShowSelector}
 			/>
-			{(boxesError || selectedBoxError) && (
-				<>
-					<Divider />
-					<Box sx={{ ml: 2, mt: 2 }}>
-						<>
-							{boxesError && <Typography variant="h6">{boxesError}</Typography>}
-							{selectedBoxError && (
-								<Typography variant="h6">{selectedBoxError}</Typography>
-							)}
-						</>
-					</Box>
-				</>
-			)}
 			<CheckedBoxesContext.Provider value={checkedBoxesStore}>
 				{(primaryBoxes || otherBoxes) && <Divider />}
 				{primaryBoxes && (

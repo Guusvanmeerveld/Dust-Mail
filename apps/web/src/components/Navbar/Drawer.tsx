@@ -26,32 +26,31 @@ const UnMemoizedDrawer: FC<{
 
 	const isMobile = theme.breakpoints.values.md >= windowWidth;
 
-	/// TODO: Use css for this
-	if (!isMobile) return <></>;
-
 	return (
-		<MUIDrawer
-			anchor="left"
-			sx={{ ...scrollBarSx, p: 2 }}
-			open={drawerState}
-			onClose={toggleDrawer(false)}
-		>
-			<Box
-				sx={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "flex-end",
-					padding: theme.spacing(0, 1),
-					...theme.mixins.toolbar
-				}}
+		<Box sx={{ display: isMobile ? "none" : "flex" }}>
+			<MUIDrawer
+				anchor="left"
+				sx={{ ...scrollBarSx, p: 2 }}
+				open={drawerState}
+				onClose={toggleDrawer(false)}
 			>
-				<IconButton onClick={toggleDrawer(false)}>
-					<ChevronLeftIcon />
-				</IconButton>
-			</Box>
-			<Divider />
-			<BoxesList clickOnBox={toggleDrawer(false)} />
-		</MUIDrawer>
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "flex-end",
+						padding: theme.spacing(0, 1),
+						...theme.mixins.toolbar
+					}}
+				>
+					<IconButton onClick={toggleDrawer(false)}>
+						<ChevronLeftIcon />
+					</IconButton>
+				</Box>
+				<Divider />
+				<BoxesList clickOnBox={toggleDrawer(false)} />
+			</MUIDrawer>
+		</Box>
 	);
 };
 

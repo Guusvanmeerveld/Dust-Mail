@@ -11,7 +11,7 @@ import { createResultFromUnknown, errorToString } from "@utils/parseError";
 
 type UseBoxes = {
 	boxes: MailBoxList | void;
-	error: string | void;
+	error: string | null;
 	findBox: (id: string) => MailBox | void;
 };
 
@@ -42,7 +42,7 @@ const useBoxes = (): UseBoxes => {
 		[boxes]
 	);
 
-	return { boxes, error: error ? errorToString(error) : undefined, findBox };
+	return { boxes, error: error ? errorToString(error) : null, findBox };
 };
 
 export default useBoxes;

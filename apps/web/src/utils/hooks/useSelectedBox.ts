@@ -16,8 +16,8 @@ import {
 } from "@utils/parseError";
 
 interface UseSelectedBox {
-	box: Box | void;
-	error: string | void;
+	box: Box | null;
+	error: string | null;
 	setSelectedBox: (boxID?: string) => void;
 }
 
@@ -68,8 +68,8 @@ const useSelectedBox = (): UseSelectedBox => {
 				? data
 					? { ...data, icon: primaryBoxData?.icon }
 					: defaultBox(boxId)
-				: undefined,
-			error: error ? errorToString(error) : undefined,
+				: null,
+			error: error ? errorToString(error) : null,
 			setSelectedBox
 		};
 	}, [data, error, setSelectedBox]);
