@@ -40,7 +40,6 @@
 		"@mui/material": "^5.8.0",
 		"@mui/styled-engine": "^5.8.0",
 		"@tauri-apps/api": "^1.2.0",
-		"axios": "^0.27.2",
 		"js-md5": "^0.7.3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",

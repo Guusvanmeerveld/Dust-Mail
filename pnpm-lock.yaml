@@ -103,7 +103,6 @@ importers:
       '@typescript-eslint/eslint-plugin': ^5.30.7
       '@typescript-eslint/parser': ^5.30.7
       '@vitejs/plugin-react': ^2.0.0
-      axios: ^0.27.2
       c8: ^7.12.0
       eslint: ^8.20.0
       eslint-plugin-jsx-a11y: ^6.6.0
@@ -140,7 +139,6 @@ importers:
       '@mui/material': 5.9.2_bl6qrq6463ovzmqn4cmwv7vydq
       '@mui/styled-engine': 5.8.7_fdnqutfacy7v3gmlcm66flps3q
       '@tauri-apps/api': 1.2.0
-      axios: 0.27.2
       js-md5: 0.7.3
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
