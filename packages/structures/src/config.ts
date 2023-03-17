@@ -44,9 +44,17 @@ export const ConfigTypeModel = z.record(
 );
 export type ConfigType = z.infer<typeof ConfigTypeModel>;
 
+export const OAuth2ConfigModel = z.object({
+	tokenUrl: z.string().url(),
+	oauthUrl: z.string().url(),
+	scopes: z.string().array()
+});
+export type OAuth2Config = z.infer<typeof OAuth2ConfigModel>;
+
 export const MailConfigModel = z.object({
 	type: ConfigTypeModel,
 	provider: z.string(),
+	oauth2: OAuth2ConfigModel.nullable(),
 	displayName: z.string()
 });
 export type MailConfig = z.infer<typeof MailConfigModel>;

@@ -10,10 +10,13 @@ import {
 	ServerType,
 	MailServerType,
 	ConnectionSecurity,
-	AuthType
+	LoginOptions
 } from "@dust-mail/structures";
 
-import MultiServerLoginOptions from "@interfaces/login";
+export type MultiServerLoginOptions = {
+	password: string;
+	username: string;
+} & Omit<LoginOptions, "loginType">;
 
 type Store = Record<
 	IncomingServerType,
@@ -49,57 +52,51 @@ type Store = Record<
 		) => (newValue?: string | number) => void;
 	};
 
-export const defaultIncomingServer: IncomingMailServerType = "Imap";
-export const defaultOutgoingServer: OutgoingMailServerType = "Smtp";
+export const defaultIncomingServer: IncomingMailServerType = "Imap" as const;
+export const defaultOutgoingServer: OutgoingMailServerType = "Smtp" as const;
 
-export const defaultUsername = "";
-export const defaultPassword = "";
+export const defaultUsername = "" as const;
+export const defaultPassword = "" as const;
 
 export const defaultPorts: Record<MailServerType, number> = {
 	Imap: 993,
 	Pop: 995,
 	Exchange: 443,
 	Smtp: 465
-};
+} as const;
 
 export const defaultSecuritySetting: ConnectionSecurity = "Tls";
 
-const defaultLoginTypes: AuthType[] = ["ClearText"];
-
 const defaultImapConfig: MultiServerLoginOptions = {
-	password: defaultPassword,
 	username: defaultUsername,
+	password: defaultPassword,
 	domain: "imap.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Imap"],
-	loginType: defaultLoginTypes
+	port: defaultPorts["Imap"]
 };
 
 const defaultExchangeConfig: MultiServerLoginOptions = {
-	password: defaultPassword,
 	username: defaultUsername,
+	password: defaultPassword,
 	domain: "exchange.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Exchange"],
-	loginType: defaultLoginTypes
+	port: defaultPorts["Exchange"]
 };
 
 const defaultPopConfig: MultiServerLoginOptions = {
-	password: defaultPassword,
 	username: defaultUsername,
+	password: defaultPassword,
 	domain: "pop.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Pop"],
-	loginType: defaultLoginTypes
+	port: defaultPorts["Pop"]
 };
 
 const defaultSmtpConfig: MultiServerLoginOptions = {
-	password: defaultPassword,
 	username: defaultUsername,
+	password: defaultPassword,
 	domain: "smtp.example.com",
 	security: defaultSecuritySetting,
-	port: defaultPorts["Smtp"],
-	loginType: defaultLoginTypes
+	port: defaultPorts["Smtp"]
 };
 
 export const defaultConfigs = {

@@ -12,24 +12,16 @@ use crate::{
 };
 
 pub struct User {
-    token: String,
     mail_sessions: Arc<UserSession>,
 }
 
 impl User {
-    pub fn new<S: Into<String>>(token: S, mail_sessions: Arc<UserSession>) -> Self {
-        User {
-            mail_sessions,
-            token: token.into(),
-        }
+    pub fn new(mail_sessions: Arc<UserSession>) -> Self {
+        User { mail_sessions }
     }
 
     pub fn mail_sessions(&self) -> Arc<UserSession> {
         self.mail_sessions.clone()
-    }
-
-    pub fn token(&self) -> &str {
-        &self.token
     }
 }
 
@@ -54,7 +46,7 @@ impl<'r> FromRequest<'r> for User {
             Some(user_sessions) => {
                 let user_session = user_sessions.get(&token);
 
-                Outcome::Success(User::new(token, user_session))
+                Outcome::Success(User::new(user_session))
             }
             None => {
                 let error = ErrResponse::new(

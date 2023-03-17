@@ -43,16 +43,16 @@ import Typography from "@mui/material/Typography";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
-import MultiServerLoginOptions from "@interfaces/login";
-
 import modalStyles from "@styles/modal";
 import scrollbarStyles from "@styles/scrollbar";
 
 import { useMailLogin } from "@utils/hooks/useLogin";
 import useMailClient from "@utils/hooks/useMailClient";
 import useMultiServerLoginStore, {
-	defaultConfigs
+	defaultConfigs,
+	MultiServerLoginOptions
 } from "@utils/hooks/useMultiServerLoginStore";
+import useOAuth2Client from "@utils/hooks/useOAuth2Client";
 import useStore from "@utils/hooks/useStore";
 import useTheme from "@utils/hooks/useTheme";
 import parseEmail from "@utils/parseEmail";
@@ -263,6 +263,32 @@ const UnMemoizedServerConfigColumn: FC<{
 
 const ServerConfigColumn = memo(UnMemoizedServerConfigColumn);
 
+const createCredentials = (
+	incomingConfig: MultiServerLoginOptions,
+	incomingType: IncomingMailServerType
+): Credentials => {
+	const {
+		username: incomingUsername,
+		password: incomingPassword,
+		...incoming
+	} = incomingConfig;
+
+	const options: Credentials = {
+		incoming: {
+			...incoming,
+			loginType: {
+				passwordBased: {
+					password: incomingPassword,
+					username: incomingUsername
+				}
+			}
+		},
+		incomingType
+	};
+
+	return options;
+};
+
 const LoginOptionsMenu: FC = () => {
 	const theme = useTheme();
 
@@ -287,10 +313,10 @@ const LoginOptionsMenu: FC = () => {
 
 	const provider = useMultiServerLoginStore((state) => state.provider);
 
-	const incoming = useMultiServerLoginStore(
+	const incomingConfig = useMultiServerLoginStore(
 		(state) => state.incoming[selectedMailServerTypes.incoming]
 	);
-	const outgoing = useMultiServerLoginStore(
+	const outgoingConfig = useMultiServerLoginStore(
 		(state) => state.outgoing[selectedMailServerTypes.outgoing]
 	);
 
@@ -304,8 +330,8 @@ const LoginOptionsMenu: FC = () => {
 	}, [resetToDefaults, setOpen]);
 
 	const missingFields = useMemo(() => {
-		return !incoming.username || !incoming.password;
-	}, [incoming.username, incoming.password]);
+		return !incomingConfig.username || !incomingConfig.password;
+	}, [incomingConfig.username, incomingConfig.password]);
 
 	const onSubmit: FormEventHandler = async (e): Promise<void> => {
 		e.preventDefault();
@@ -316,12 +342,12 @@ const LoginOptionsMenu: FC = () => {
 			return;
 		}
 
-		const options: Credentials = {
-			incoming,
-			incoming_type: selectedMailServerTypes.incoming
-		};
+		const credentials = createCredentials(
+			incomingConfig,
+			selectedMailServerTypes.incoming
+		);
 
-		await login(options)
+		await login(credentials)
 			.then((result) => {
 				if (result.ok) {
 					onClose();
@@ -362,21 +388,21 @@ const LoginOptionsMenu: FC = () => {
 						<Grid container spacing={2}>
 							<ServerConfigColumn
 								type="incoming"
-								port={incoming.port}
-								security={incoming.security}
-								server={incoming.domain}
-								username={incoming.username}
-								password={incoming.password}
+								port={incomingConfig.port}
+								security={incomingConfig.security}
+								server={incomingConfig.domain}
+								username={incomingConfig.username}
+								password={incomingConfig.password}
 								selectedMailServerType={selectedMailServerTypes.incoming}
 							/>
 
 							<ServerConfigColumn
 								type="outgoing"
-								port={outgoing.port}
-								security={outgoing.security}
-								server={outgoing.domain}
-								username={outgoing.username}
-								password={outgoing.password}
+								port={outgoingConfig.port}
+								security={outgoingConfig.security}
+								server={outgoingConfig.domain}
+								username={outgoingConfig.username}
+								password={outgoingConfig.password}
 								selectedMailServerType={selectedMailServerTypes.outgoing}
 							/>
 						</Grid>
@@ -433,6 +459,7 @@ const LoginForm: FC<{
 	const [error, setError] = useState<string>();
 
 	const mailClient = useMailClient();
+	const oauthClient = useOAuth2Client();
 
 	useEffect(() => setError(undefined), [username, password]);
 
@@ -509,6 +536,13 @@ const LoginForm: FC<{
 
 		const config = configResult.data;
 
+		oauthClient.getGrant(
+			config.displayName,
+			config.oauth2?.oauthUrl ?? "",
+			config.oauth2?.tokenUrl ?? "",
+			config.oauth2?.scopes ?? []
+		);
+
 		if (
 			typeof config.type != "string" &&
 			config.type.multiServer?.incoming &&
@@ -517,7 +551,6 @@ const LoginForm: FC<{
 			const incomingConfigs: (MultiServerLoginOptions & {
 				type: IncomingMailServerType;
 			})[] = config.type.multiServer.incoming.map(
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				({ authType, ...config }) => ({
 					...config,
 					loginType: authType,
@@ -529,7 +562,6 @@ const LoginForm: FC<{
 			const outgoingConfigs: (MultiServerLoginOptions & {
 				type: OutgoingMailServerType;
 			})[] = config.type.multiServer.outgoing.map(
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				({ authType, ...config }) => ({
 					...config,
 					loginType: authType,

@@ -17,8 +17,8 @@ import {
 import { messageCountForPage } from "@src/constants";
 
 import MailClient from "@interfaces/client";
-import { ErrorResult } from "@interfaces/result";
 
+import { MissingRequiredParam, NotLoggedIn } from "@utils/defaultErrors";
 import parseEmail from "@utils/parseEmail";
 import {
 	createBaseError,
@@ -26,26 +26,6 @@ import {
 	parseError
 } from "@utils/parseError";
 import parseZodOutput from "@utils/parseZodOutput";
-
-const NotLoggedIn = (): ErrorResult =>
-	createBaseError({
-		kind: "NotLoggedIn",
-		message: "Could not find session token in local storage"
-	});
-
-// const NotImplemented = (feature?: string): Error =>
-// 	createBaseError({
-// 		kind: "NotImplemented",
-// 		message: `The feature ${
-// 			feature ? `'${feature}'` : ""
-// 		} is not yet implemented`
-// 	});
-
-const MissingRequiredParam = (): ErrorResult =>
-	createBaseError({
-		kind: "MissingRequiredParam",
-		message: "Missing a required parameter"
-	});
 
 const useMailClient = (): MailClient => {
 	const isTauri: boolean = "__TAURI__" in window;

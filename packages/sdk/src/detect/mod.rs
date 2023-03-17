@@ -220,6 +220,7 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
             config = Some(Config::new(
                 ConfigType::new_multiserver(incoming_configs, outgoing_configs),
                 domain.as_str(),
+                None,
                 Some(domain.to_string()),
             ));
         }

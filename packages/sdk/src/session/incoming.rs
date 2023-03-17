@@ -1,26 +1,47 @@
+use std::io::{Read, Write};
+
 use crate::{
-    client::incoming::{ClientConstructor as IncomingClientConstructor, Session},
-    types::{ConnectOptions, ConnectionSecurity, LoginOptions, Result, IncomingClientType},
+    client::incoming::{IncomingClient, IncomingClientBuilder, IncomingSession},
+    types::{ConnectionSecurity, IncomingClientType, Result},
 };
 
-pub fn create_session(
+use super::login::{LoginOptions, LoginType};
+
+fn create_session_from_client<S: Write + Read + Send + 'static>(
+    client: IncomingClient<S>,
+    login_type: &LoginType,
+) -> Result<Box<dyn IncomingSession + Send>> {
+    match login_type {
+        LoginType::PasswordBased(password_creds) => {
+            client.login(password_creds.username(), password_creds.password())
+        }
+        LoginType::OAuthBased(oauth_creds) => client.oauth2_login(oauth_creds),
+    }
+}
+
+/// Given some login options and a client type, create an incoming session.
+///
+/// This will automatically connect and login to the mail server specified in the login options using the credentials specified in the login options.
+pub fn create_incoming_session(
     options: &LoginOptions,
     client_type: &IncomingClientType,
-) -> Result<Box<dyn Session + Send>> {
-    let client_options = ConnectOptions::new(options.domain(), options.port());
+) -> Result<Box<dyn IncomingSession + Send>> {
+    let mut builder = IncomingClientBuilder::new(client_type);
+
+    builder
+        .set_server(options.domain())
+        .set_port(options.port().clone());
 
     match options.security() {
         ConnectionSecurity::Tls => {
-            let client = IncomingClientConstructor::new(client_type, Some(client_options))?;
+            let client = builder.build()?;
 
-            client
-                .login(options.username(), options.password())
+            create_session_from_client(client, options.login_type())
         }
         ConnectionSecurity::Plain => {
-            let client = IncomingClientConstructor::new_plain(client_type, Some(client_options))?;
+            let client = builder.build_plain()?;
 
-            client
-                .login(options.username(), options.password())
+            create_session_from_client(client, options.login_type())
         }
         _ => {
             todo!()

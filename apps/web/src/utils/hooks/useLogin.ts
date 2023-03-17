@@ -3,7 +3,12 @@ import useUser, { useCurrentUser, useModifyUser } from "./useUser";
 
 import { useNavigate } from "react-router-dom";
 
-import { Credentials, ServerType, Version } from "@dust-mail/structures";
+import {
+	Credentials,
+	LoginOptions,
+	ServerType,
+	Version
+} from "@dust-mail/structures";
 
 import { Result } from "@interfaces/result";
 
@@ -15,6 +20,29 @@ import {
 } from "@utils/parseError";
 
 // TODO: Fix this mess of a file.
+
+const findUsernameInLoginOptions = (loginOptions: LoginOptions): string => {
+	return (
+		loginOptions.loginType.oAuthBased?.username ??
+		loginOptions.loginType.passwordBased?.username ??
+		// Should never occur, but just in case it does happen there will be a fallback
+		"test@example.com"
+	);
+};
+
+const createIdentifier = (
+	incomingConfig: LoginOptions,
+	outgoingConfig: LoginOptions
+): string => {
+	const incomingUsername = findUsernameInLoginOptions(incomingConfig);
+	const outgoingUsername = findUsernameInLoginOptions(outgoingConfig);
+
+	const identifier = btoa(
+		`${incomingUsername}@${incomingConfig.domain}|${outgoingUsername}@${outgoingConfig.domain}`
+	);
+
+	return identifier;
+};
 
 export const useMailLogin = (): ((
 	config: Credentials
@@ -80,15 +108,13 @@ export const useMailLogin = (): ((
 				message: "Config is missing items"
 			});
 
-		const id = btoa(
-			`${incomingConfig.username}@${incomingConfig.domain}|${outgoingConfig.username}@${outgoingConfig.domain}`
-		);
+		const id = createIdentifier(incomingConfig, outgoingConfig);
 
 		login(loginResult.data, {
 			id,
 			usernames: {
-				incoming: incomingConfig.username,
-				outgoing: outgoingConfig.username
+				incoming: findUsernameInLoginOptions(incomingConfig),
+				outgoing: findUsernameInLoginOptions(outgoingConfig)
 			},
 			redirectToDashboard: true,
 			setAsDefault: true

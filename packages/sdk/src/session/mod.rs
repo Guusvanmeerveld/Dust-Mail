@@ -1,14 +1,15 @@
 mod incoming;
+mod login;
 
 use std::sync::{Arc, Mutex};
 
-use serde::{Deserialize, Serialize};
 use tokio::task::spawn_blocking;
 
-use crate::{
-    types::{IncomingClientType, LoginOptions, Result},
-    IncomingSession,
-};
+use crate::{types::Result, IncomingSession};
+
+use self::incoming::create_incoming_session;
+
+pub use self::login::{FullLoginOptions, FullLoginOptionsBuilder};
 
 pub type ThreadSafeIncomingSession = Arc<Mutex<Box<dyn IncomingSession + Send>>>;
 
@@ -28,44 +29,7 @@ impl MailSessions {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Credentials {
-    incoming: LoginOptions,
-    incoming_type: IncomingClientType,
-}
-
-impl Credentials {
-    pub fn incoming_options(&self) -> &LoginOptions {
-        &self.incoming
-    }
-
-    pub fn incoming_type(&self) -> &IncomingClientType {
-        &self.incoming_type
-    }
-
-    pub fn new(incoming: (LoginOptions, IncomingClientType)) -> Self {
-        Self {
-            incoming: incoming.0,
-            incoming_type: incoming.1,
-        }
-    }
-}
-
-impl Into<String> for Credentials {
-    /// Creates an identifiable string from the credentials, excluding the password.
-    fn into(self) -> String {
-        let incoming = self.incoming_options();
-
-        format!(
-            "{}@{}:{}",
-            incoming.username(),
-            incoming.domain(),
-            incoming.port()
-        )
-    }
-}
-
-pub async fn create_sessions(credentials: &Credentials) -> Result<MailSessions> {
+pub async fn create_sessions(credentials: &FullLoginOptions) -> Result<MailSessions> {
     let incoming_credentials = (
         credentials.incoming_options().clone(),
         credentials.incoming_type().clone(),
@@ -73,7 +37,7 @@ pub async fn create_sessions(credentials: &Credentials) -> Result<MailSessions> 
 
     // Try to get a session for all of the given login options
     let incoming_login_thread = spawn_blocking(move || {
-        incoming::create_session(&incoming_credentials.0, &incoming_credentials.1)
+        create_incoming_session(&incoming_credentials.0, &incoming_credentials.1)
     });
     // let outgoing_login_thread;
 

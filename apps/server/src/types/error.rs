@@ -7,6 +7,8 @@ use sdk::types::Error as SdkError;
 #[serde(crate = "rocket::serde")]
 pub enum ErrorKind {
     SdkError(SdkError),
+    CreateHttpRequest,
+    BadConfig,
     Unauthorized,
     BadRequest,
     TooManyRequests,

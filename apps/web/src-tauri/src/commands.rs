@@ -1,10 +1,13 @@
 use sdk::{
     detect::{self, Config},
-    session::Credentials,
+    session::FullLoginOptions,
     types::{MailBox, Message, Preview},
 };
 
-use crate::{types::{session, Result, Sessions}, files::CacheFile};
+use crate::{
+    files::CacheFile,
+    types::{session, Result, Sessions},
+};
 
 use tauri::{async_runtime::spawn_blocking, State};
 
@@ -15,7 +18,7 @@ pub async fn detect_config(email_address: String) -> Result<Config> {
 
 #[tauri::command(async)]
 pub async fn login(
-    credentials: Credentials,
+    credentials: FullLoginOptions,
     session_handler: State<'_, Sessions>,
 ) -> Result<String> {
     // Connect and login to the mail servers using the user provided credentials.
@@ -39,9 +42,7 @@ pub async fn list(token: String, sessions: State<'_, Sessions>) -> Result<Vec<Ma
     let fetch_box_list = spawn_blocking(move || {
         let mut session_lock = session.lock().unwrap();
 
-        let list = session_lock
-            .box_list()
-            .map(|box_list| box_list.clone())?;
+        let list = session_lock.box_list().map(|box_list| box_list.clone())?;
 
         Ok(list)
     });
@@ -57,9 +58,7 @@ pub async fn get(token: String, box_id: String, sessions: State<'_, Sessions>) -
     let fetch_box = spawn_blocking(move || {
         let mut session_lock = session.lock().unwrap();
 
-        let mailbox = session_lock
-            .get(&box_id)
-            .map(|mailbox| mailbox.clone())?;
+        let mailbox = session_lock.get(&box_id).map(|mailbox| mailbox.clone())?;
 
         Ok(mailbox)
     });
@@ -81,8 +80,7 @@ pub async fn messages(
     let fetch_message_list = spawn_blocking(move || {
         let mut session_lock = session.lock().unwrap();
 
-        let message_list = session_lock
-            .messages(&box_id, start, end)?;
+        let message_list = session_lock.messages(&box_id, start, end)?;
 
         Ok(message_list)
     });
@@ -103,8 +101,7 @@ pub async fn get_message(
     let fetch_message = spawn_blocking(move || {
         let mut session_lock = session.lock().unwrap();
 
-        let message = session_lock
-            .get_message(&box_id, &message_id)?;
+        let message = session_lock.get_message(&box_id, &message_id)?;
 
         Ok(message)
     });

@@ -407,6 +407,24 @@ impl<S: Read + Write> Client<S> {
         Ok(())
     }
 
+    pub fn auth<U: AsRef<str>>(&mut self, token: U) -> types::Result<()> {
+        self.is_correct_state(ClientState::Authentication)?;
+
+        self.has_capability_else_err(vec![Capability::Sasl(vec![String::from("XOAUTH2")])])?;
+
+        self.has_read_greeting()?;
+
+        let socket = self.get_socket_mut()?;
+
+        let command = format!("AUTH {}", token.as_ref());
+
+        socket.send_command(command.as_bytes(), false)?;
+
+        self.state = ClientState::Transaction;
+
+        Ok(())
+    }
+
     pub fn login(&mut self, user: &str, password: &str) -> types::Result<()> {
         self.is_correct_state(ClientState::Authentication)?;
 

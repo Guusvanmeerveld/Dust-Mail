@@ -12,7 +12,7 @@ use crate::imap::{self, ImapClient};
 use crate::pop::{self, PopClient};
 
 use crate::types::{
-    self, ConnectOptions, Error, ErrorKind, IncomingClientType, MailBox, Message, Preview,
+    Error, ErrorKind, IncomingClientType, MailBox, Message, OAuthCredentials, Preview, Result,
 };
 
 enum IncomingClientTypeWithClient<S>
@@ -25,12 +25,17 @@ where
     Pop(PopClient<S>),
 }
 
-pub struct IncomingClient<S: Read + Write> {
+pub struct IncomingClient<S: Read + Write + Send> {
     client: IncomingClientTypeWithClient<S>,
 }
 
 impl<S: Read + Write + 'static + Send> IncomingClient<S> {
-    pub fn login(self, username: &str, password: &str) -> types::Result<Box<dyn Session + Send>> {
+    /// Login to the specified mail server using a username and a password.
+    pub fn login<T: AsRef<str>>(
+        self,
+        username: T,
+        password: T,
+    ) -> Result<Box<dyn IncomingSession + Send>> {
         match self.client {
             #[cfg(feature = "imap")]
             IncomingClientTypeWithClient::Imap(client) => {
@@ -50,94 +55,141 @@ impl<S: Read + Write + 'static + Send> IncomingClient<S> {
             )),
         }
     }
-}
 
-pub trait Session {
-    /// Logout of the session, closing the connection with the server if applicable.
-    fn logout(&mut self) -> types::Result<()>;
+    /// Login to the specified mail servers using OAuth2 credentials, which consist of an access token and a usernames
+    pub fn oauth2_login(
+        self,
+        oauth_credentials: &OAuthCredentials,
+    ) -> Result<Box<dyn IncomingSession + Send>> {
+        match self.client {
+            #[cfg(feature = "imap")]
+            IncomingClientTypeWithClient::Imap(client) => {
+                let session = client.oauth2_login(oauth_credentials)?;
 
-    /// Returns a list of all of the mailboxes that are on the server.
-    fn box_list(&mut self) -> types::Result<&Vec<MailBox>>;
-
-    /// Returns some basic information about a specified mailbox.
-    fn get(&mut self, box_id: &str) -> types::Result<&MailBox>;
-
-    /// Deletes a specified mailbox.
-    fn delete(&mut self, box_id: &str) -> types::Result<()>;
-
-    /// Creates a new mailbox with a specified id.
-    fn create(&mut self, box_id: &str) -> types::Result<()>;
-
-    /// Renames a specified mailbox.
-    fn rename(&mut self, box_id: &str, new_name: &str) -> types::Result<()>;
-
-    /// Returns a list of a specified range of messages from a specified mailbox.
-    fn messages(&mut self, box_id: &str, start: u32, end: u32) -> types::Result<Vec<Preview>>;
-
-    /// Returns all of the relevant data for a specified message.
-    fn get_message(&mut self, box_id: &str, msg_id: &str) -> types::Result<Message>;
-}
-
-pub struct ClientConstructor;
-
-/// Check whether the login options exist if they are needed for a given client type.
-fn check_options(
-    client_type: &IncomingClientType,
-    options: &Option<ConnectOptions>,
-) -> types::Result<()> {
-    match client_type {
-        #[cfg(feature = "imap")]
-        IncomingClientType::Imap => match options {
-            Some(_) => Ok(()),
-            None => {
-                return Err(types::Error::new(
-                    types::ErrorKind::Unsupported,
-                    "Imap support requires the login options to be specified",
-                ))
+                Ok(Box::new(session))
             }
-        },
-        #[cfg(feature = "pop")]
-        IncomingClientType::Pop => match options {
-            Some(_) => Ok(()),
-            None => {
-                return Err(types::Error::new(
-                    types::ErrorKind::Unsupported,
-                    "Pop support requires the login options to be specified",
-                ))
-            }
-        },
+            // #[cfg(feature = "pop")]
+            // IncomingClientTypeWithClient::Pop(client) => {
+            //     let session = client.login(username, password)?;
+
+            //     Ok(Box::new(session))
+            // }
+            _ => Err(Error::new(
+                ErrorKind::NoClientAvailable,
+                "OAuth2 login is not supported by the specified incoming client type",
+            )),
+        }
     }
 }
 
-impl ClientConstructor {
-    /// Creates a new client over a secure tcp connection.
-    pub fn new(
-        client_type: &IncomingClientType,
-        options: Option<ConnectOptions>,
-    ) -> types::Result<IncomingClient<TlsStream<TcpStream>>> {
-        check_options(&client_type, &options)?;
+pub trait IncomingSession {
+    /// Logout of the session, closing the connection with the server if applicable.
+    fn logout(&mut self) -> Result<()>;
 
-        let client = match client_type {
+    /// Returns a list of all of the mailboxes that are on the server.
+    fn box_list(&mut self) -> Result<&Vec<MailBox>>;
+
+    /// Returns some basic information about a specified mailbox.
+    fn get(&mut self, box_id: &str) -> Result<&MailBox>;
+
+    /// Deletes a specified mailbox.
+    fn delete(&mut self, box_id: &str) -> Result<()>;
+
+    /// Creates a new mailbox with a specified id.
+    fn create(&mut self, box_id: &str) -> Result<()>;
+
+    /// Renames a specified mailbox.
+    fn rename(&mut self, box_id: &str, new_name: &str) -> Result<()>;
+
+    /// Returns a list of a specified range of messages from a specified mailbox.
+    fn messages(&mut self, box_id: &str, start: u32, end: u32) -> Result<Vec<Preview>>;
+
+    /// Returns all of the relevant data for a specified message.
+    fn get_message(&mut self, box_id: &str, msg_id: &str) -> Result<Message>;
+}
+
+/// A struct used to create a connection to an incoming mail server.
+///
+/// Use the `new()` method to build a connection.
+pub struct IncomingClientBuilder {
+    client_type: IncomingClientType,
+    server: Option<String>,
+    port: Option<u16>,
+}
+
+impl IncomingClientBuilder {
+    /// Creates an incoming client builder given an incoming client type.
+    ///
+    /// This incoming client type will specify what kind of protocol is going to be used to connect to the later specified mail server.
+    pub fn new(client_type: &IncomingClientType) -> Self {
+        Self {
+            client_type: client_type.clone(),
+            port: None,
+            server: None,
+        }
+    }
+
+    /// Set the port of the server to connect to.
+    ///
+    /// E.g `993`
+    pub fn set_port<S: Into<u16>>(&mut self, port: S) -> &mut Self {
+        self.port = Some(port.into());
+
+        self
+    }
+
+    /// Set the domain name of the server to connect to.
+    ///
+    /// E.g `example.com`
+    pub fn set_server<S: Into<String>>(&mut self, server: S) -> &mut Self {
+        self.server = Some(server.into());
+
+        self
+    }
+
+    /// Internal function used to check if the domain and port have been set and return them if they are set.
+    ///
+    /// This function will error if either one is not set.
+    fn get_connect_config(&self) -> Result<(&str, &u16)> {
+        let port = match self.port.as_ref() {
+            Some(port) => port,
+            None => {
+                return Err(Error::new(
+                    ErrorKind::InvalidLoginConfig,
+                    "Missing port from login config",
+                ))
+            }
+        };
+
+        let server = match self.server.as_ref() {
+            Some(server) => server,
+            None => {
+                return Err(Error::new(
+                    ErrorKind::InvalidLoginConfig,
+                    "Missing server from login config",
+                ))
+            }
+        };
+
+        return Ok((server, port));
+    }
+
+    /// Creates a new client over a secure tcp connection.
+    pub fn build(&self) -> Result<IncomingClient<TlsStream<TcpStream>>> {
+        let client = match self.client_type {
             #[cfg(feature = "imap")]
             IncomingClientType::Imap => {
-                let options = match options {
-                    Some(options) => options,
-                    // Is unreachable as we have already checked the options for every client type
-                    None => unreachable!(),
-                };
+                let (server, port) = self.get_connect_config()?;
 
-                let client = imap::connect(options)?;
+                let client = imap::connect(server, port.clone())?;
 
                 IncomingClientTypeWithClient::Imap(client)
             }
             #[cfg(feature = "pop")]
             IncomingClientType::Pop => {
-                let options = match options {
-                    Some(options) => options,
-                    None => unreachable!(),
-                };
+                let (server, port) = self.get_connect_config()?;
 
-                let client = pop::connect(options)?;
+                let client = pop::connect(server, port.clone())?;
 
                 IncomingClientTypeWithClient::Pop(client)
             }
@@ -148,86 +200,27 @@ impl ClientConstructor {
 
     /// Creates a new client over a plain tcp connection.
     ///
-    /// # Do not use this in a production environment as it will send your credentials to the server without any encryption!
-    pub fn new_plain(
-        client_type: &IncomingClientType,
-        options: Option<ConnectOptions>,
-    ) -> types::Result<IncomingClient<TcpStream>> {
-        check_options(&client_type, &options)?;
-
-        let client = match client_type {
+    /// ### Do not use this in a production environment as it will send your credentials to the server without any encryption!
+    pub fn build_plain(&self) -> Result<IncomingClient<TcpStream>> {
+        let client = match self.client_type {
             #[cfg(feature = "imap")]
             IncomingClientType::Imap => {
-                let options = match options {
-                    Some(options) => options,
-                    None => unreachable!(),
-                };
+                let (server, port) = self.get_connect_config()?;
 
-                let client = imap::connect_plain(options)?;
+                let client = imap::connect_plain(server, port.clone())?;
 
                 IncomingClientTypeWithClient::Imap(client)
             }
             #[cfg(feature = "pop")]
             IncomingClientType::Pop => {
-                let options = match options {
-                    Some(options) => options,
-                    None => unreachable!(),
-                };
+                let (server, port) = self.get_connect_config()?;
 
-                let client = pop::connect_plain(options)?;
+                let client = pop::connect_plain(server, port.clone())?;
 
                 IncomingClientTypeWithClient::Pop(client)
             }
         };
 
         Ok(IncomingClient { client })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::types::ConnectOptions;
-
-    use std::env;
-
-    use dotenv::dotenv;
-
-    use super::{IncomingClientType, Session};
-
-    fn create_session() -> Box<dyn Session> {
-        dotenv().ok();
-
-        let username = env::var("IMAP_USERNAME").unwrap();
-        let password = env::var("IMAP_PASSWORD").unwrap();
-
-        let server = env::var("IMAP_SERVER").unwrap();
-        let port: u16 = 993;
-
-        let options = ConnectOptions::new(server, &port);
-
-        let client =
-            super::ClientConstructor::new(&IncomingClientType::Imap, Some(options)).unwrap();
-
-        let session = client.login(&username, &password).unwrap();
-
-        session
-    }
-
-    #[test]
-    fn logout() {
-        let mut session = create_session();
-
-        session.logout().unwrap();
-    }
-
-    #[test]
-    fn box_list() {
-        let mut session = create_session();
-
-        let list = session.box_list().unwrap();
-
-        for mailbox in list {
-            println!("{}", mailbox.counts().unwrap().total());
-        }
     }
 }

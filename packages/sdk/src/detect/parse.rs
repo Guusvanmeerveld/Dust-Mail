@@ -3,13 +3,16 @@ use autoconfig::{
     self,
     types::config::{
         AuthenticationType as AutoConfigAuthenticationType, Config as AutoConfig,
-        SecurityType as AutoConfigSecurityType, Server, ServerType as AutoConfigServerType,
+        OAuth2Config as AutoConfigOAuth2Config, SecurityType as AutoConfigSecurityType, Server,
+        ServerType as AutoConfigServerType,
     },
 };
 
 use crate::types::{ConnectionSecurity, Result};
 
-use super::{AuthenticationType, Config, ConfigType, ServerConfig, ServerConfigType};
+use super::{
+    types::OAuth2Config, AuthenticationType, Config, ConfigType, ServerConfig, ServerConfigType,
+};
 
 #[cfg(feature = "autoconfig")]
 pub struct AutoConfigParser;
@@ -20,7 +23,7 @@ impl AutoConfigParser {
         {
             let domain: String = server.hostname()?.into();
 
-            let port: u16 = *server.port()?;
+            let port: u16 = server.port().cloned()?;
 
             let security: ConnectionSecurity = match server.security_type() {
                 Some(security) => match security {
@@ -60,8 +63,17 @@ impl AutoConfigParser {
         }
     }
 
+    fn parse_oauth2_config(config: &AutoConfigOAuth2Config) -> OAuth2Config {
+        OAuth2Config::new(
+            config.token_url().into(),
+            config.auth_url().into(),
+            config.scope(),
+        )
+    }
+
     pub fn parse(autoconfig: AutoConfig) -> Result<Config> {
         let provider: String = autoconfig.email_provider().id().into();
+
         let display_name: Option<String> = autoconfig
             .email_provider()
             .display_name()
@@ -83,7 +95,9 @@ impl AutoConfigParser {
 
         let config_type = ConfigType::MultiServer { incoming, outgoing };
 
-        let config = Config::new(config_type, provider, display_name);
+        let oauth2_config = autoconfig.oauth2().map(Self::parse_oauth2_config);
+
+        let config = Config::new(config_type, provider, oauth2_config, display_name);
 
         Ok(config)
     }

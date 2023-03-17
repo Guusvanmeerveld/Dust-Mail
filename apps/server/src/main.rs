@@ -2,6 +2,8 @@ mod cache;
 mod constants;
 mod fairings;
 mod guards;
+mod http;
+mod oauth2;
 mod routes;
 mod state;
 mod types;
@@ -25,6 +27,11 @@ fn too_many_requests() -> (Status, Json<ErrResponse>) {
         ErrorKind::TooManyRequests,
         "Received too many requests from your ip",
     )
+}
+
+#[catch(401)]
+fn unauthorized() -> (Status, Json<ErrResponse>) {
+    ErrResponse::new(ErrorKind::Unauthorized, "Unauthorized")
 }
 
 #[catch(500)]
@@ -65,9 +72,15 @@ fn rocket() -> _ {
 
     let mail_sessions_state = state::GlobalUserSessions::new();
 
+    let http_client = http::HttpClient::new();
+
     rocket::custom(figment)
-        .register("/", catchers![not_found, internal_error, too_many_requests])
+        .register(
+            "/",
+            catchers![not_found, internal_error, too_many_requests, unauthorized],
+        )
         .manage(config)
+        .manage(http_client)
         .manage(ip_state)
         .manage(cache_state)
         .manage(mail_sessions_state)
@@ -92,6 +105,13 @@ fn rocket() -> _ {
                 routes::mail_get_box_handler,
                 routes::mail_box_messages_handler,
                 routes::mail_box_message_handler
+            ],
+        )
+        .mount(
+            "/mail/oauth2",
+            routes![
+                routes::oauth_get_tokens_handler,
+                routes::oauth_redirect_handler
             ],
         )
 }

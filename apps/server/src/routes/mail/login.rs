@@ -6,11 +6,11 @@ use crate::{
 };
 
 use rocket::{serde::json::Json, State};
-use sdk::session::{create_sessions, Credentials};
+use sdk::session::{create_sessions, FullLoginOptions};
 
 #[post("/login", data = "<credentials>")]
 pub async fn login(
-    credentials: Json<Credentials>,
+    credentials: Json<FullLoginOptions>,
     user: User,
     _rate_limiter: RateLimiter,
     config: &State<Config>,

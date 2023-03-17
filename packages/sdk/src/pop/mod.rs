@@ -6,10 +6,10 @@ use native_tls::TlsStream;
 use pop3::types::{Left, Right};
 
 use crate::{
-    client::incoming::Session,
+    client::incoming::IncomingSession,
     parse::{map_pop_error, parse_headers, parse_rfc822},
     tls::create_tls_connector,
-    types::{ConnectOptions, Counts, Error, ErrorKind, Flag, MailBox, Message, Preview, Result},
+    types::{Counts, Error, ErrorKind, Flag, MailBox, Message, Preview, Result},
 };
 
 use parse::parse_address;
@@ -28,31 +28,35 @@ pub struct PopSession<S: Read + Write> {
     unique_id_map: HashMap<String, u32>,
 }
 
-pub fn connect(options: ConnectOptions) -> Result<PopClient<TlsStream<TcpStream>>> {
+pub fn connect<S: AsRef<str>, P: Into<u16>>(
+    server: S,
+    port: P,
+) -> Result<PopClient<TlsStream<TcpStream>>> {
     let tls = create_tls_connector()?;
 
-    let server = options.server();
-    let port = *options.port();
-
-    let session = pop3::connect((server, port), server, &tls, None).map_err(map_pop_error)?;
+    let session = pop3::connect((server.as_ref(), port.into()), server.as_ref(), &tls, None)
+        .map_err(map_pop_error)?;
 
     Ok(PopClient { session })
 }
 
-pub fn connect_plain(options: ConnectOptions) -> Result<PopClient<TcpStream>> {
-    let server = options.server();
-    let port = *options.port();
-
-    let session = pop3::connect_plain((server, port), None).map_err(map_pop_error)?;
+pub fn connect_plain<S: AsRef<str>, P: Into<u16>>(
+    server: S,
+    port: P,
+) -> Result<PopClient<TcpStream>> {
+    let session =
+        pop3::connect_plain((server.as_ref(), port.into()), None).map_err(map_pop_error)?;
 
     Ok(PopClient { session })
 }
 
 impl<S: Read + Write> PopClient<S> {
-    pub fn login(self, username: &str, password: &str) -> Result<PopSession<S>> {
+    pub fn login<T: AsRef<str>>(self, username: T, password: T) -> Result<PopSession<S>> {
         let mut session = self.session;
 
-        session.login(username, password).map_err(map_pop_error)?;
+        session
+            .login(username.as_ref(), password.as_ref())
+            .map_err(map_pop_error)?;
 
         // session.capabilities()
 
@@ -123,7 +127,7 @@ impl<S: Read + Write> PopSession<S> {
     }
 }
 
-impl<S: Read + Write> Session for PopSession<S> {
+impl<S: Read + Write> IncomingSession for PopSession<S> {
     fn logout(&mut self) -> Result<()> {
         let session = self.get_session_mut();
 
@@ -276,7 +280,7 @@ mod test {
 
     use super::PopSession;
 
-    use crate::{client::incoming::Session, types::ConnectOptions};
+    use crate::client::incoming::IncomingSession;
 
     use dotenv::dotenv;
     use native_tls::TlsStream;
@@ -291,9 +295,7 @@ mod test {
         let server = env::var("POP_SERVER").unwrap();
         let port: u16 = 995;
 
-        let options = ConnectOptions::new(&server, &port);
-
-        let client = super::connect(options).unwrap();
+        let client = super::connect(server, port).unwrap();
 
         let session = client.login(&username, &password).unwrap();
 

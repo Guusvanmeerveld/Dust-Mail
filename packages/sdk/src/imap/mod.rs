@@ -9,16 +9,16 @@ use std::time::{Duration, Instant};
 use imap::types::{Fetch as ImapFetch, Mailbox as ImapMailbox};
 use native_tls::TlsStream;
 
-use crate::client::incoming::Session;
+use crate::client::incoming::IncomingSession;
 use crate::parse::map_imap_error;
 use crate::tls::create_tls_connector;
 use crate::types::{
-    ConnectOptions,
     // Counts,
     Error,
     ErrorKind,
     MailBox,
     Message,
+    OAuthCredentials,
     Preview,
     Result,
 };
@@ -44,24 +44,25 @@ pub struct ImapSession<S: Read + Write> {
     selected_box: Option<(String, ImapMailbox)>,
 }
 
-pub fn connect(options: ConnectOptions) -> Result<ImapClient<TlsStream<TcpStream>>> {
+pub fn connect<S: AsRef<str>, P: Into<u16>>(
+    server: S,
+    port: P,
+) -> Result<ImapClient<TlsStream<TcpStream>>> {
     let tls = create_tls_connector()?;
 
-    let domain = options.server();
-    let port = *options.port();
-
-    let client = imap::connect((domain, port), domain, &tls).map_err(map_imap_error)?;
+    let client = imap::connect((server.as_ref(), port.into()), server.as_ref(), &tls)
+        .map_err(map_imap_error)?;
 
     let imap_client = ImapClient { client };
 
     Ok(imap_client)
 }
 
-pub fn connect_plain(options: ConnectOptions) -> Result<ImapClient<TcpStream>> {
-    let domain = options.server();
-    let port = *options.port();
-
-    let stream = TcpStream::connect((domain, port))
+pub fn connect_plain<S: AsRef<str>, P: Into<u16>>(
+    server: S,
+    port: P,
+) -> Result<ImapClient<TcpStream>> {
+    let stream = TcpStream::connect((server.as_ref(), port.into()))
         .map_err(|e| Error::new(ErrorKind::Connect, e.to_string()))?;
 
     let client = imap::Client::new(stream);
@@ -70,7 +71,7 @@ pub fn connect_plain(options: ConnectOptions) -> Result<ImapClient<TcpStream>> {
 }
 
 impl<S: Read + Write> ImapClient<S> {
-    pub fn login(self, username: &str, password: &str) -> Result<ImapSession<S>> {
+    pub fn login<T: AsRef<str>>(self, username: T, password: T) -> Result<ImapSession<S>> {
         let session = self
             .client
             .login(username, password)
@@ -80,7 +81,22 @@ impl<S: Read + Write> ImapClient<S> {
             session,
             box_list: Vec::new(),
             box_list_last_refresh: None,
-            // retrieved_message_counts: false,
+            selected_box: None,
+        };
+
+        Ok(imap_session)
+    }
+
+    pub fn oauth2_login(self, login: &OAuthCredentials) -> Result<ImapSession<S>> {
+        let session = self
+            .client
+            .authenticate("XOAUTH2", login)
+            .map_err(|(err, _)| map_imap_error(err))?;
+
+        let imap_session = ImapSession {
+            session,
+            box_list: Vec::new(),
+            box_list_last_refresh: None,
             selected_box: None,
         };
 
@@ -165,7 +181,7 @@ impl<S: Read + Write> ImapSession<S> {
     }
 }
 
-impl<S: Read + Write> Session for ImapSession<S> {
+impl<S: Read + Write> IncomingSession for ImapSession<S> {
     fn logout(&mut self) -> Result<()> {
         let session = self.get_session_mut();
 
@@ -391,9 +407,9 @@ mod tests {
 
     use native_tls::TlsStream;
 
-    use super::{ConnectOptions, ImapSession};
+    use super::ImapSession;
 
-    use crate::client::incoming::Session;
+    use crate::client::incoming::IncomingSession;
 
     use dotenv::dotenv;
 
@@ -408,9 +424,7 @@ mod tests {
         let server = env::var("IMAP_SERVER").unwrap();
         let port: u16 = 993;
 
-        let options = ConnectOptions::new(server, &port);
-
-        let client = super::connect(options).unwrap();
+        let client = super::connect(server, port).unwrap();
 
         let session = client.login(&username, &password).unwrap();
 

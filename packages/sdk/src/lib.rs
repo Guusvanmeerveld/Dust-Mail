@@ -16,6 +16,4 @@ pub mod types;
 
 pub mod session;
 
-pub use client::incoming::{
-    ClientConstructor as IncomingClientConstructor, Session as IncomingSession,
-};
+pub use client::incoming::{IncomingClientBuilder, IncomingSession};

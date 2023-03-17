@@ -72,6 +72,37 @@ pub enum AuthenticationType {
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct OAuth2Config {
+    token_url: String,
+    oauth_url: String,
+    scopes: Vec<String>,
+}
+
+impl OAuth2Config {
+    pub fn new<S: Into<String>>(token_url: S, oauth_url: S, scopes: Vec<S>) -> Self {
+        let scopes = scopes.into_iter().map(|scope| scope.into()).collect();
+
+        Self {
+            oauth_url: oauth_url.into(),
+            token_url: token_url.into(),
+            scopes,
+        }
+    }
+    pub fn oauth_url(&self) -> &str {
+        &self.oauth_url
+    }
+
+    pub fn token_url(&self) -> &str {
+        &self.token_url
+    }
+
+    pub fn scopes(&self) -> &Vec<String> {
+        &self.scopes
+    }
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum ConfigType {
     MultiServer {
         incoming: Vec<ServerConfig>,
@@ -90,6 +121,7 @@ impl ConfigType {
 pub struct Config {
     r#type: ConfigType,
     provider: String,
+    oauth2: Option<OAuth2Config>,
     display_name: Option<String>,
 }
 
@@ -97,13 +129,19 @@ impl Config {
     pub fn new<S: Into<String>>(
         r#type: ConfigType,
         provider: S,
+        oauth2_config: Option<OAuth2Config>,
         display_name: Option<String>,
     ) -> Self {
         Self {
             display_name,
+            oauth2: oauth2_config,
             provider: provider.into(),
             r#type,
         }
+    }
+
+    pub fn oauth2(&self) -> &Option<OAuth2Config> {
+        &self.oauth2
     }
 
     /// The kind of config
