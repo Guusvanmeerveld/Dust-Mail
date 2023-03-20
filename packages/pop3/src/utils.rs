@@ -1,40 +1,22 @@
-use std::fmt::Display;
-
 use crate::types;
 
-const SPACE: u8 = b' ';
+const SPACE: char = ' ';
 
-pub fn create_command<T: Display>(
-    name: &str,
-    arguments: &Option<Vec<Option<T>>>,
+pub fn create_command<S: Into<String>, T: AsRef<str>>(
+    name: S,
+    arguments: &Vec<T>,
 ) -> types::Result<String> {
-    let mut bytes = Vec::from(name.as_bytes());
+    let mut command: String = name.into();
 
-    match arguments {
-        Some(arguments) => {
-            for arg in arguments {
-                match arg {
-                    Some(arg) => {
-                        bytes.push(SPACE);
+    for arg in arguments {
+        command.push(SPACE);
 
-                        for character in arg.to_string().trim().replace(" ", "_").as_bytes() {
-                            bytes.push(*character);
-                        }
-                    }
-                    None => {}
-                }
-            }
-        }
-        None => {}
+        let arg_parsed = arg.as_ref().trim().replace(" ", "_");
+
+        command.push_str(&arg_parsed);
     }
 
-    match String::from_utf8(bytes) {
-        Ok(result) => Ok(result),
-        Err(err) => Err(types::Error::new(
-            types::ErrorKind::SendCommand,
-            format!("Failed to convert command into string: {}", err),
-        )),
-    }
+    Ok(command)
 }
 
 #[cfg(test)]
@@ -44,19 +26,16 @@ mod test {
     #[test]
     fn test_create_command() {
         let to_parse = vec![
-            ("DELE", Some(vec![Some("1")])),
-            ("DELE", None),
-            (
-                "UIDL",
-                Some(vec![Some("10\n\r"), Some("T T"), Some("    test")]),
-            ),
+            ("DELE", vec!["1"]),
+            ("DELE", Vec::new()),
+            ("UIDL", vec!["10\n\r", "T T", "    test"]),
         ];
 
         let to_match = vec!["DELE 1", "DELE", "UIDL 10 T_T test"];
 
         let result: Vec<String> = to_parse
             .iter()
-            .map(|(name, arguments)| create_command(name, arguments).unwrap())
+            .map(|(name, arguments)| create_command(name.to_string(), arguments).unwrap())
             .collect();
 
         assert_eq!(result, to_match)

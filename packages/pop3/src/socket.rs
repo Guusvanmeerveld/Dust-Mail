@@ -1,39 +1,44 @@
-use std::io::{Read, Write};
+use std::time::Duration;
 
-use bufstream::BufStream;
+use tokio::{
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufStream},
+    time::timeout,
+};
 
 use crate::{
     constants::{DOT, END_OF_LINE, EOF, LF},
-    parse::{map_write_error_to_error, parse_server_response, parse_utf8_bytes},
-    types,
+    parse::{parse_server_response, parse_utf8_bytes},
+    types::{self, Error, ErrorKind},
 };
 
-pub struct Socket<T: Read + Write> {
+pub struct Socket<T: AsyncRead + AsyncWrite + Unpin> {
     stream: BufStream<T>,
 }
 
-impl<T: Read + Write> Socket<T> {
+impl<T: AsyncRead + AsyncWrite + Unpin> Socket<T> {
+    const RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
+
     pub fn new(stream: T) -> Socket<T> {
         Self {
             stream: BufStream::new(stream),
         }
     }
 
-    pub fn send_command(
+    pub async fn send_command<C: AsRef<[u8]>>(
         &mut self,
-        command: &[u8],
+        command: C,
         multi_line_response: bool,
     ) -> types::Result<String> {
-        self.send_bytes(command)?;
+        self.send_bytes(command.as_ref()).await?;
 
-        self.read_response(multi_line_response)
+        self.read_response(multi_line_response).await
     }
 
-    pub fn read_response(&mut self, multi_line_response: bool) -> types::Result<String> {
+    pub async fn read_response(&mut self, multi_line_response: bool) -> types::Result<String> {
         let mut response: Vec<u8> = Vec::new();
 
         if multi_line_response {
-            self.read_multi_line(&mut response)?;
+            self.read_multi_line(&mut response).await?;
 
             let line_break_index = response
                 .iter()
@@ -52,7 +57,7 @@ impl<T: Read + Write> Socket<T> {
                 None => Ok(String::new()),
             }
         } else {
-            self.read_line(&mut response)?;
+            self.read_line(&mut response).await?;
 
             let response = parse_utf8_bytes(response)?;
 
@@ -60,11 +65,11 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn read_multi_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
+    pub async fn read_multi_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
         let mut total_bytes_read: usize = 0;
 
         loop {
-            let bytes_read = self.read_line(buf)?;
+            let bytes_read = self.read_line(buf).await?;
 
             total_bytes_read += bytes_read;
 
@@ -96,10 +101,18 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    fn read_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
-        use std::io::BufRead;
-
-        match self.stream.read_until(LF, buf) {
+    async fn read_line(&mut self, buf: &mut Vec<u8>) -> types::Result<usize> {
+        match timeout(Self::RESPONSE_TIMEOUT, self.stream.read_until(LF, buf))
+            .await
+            .map_err(|_| {
+                Error::new(
+                    ErrorKind::InvalidResponse,
+                    format!(
+                        "Server did not respond with a valid response within {} seconds",
+                        Self::RESPONSE_TIMEOUT.as_secs()
+                    ),
+                )
+            })? {
             Ok(bytes_read) => {
                 if bytes_read == 0 {
                     return Err(types::Error::new(
@@ -117,15 +130,13 @@ impl<T: Read + Write> Socket<T> {
         }
     }
 
-    pub fn send_bytes(&mut self, buf: &[u8]) -> types::Result<()> {
-        self.stream
-            .write_all(buf)
-            .map_err(map_write_error_to_error)?;
+    pub async fn send_bytes(&mut self, buf: &[u8]) -> types::Result<()> {
+        self.stream.write_all(buf).await?;
 
-        self.stream
-            .write_all(&END_OF_LINE)
-            .map_err(map_write_error_to_error)?;
+        self.stream.write_all(&END_OF_LINE).await?;
 
-        self.stream.flush().map_err(map_write_error_to_error)
+        self.stream.flush().await?;
+
+        Ok(())
     }
 }

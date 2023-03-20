@@ -4,17 +4,17 @@ mod socket;
 pub mod types;
 mod utils;
 
-use std::{
-    io::{Read, Write},
-    net::{TcpStream, ToSocketAddrs},
-    time::Duration,
-};
+use std::{net::ToSocketAddrs, time::Duration};
 
-use either::Either::{self, Left, Right};
-use native_tls::{TlsConnector, TlsStream};
-use parse::{map_native_tls_error, parse_capabilities, parse_socket_address, Parser};
+use async_native_tls::{TlsConnector, TlsStream};
+use parse::{parse_capabilities, parse_socket_address, Parser};
 use socket::Socket;
-use types::{Capabilities, Capability, Stats, UniqueID};
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
+    time::timeout,
+};
+use types::{Capabilities, Capability, Stats, StatsResponse, UniqueIDResponse};
 use utils::create_command;
 
 #[derive(Eq, PartialEq, Debug)]
@@ -25,7 +25,7 @@ pub enum ClientState {
     None,
 }
 
-pub struct Client<S: Read + Write> {
+pub struct Client<S: AsyncWrite + AsyncRead + Unpin> {
     socket: Option<Socket<S>>,
     capabilities: Capabilities,
     marked_as_del: Vec<u32>,
@@ -41,7 +41,9 @@ fn get_connection_timeout(timeout: Option<Duration>) -> Duration {
     }
 }
 
-fn create_client_from_socket<S: Read + Write>(socket: Socket<S>) -> types::Result<Client<S>> {
+async fn create_client_from_socket<S: AsyncRead + AsyncWrite + Unpin>(
+    socket: Socket<S>,
+) -> types::Result<Client<S>> {
     let mut client = Client {
         marked_as_del: Vec::new(),
         capabilities: Vec::new(),
@@ -51,9 +53,9 @@ fn create_client_from_socket<S: Read + Write>(socket: Socket<S>) -> types::Resul
         state: ClientState::Authentication,
     };
 
-    client.greeting = Some(client.read_greeting()?);
+    client.greeting = Some(client.read_greeting().await?);
 
-    client.capabilities = client.capa()?;
+    client.capabilities = client.capa().await?;
 
     Ok(client)
 }
@@ -73,14 +75,14 @@ fn create_client_from_socket<S: Read + Write>(socket: Socket<S>) -> types::Resul
 ///     client.quit().unwrap();
 /// }
 /// ```
-pub fn new<S: Read + Write>(stream: S) -> types::Result<Client<S>> {
+pub async fn new<S: AsyncRead + AsyncWrite + Unpin>(stream: S) -> types::Result<Client<S>> {
     let socket = Socket::new(stream);
 
-    create_client_from_socket(socket)
+    create_client_from_socket(socket).await
 }
 
 /// Create a new pop3 client with a tls connection.
-pub fn connect<A: ToSocketAddrs>(
+pub async fn connect<A: ToSocketAddrs>(
     addr: A,
     domain: &str,
     tls_connector: &TlsConnector,
@@ -88,48 +90,36 @@ pub fn connect<A: ToSocketAddrs>(
 ) -> types::Result<Client<TlsStream<TcpStream>>> {
     let connection_timeout = get_connection_timeout(connection_timeout);
 
-    let addr = parse_socket_address(addr)?;
+    let addr = parse_socket_address(addr).await?;
 
-    let tcp_stream = TcpStream::connect_timeout(&addr, connection_timeout).map_err(|e| {
-        types::Error::new(
-            types::ErrorKind::Connect,
-            format!("Failed to connect to server: {}", e.to_string()),
-        )
-    })?;
+    let tcp_stream = timeout(connection_timeout, TcpStream::connect(&addr)).await??;
 
-    let tls_stream = tls_connector
-        .connect(domain, tcp_stream)
-        .map_err(map_native_tls_error)?;
+    let tls_stream = tls_connector.connect(domain, tcp_stream).await?;
 
     let socket = Socket::new(tls_stream);
 
-    create_client_from_socket(socket)
+    create_client_from_socket(socket).await
 }
 
 /// Creates a new pop3 client using a plain connection.
 ///
 /// DO NOT USE in a production environment. Your password will be sent over a plain tcp stream which hackers could intercept.
-pub fn connect_plain<A: ToSocketAddrs>(
+pub async fn connect_plain<A: ToSocketAddrs>(
     addr: A,
     connection_timeout: Option<Duration>,
 ) -> types::Result<Client<TcpStream>> {
     let connection_timeout = get_connection_timeout(connection_timeout);
 
-    let addr = parse_socket_address(addr)?;
+    let addr = parse_socket_address(addr).await?;
 
-    let tcp_stream = TcpStream::connect_timeout(&addr, connection_timeout).map_err(|e| {
-        types::Error::new(
-            types::ErrorKind::Connect,
-            format!("Failed to connect to server: {}", e.to_string()),
-        )
-    })?;
+    let tcp_stream = timeout(connection_timeout, TcpStream::connect(&addr)).await??;
 
     let socket = Socket::new(tcp_stream);
 
-    create_client_from_socket(socket)
+    create_client_from_socket(socket).await
 }
 
-impl<S: Read + Write> Client<S> {
+impl<S: AsyncRead + AsyncWrite + Unpin> Client<S> {
     fn get_socket_mut(&mut self) -> types::Result<&mut Socket<S>> {
         match self.socket.as_mut() {
             Some(socket) => {
@@ -162,6 +152,18 @@ impl<S: Read + Write> Client<S> {
         }
     }
 
+    /// ## Current client state
+    ///
+    /// Indicates what state the client is currently in, can be either
+    /// Authentication, Transaction, Update or None.
+    ///
+    /// Some methods are only available in some specified states and will error if run in an incorrect state.
+    ///
+    /// https://www.rfc-editor.org/rfc/rfc1939#section-3
+    pub fn get_state(&self) -> &ClientState {
+        &self.state
+    }
+
     /// ## NOOP
     /// The POP3 server does nothing, it merely replies with a positive response.
     /// ### Arguments: none
@@ -174,20 +176,17 @@ impl<S: Read + Write> Client<S> {
     /// client.noop()?;
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-9
-    pub fn noop(&mut self) -> types::Result<()> {
+    pub async fn noop(&mut self) -> types::Result<()> {
         let socket = self.get_socket_mut()?;
 
         let command = b"NOOP";
 
-        socket.send_command(command, false)?;
+        socket.send_command(command, false).await?;
 
         Ok(())
     }
 
-    pub fn uidl(
-        &mut self,
-        msg_number: Option<u32>,
-    ) -> types::Result<Either<Vec<UniqueID>, UniqueID>> {
+    pub async fn uidl(&mut self, msg_number: Option<u32>) -> types::Result<UniqueIDResponse> {
         self.has_capability_else_err(vec![Capability::Uidl])?;
 
         let response_is_multi_line = msg_number.is_none();
@@ -198,22 +197,26 @@ impl<S: Read + Write> Client<S> {
 
         let socket = self.get_socket_mut()?;
 
-        let arguments = Some(vec![msg_number]);
+        let arguments = if msg_number.is_some() {
+            vec![msg_number.unwrap().to_string()]
+        } else {
+            Vec::new()
+        };
 
         let command = create_command("UIDL", &arguments)?;
 
-        let response = socket.send_command(command.as_bytes(), response_is_multi_line)?;
+        let response = socket.send_command(command, response_is_multi_line).await?;
 
         let parser = Parser::new(response);
 
         if response_is_multi_line {
-            Ok(Left(parser.to_unique_id_list()))
+            Ok(UniqueIDResponse::UniqueIDList(parser.to_unique_id_list()))
         } else {
-            Ok(Right(parser.to_unique_id()))
+            Ok(UniqueIDResponse::UniqueID(parser.to_unique_id()))
         }
     }
 
-    pub fn top(&mut self, msg_number: u32, lines: u32) -> types::Result<Vec<u8>> {
+    pub async fn top(&mut self, msg_number: u32, lines: u32) -> types::Result<Vec<u8>> {
         self.is_deleted_else_err(&msg_number)?;
 
         self.has_capability_else_err(vec![Capability::Top])?;
@@ -222,11 +225,11 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("TOP {} {}", msg_number, lines);
 
-        socket.send_command(command.as_bytes(), false)?;
+        socket.send_command(command, false).await?;
 
         let mut response: Vec<u8> = Vec::new();
 
-        socket.read_multi_line(&mut response)?;
+        socket.read_multi_line(&mut response).await?;
 
         Ok(response)
     }
@@ -276,14 +279,14 @@ impl<S: Read + Write> Client<S> {
     ///
     /// println!("{}", is_deleted);
     /// ```
-    pub fn dele(&mut self, msg_number: u32) -> types::Result<()> {
+    pub async fn dele(&mut self, msg_number: u32) -> types::Result<()> {
         self.is_deleted_else_err(&msg_number)?;
 
         let socket = self.get_socket_mut()?;
 
         let command = format!("DELE {}", msg_number);
 
-        socket.send_command(command.as_bytes(), false)?;
+        socket.send_command(command.as_bytes(), false).await?;
 
         Ok(())
     }
@@ -301,12 +304,12 @@ impl<S: Read + Write> Client<S> {
     /// client.rset().unwrap();
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-9
-    pub fn rset(&mut self) -> types::Result<()> {
+    pub async fn rset(&mut self) -> types::Result<()> {
         let socket = self.get_socket_mut()?;
 
         let command = b"RSET";
 
-        socket.send_command(command, false)?;
+        socket.send_command(command, false).await?;
 
         Ok(())
     }
@@ -334,25 +337,25 @@ impl<S: Read + Write> Client<S> {
     /// println!("{}", subject);
     /// ```
     /// https://www.rfc-editor.org/rfc/rfc1939#page-8
-    pub fn retr(&mut self, msg_number: u32) -> types::Result<Vec<u8>> {
+    pub async fn retr(&mut self, msg_number: u32) -> types::Result<Vec<u8>> {
         self.is_deleted_else_err(&msg_number)?;
 
         let socket = self.get_socket_mut()?;
 
-        let arguments = Some(vec![Some(msg_number)]);
+        let arguments = vec![msg_number.to_string()];
 
         let command = create_command("RETR", &arguments)?;
 
-        socket.send_bytes(command.as_bytes())?;
+        socket.send_bytes(command.as_bytes()).await?;
 
         let mut response: Vec<u8> = Vec::new();
 
-        socket.read_multi_line(&mut response)?;
+        socket.read_multi_line(&mut response).await?;
 
         Ok(response)
     }
 
-    pub fn list(&mut self, msg_number: Option<u32>) -> types::Result<Either<Vec<Stats>, Stats>> {
+    pub async fn list(&mut self, msg_number: Option<u32>) -> types::Result<StatsResponse> {
         if msg_number.is_some() {
             self.is_deleted_else_err(msg_number.as_ref().unwrap())?;
         }
@@ -361,29 +364,33 @@ impl<S: Read + Write> Client<S> {
 
         let response_is_multi_line = msg_number.is_none();
 
-        let arguments = Some(vec![msg_number]);
+        let arguments = if msg_number.is_some() {
+            vec![msg_number.unwrap().to_string()]
+        } else {
+            Vec::new()
+        };
 
         let command = create_command("LIST", &arguments)?;
 
-        let response = socket.send_command(command.as_bytes(), response_is_multi_line)?;
+        let response = socket.send_command(command, response_is_multi_line).await?;
 
         let parser = Parser::new(response);
 
         if response_is_multi_line {
             // println!("{}", response);
 
-            Ok(Left(parser.to_stats_list()))
+            Ok(StatsResponse::StatsList(parser.to_stats_list()))
         } else {
-            Ok(Right(parser.to_stats()))
+            Ok(StatsResponse::Stats(parser.to_stats()))
         }
     }
 
-    pub fn stat(&mut self) -> types::Result<Stats> {
+    pub async fn stat(&mut self) -> types::Result<Stats> {
         let socket = self.get_socket_mut()?;
 
         let command = b"STAT";
 
-        let response = socket.send_command(command, false)?;
+        let response = socket.send_command(command, false).await?;
 
         let parser = Parser::new(response);
 
@@ -392,7 +399,7 @@ impl<S: Read + Write> Client<S> {
         Ok(stats)
     }
 
-    pub fn apop(&mut self, name: &str, digest: &str) -> types::Result<()> {
+    pub async fn apop(&mut self, name: &str, digest: &str) -> types::Result<()> {
         self.is_correct_state(ClientState::Authentication)?;
 
         self.has_read_greeting()?;
@@ -401,13 +408,13 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("APOP {} {}", name, digest);
 
-        socket.send_command(command.as_bytes(), false)?;
+        socket.send_command(command, false).await?;
 
         self.state = ClientState::Transaction;
         Ok(())
     }
 
-    pub fn auth<U: AsRef<str>>(&mut self, token: U) -> types::Result<()> {
+    pub async fn auth<U: AsRef<str>>(&mut self, token: U) -> types::Result<()> {
         self.is_correct_state(ClientState::Authentication)?;
 
         self.has_capability_else_err(vec![Capability::Sasl(vec![String::from("XOAUTH2")])])?;
@@ -418,14 +425,18 @@ impl<S: Read + Write> Client<S> {
 
         let command = format!("AUTH {}", token.as_ref());
 
-        socket.send_command(command.as_bytes(), false)?;
+        socket.send_command(command, false).await?;
 
         self.state = ClientState::Transaction;
 
         Ok(())
     }
 
-    pub fn login(&mut self, user: &str, password: &str) -> types::Result<()> {
+    pub async fn login<U: AsRef<str>, P: AsRef<str>>(
+        &mut self,
+        user: U,
+        password: P,
+    ) -> types::Result<()> {
         self.is_correct_state(ClientState::Authentication)?;
 
         self.has_capability_else_err(vec![
@@ -437,27 +448,27 @@ impl<S: Read + Write> Client<S> {
 
         let socket = self.get_socket_mut()?;
 
-        let command = format!("USER {}", user);
+        let command = format!("USER {}", user.as_ref());
 
-        socket.send_command(command.as_bytes(), false)?;
+        socket.send_command(command, false).await?;
 
-        let command = format!("PASS {}", password);
+        let command = format!("PASS {}", password.as_ref());
 
-        socket.send_command(command.as_bytes(), false)?;
+        socket.send_command(command, false).await?;
 
-        self.capabilities = self.capa()?;
+        self.capabilities = self.capa().await?;
 
         self.state = ClientState::Transaction;
 
         Ok(())
     }
 
-    pub fn quit(&mut self) -> types::Result<()> {
+    pub async fn quit(&mut self) -> types::Result<()> {
         let socket = self.get_socket_mut()?;
 
         let command = b"QUIT";
 
-        socket.send_command(command, false)?;
+        socket.send_command(command, false).await?;
 
         self.state = ClientState::Update;
         self.socket = None;
@@ -501,12 +512,12 @@ impl<S: Read + Write> Client<S> {
     }
 
     /// Fetches a list of capabilities for the currently connected server and returns it.
-    pub fn capa(&mut self) -> types::Result<Capabilities> {
+    pub async fn capa(&mut self) -> types::Result<Capabilities> {
         let socket = self.get_socket_mut()?;
 
         let command = b"CAPA";
 
-        let response = socket.send_command(command, true)?;
+        let response = socket.send_command(command, true).await?;
 
         Ok(parse_capabilities(&response))
     }
@@ -522,23 +533,15 @@ impl<S: Read + Write> Client<S> {
         }
     }
 
-    fn read_greeting(&mut self) -> types::Result<String> {
+    async fn read_greeting(&mut self) -> types::Result<String> {
         assert!(!self.read_greeting, "Cannot read greeting twice");
 
-        let socket = match self.get_socket_mut() {
-            Ok(socket) => socket,
-            Err(err) => return Err(err),
-        };
+        let socket = self.get_socket_mut()?;
 
-        let response = socket.read_response(false);
+        let response = socket.read_response(false).await?;
 
-        match response {
-            Ok(greeting) => {
-                self.read_greeting = true;
-                Ok(greeting)
-            }
-            Err(err) => Err(err),
-        }
+        self.read_greeting = true;
+        Ok(response)
     }
 
     pub fn greeting(&self) -> Option<&str> {

@@ -1,6 +1,5 @@
 use std::{
-    io,
-    net::{SocketAddr, TcpStream, ToSocketAddrs},
+    net::{SocketAddr, ToSocketAddrs},
     time::Duration,
 };
 
@@ -116,7 +115,7 @@ pub fn parse_server_response<'a>(full_response: &'a str) -> Result<&'a str> {
     }
 }
 
-pub fn parse_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAddr> {
+pub async fn parse_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAddr> {
     Ok(addr
         .to_socket_addrs()
         .map_err(|e| {
@@ -189,17 +188,6 @@ pub fn parse_capabilities(response: &str) -> Capabilities {
             }
         })
         .collect::<Capabilities>()
-}
-
-pub fn map_native_tls_error(error: native_tls::HandshakeError<TcpStream>) -> types::Error {
-    types::Error::new(types::ErrorKind::SecureConnection, error.to_string())
-}
-
-pub fn map_write_error_to_error(write_error: io::Error) -> types::Error {
-    types::Error::new(
-        types::ErrorKind::SendCommand,
-        format!("Failed to send command: {}", write_error.to_string()),
-    )
 }
 
 #[cfg(test)]

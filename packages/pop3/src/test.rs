@@ -1,10 +1,10 @@
-use std::{env, net::TcpStream};
+use std::env;
 
+// use async_native_tls::{TlsConnector, TlsStream};
 use dotenv::dotenv;
-use either::Either::{Left, Right};
-// use native_tls::{TlsConnector, TlsStream};
+use tokio::net::TcpStream;
 
-use crate::ClientState;
+use crate::{types::StatsResponse, ClientState};
 
 use super::Client;
 
@@ -27,86 +27,88 @@ fn create_client_info() -> ClientInfo {
     }
 }
 
-fn create_logged_in_client() -> Client<TcpStream> {
+async fn create_logged_in_client() -> Client<TcpStream> {
     let client_info = create_client_info();
     let server = client_info.server.as_ref();
     let port = client_info.port;
 
-    let username = client_info.username.as_ref();
-    let password = client_info.password.as_ref();
+    let username = client_info.username;
+    let password = client_info.password;
 
-    let mut client = super::connect_plain((server, port), None).unwrap();
+    let mut client = super::connect_plain((server, port), None).await.unwrap();
 
-    client.login(username, password).unwrap();
+    client.login(username, password).await.unwrap();
 
     client
 }
 
-// fn create_logged_in_client_tls() -> Client<TlsStream<TcpStream>> {
+// async fn create_logged_in_client_tls() -> Client<TlsStream<TcpStream>> {
 //     let client_info = create_client_info();
 //     let server = client_info.server.as_ref();
 //     let port = client_info.port;
 
-//     let username = client_info.username.as_ref();
-//     let password = client_info.password.as_ref();
+//     let username = client_info.username;
+//     let password = client_info.password;
 
-//     let tls = TlsConnector::new().unwrap();
+//     let tls = TlsConnector::new();
 
-//     let mut client = super::connect((server, port), server, &tls, None).unwrap();
+//     let mut client = super::connect((server, port), server, &tls, None)
+//         .await
+//         .unwrap();
 
-//     client.login(username, password).unwrap();
+//     client.login(username, password).await.unwrap();
 
 //     client
 // }
 
-#[test]
-fn connect() {
+#[tokio::test]
+async fn connect() {
     let client_info = create_client_info();
 
     let server = client_info.server.as_ref();
     let port = client_info.port;
 
-    let mut client = super::connect_plain((server, port), None).unwrap();
+    let mut client = super::connect_plain((server, port), None).await.unwrap();
 
     let greeting = client.greeting().unwrap();
 
     assert_eq!(greeting, "POP3 GreenMail Server v1.6.12 ready");
 
-    client.quit().unwrap()
+    client.quit().await.unwrap()
 }
 
-#[test]
-fn login() {
-    let mut client = create_logged_in_client();
+#[tokio::test]
+async fn login() {
+    let mut client = create_logged_in_client().await;
 
-    assert_eq!(client.state, ClientState::Transaction);
+    assert_eq!(client.get_state(), &ClientState::Transaction);
 
-    client.quit().unwrap();
+    client.quit().await.unwrap();
 }
 
-#[test]
-fn noop() {
-    let mut client = create_logged_in_client();
+#[tokio::test]
+async fn noop() {
+    let mut client = create_logged_in_client().await;
 
-    assert_eq!(client.noop().unwrap(), ());
+    assert_eq!(client.noop().await.unwrap(), ());
 
-    client.quit().unwrap();
+    client.quit().await.unwrap();
 }
 
-#[test]
-fn stat() {
-    let mut client = create_logged_in_client();
+#[tokio::test]
+async fn stat() {
+    let mut client = create_logged_in_client().await;
 
-    let stats = client.stat().unwrap();
+    let stats = client.stat().await.unwrap();
 
     assert_eq!(stats, (0, 0));
 
-    client.quit().unwrap();
+    client.quit().await.unwrap();
 }
 
-#[test]
-fn list() {
-    let mut client = create_logged_in_client();
+#[tokio::test]
+async fn list() {
+    let mut client = create_logged_in_client().await;
 
     // let list = client.list(Some(4)).unwrap();
 
@@ -117,16 +119,16 @@ fn list() {
     //     _ => {}
     // };
 
-    let list = client.list(None).unwrap();
+    let list = client.list(None).await.unwrap();
 
     match list {
-        Left(list) => {
+        StatsResponse::StatsList(list) => {
             assert_eq!(list, Vec::new());
         }
         _ => {}
     };
 
-    client.quit().unwrap();
+    client.quit().await.unwrap();
 }
 
 // #[test]
