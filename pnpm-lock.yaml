@@ -128,7 +128,7 @@ importers:
       vite-tsconfig-paths: ^3.4.1
       vitest: ^0.20.3
       workbox-window: ^6.5.3
-      zod: ^3.20.2
+      zod: ^3.21.4
       zustand: ^4.0.0-rc.1
     dependencies:
       '@dust-mail/structures': link:../../packages/structures
@@ -149,7 +149,7 @@ importers:
       slate: 0.81.3
       slate-react: 0.81.0_njwfekudbehx2lwpmvgkrdxmhi
       use-local-storage-state: 17.2.0_biqbaboplfbrettd7655fr4n2y
-      zod: 3.20.2
+      zod: 3.21.4
       zustand: 4.0.0_react@18.2.0
     devDependencies:
       '@babel/plugin-transform-react-jsx-source': 7.18.6
@@ -10112,10 +10112,6 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-  /zod/3.20.2:
-    resolution: {integrity: sha512-1MzNQdAvO+54H+EaK5YpyEy0T+Ejo/7YLHS93G3RnYWh5gaotGHwGeN/ZO687qEDU2y4CdStQYXVHIgrUl5UVQ==}
-    dev: false
 
   /zod/3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
