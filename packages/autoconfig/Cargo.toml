@@ -11,5 +11,9 @@ edition = "2021"
 [dependencies]
 serde-xml-rs = "0.6"
 serde = {version = "1.0", features = ["derive"] }
-regex = "1.7"
-reqwest = { version = "0.11", features = ["blocking"] }
+
+dust-mail-utils = { version = "0.1.0", path = "../structures-rs" }
+
+tokio = { version = "1.26.0", features = ["net", "time", "rt", "macros"] }
+futures = "0.3.27"
+reqwest = "0.11.16" 

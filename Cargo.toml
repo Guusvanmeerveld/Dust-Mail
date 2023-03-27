@@ -5,6 +5,7 @@ members = [
     "apps/server",
     "packages/sdk",
     "packages/autoconfig",
+    "packages/structures-rs",
     "packages/pop3"
 ]
 

@@ -1,26 +1,28 @@
 pub mod config;
 
-use std::result;
+use std::{error, fmt, result};
 
 #[derive(Debug)]
 pub enum ErrorKind {
+    Http(reqwest::Error),
+    InvalidResponse,
+    Timeout,
     BadInput,
     NotFound,
-    Http,
     Parse,
 }
 
 #[derive(Debug)]
 pub struct Error {
     kind: ErrorKind,
-    msg: String,
+    message: String,
 }
 
 impl Error {
     pub fn new<S: Into<String>>(kind: ErrorKind, msg: S) -> Self {
         Self {
             kind,
-            msg: msg.into(),
+            message: msg.into(),
         }
     }
 
@@ -29,7 +31,34 @@ impl Error {
     }
 
     pub fn message(&self) -> &str {
-        &self.msg
+        &self.message
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(http_error: reqwest::Error) -> Self {
+        Self::new(
+            ErrorKind::Http(http_error),
+            "Error with outgoing http request",
+        )
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        &self.message
+    }
+
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self.kind() {
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
     }
 }
 

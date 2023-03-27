@@ -1,48 +1,57 @@
-use reqwest::blocking::Client as HttpClient;
+use std::time::Duration;
 
-use crate::types;
+use crate::types::{Error, ErrorKind, Result};
 
-/// The accepted content types for an xml response
-const XML_CONTENT_TYPE: (&[u8; 15], &[u8; 8]) = (b"application/xml", b"text/xml");
+use futures::future::join_all;
+use reqwest::{redirect, Client as HttpClient};
 
 pub struct Client {
-    http_client: HttpClient,
+    client: HttpClient,
 }
 
 impl Client {
-    pub fn new() -> Self {
-        let http_client = HttpClient::new();
-        Self { http_client }
+    const TIMEOUT: Duration = Duration::from_secs(10);
+    const MAX_REDIRECTS: usize = 10;
+    /// The accepted content types for an xml response
+    const XML_CONTENT_TYPE: (&str, &str) = ("application/xml", "text/xml");
+
+    pub fn new() -> Result<Self> {
+        let redirect_policy = redirect::Policy::limited(Self::MAX_REDIRECTS);
+
+        let client = HttpClient::builder()
+            .timeout(Self::TIMEOUT)
+            .redirect(redirect_policy)
+            .build()?;
+
+        Ok(Self { client })
     }
 
     /// Fetches a given url and returns the XML response (if there is one)
-    fn get<S: Into<String>>(&self, uri: S) -> types::Result<String> {
-        let response = self.http_client.get(uri.into()).send().map_err(|e| {
-            types::Error::new(
-                types::ErrorKind::Http,
-                format!("Failed to send request: {}", e),
-            )
-        })?;
+    async fn get_xml<S: Into<String>>(&self, uri: S) -> Result<String> {
+        let response = self.client.get(uri.into()).send().await?;
 
         // Get the Content-Type header, error if it doesn't exist
         let content_type = match response.headers().get("content-type") {
-            Some(header) => header,
+            Some(header) => header.to_str().map_err(|_| {
+                Error::new(
+                    ErrorKind::InvalidResponse,
+                    "Content-Type header does not contain valid characters",
+                )
+            })?,
             None => {
-                return Err(types::Error::new(
-                    types::ErrorKind::Http,
+                return Err(Error::new(
+                    ErrorKind::InvalidResponse,
                     "Server did not include a content-type header in response",
                 ))
             }
         };
 
-        let content_type_bytes = content_type.as_bytes();
-
         // Ensure the content type is XML
-        if !(content_type_bytes.starts_with(XML_CONTENT_TYPE.0)
-            || content_type_bytes.starts_with(XML_CONTENT_TYPE.1))
+        if !(content_type.starts_with(Self::XML_CONTENT_TYPE.0)
+            || content_type.starts_with(Self::XML_CONTENT_TYPE.1))
         {
-            return Err(types::Error::new(
-                types::ErrorKind::Http,
+            return Err(Error::new(
+                ErrorKind::InvalidResponse,
                 "Server did not respond with xml content",
             ));
         }
@@ -50,20 +59,16 @@ impl Client {
         let is_success = response.status().is_success();
 
         // Get the http message body
-        let bytes = response.bytes().map_err(|e| {
-            types::Error::new(
-                types::ErrorKind::Http,
-                format!("Failed to get http message body: {}", e),
-            )
-        })?;
+        let bytes = response.bytes().await?;
 
         // Convert the body to a string
-        let body = String::from_utf8_lossy(&bytes).to_string();
+        let body = String::from_utf8(bytes.to_vec())
+            .map_err(|_| Error::new(ErrorKind::InvalidResponse, "Response is not valid utf-8"))?;
 
         // If we got an error response we return an error
         if !is_success {
-            return Err(types::Error::new(
-                types::ErrorKind::Http,
+            return Err(Error::new(
+                ErrorKind::InvalidResponse,
                 format!("Http request failed: {}", body),
             ));
         } else {
@@ -71,10 +76,13 @@ impl Client {
         };
     }
 
-    pub fn request_urls(&self, urls: Vec<String>) -> Option<String> {
-        // Fetch every given url
-        for url in urls {
-            match self.get(url) {
+    pub async fn request_urls(&self, urls: Vec<String>) -> Option<String> {
+        let request_futures = urls.into_iter().map(|url| self.get_xml(url));
+
+        let results = join_all(request_futures).await;
+
+        for result in results {
+            match result {
                 Ok(response) => return Some(response),
                 Err(_) => {}
             }

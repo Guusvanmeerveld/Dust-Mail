@@ -1,18 +1,18 @@
+use dust_mail_utils::validate_email;
+
 use http::Client;
-use types::config::Config;
+use types::{config::Config, Result};
 
 mod http;
 mod parse;
 pub mod types;
 mod utils;
 
-pub use utils::validate_email;
-
 const AT_SYMBOL: char = '@';
 
 /// Given an email providers domain, try to connect to autoconfig servers for that provider and return the config.
-pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
-    let client = Client::new();
+pub async fn from_domain(domain: &str) -> Result<Option<Config>> {
+    let client = Client::new()?;
 
     let urls = vec![
         // Try connect to connect with the users mail server directly
@@ -26,7 +26,7 @@ pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
         format!("https://autoconfig.thunderbird.net/v1.1/{}", domain),
     ];
 
-    let config_unparsed: Option<String> = client.request_urls(urls);
+    let config_unparsed: Option<String> = client.request_urls(urls).await;
 
     match config_unparsed {
         Some(config_unparsed) => {
@@ -39,8 +39,8 @@ pub fn from_domain(domain: &str) -> types::Result<Option<Config>> {
 }
 
 /// Given an email address, try to connect to the email providers autoconfig servers and return the config that was found.
-pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
-    if !utils::validate_email(email_address) {
+pub async fn from_addr(email_address: &str) -> Result<Option<Config>> {
+    if !validate_email(email_address) {
         return Err(types::Error::new(
             types::ErrorKind::BadInput,
             "Given email address is invalid",
@@ -62,7 +62,7 @@ pub fn from_addr(email_address: &str) -> types::Result<Option<Config>> {
         }
     };
 
-    from_domain(domain)
+    from_domain(domain).await
 }
 
 #[cfg(test)]
