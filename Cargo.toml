@@ -6,7 +6,7 @@ members = [
     "packages/sdk",
     "packages/autoconfig",
     "packages/structures-rs",
-    "packages/pop3"
+    "packages/async-pop3"
 ]
 
 [profile.release]
