@@ -26,7 +26,7 @@ steps:
       PASSWORD: "localhost"
     commands:
       - cargo fetch --locked
-      - cargo test --package pop3
+      - cargo test --package async-pop3
 
 volumes:
   - name: cache
