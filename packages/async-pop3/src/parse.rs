@@ -1,12 +1,9 @@
-use std::{
-    net::{SocketAddr, ToSocketAddrs},
-    time::Duration,
-};
-
 use crate::{
     constants::{ERR, LF, OK, SPACE},
-    types::{self, Capabilities, Capability, Error, ErrorKind, Result, Stats, UniqueID},
+    types::{Capabilities, Capability, Error, ErrorKind, Result, Stats, UniqueID},
 };
+
+use tokio::time::Duration;
 
 /// A simple struct to parse responses from the server
 pub struct Parser {
@@ -85,8 +82,8 @@ pub fn parse_server_response<'a>(full_response: &'a str) -> Result<&'a str> {
     let ok_size = OK.len().saturating_add(1);
 
     if full_response.len() < ok_size {
-        return Err(types::Error::new(
-            types::ErrorKind::InvalidResponse,
+        return Err(Error::new(
+            ErrorKind::InvalidResponse,
             "Response is too short",
         ));
     };
@@ -103,29 +100,16 @@ pub fn parse_server_response<'a>(full_response: &'a str) -> Result<&'a str> {
     } else if full_response.starts_with(ERR) {
         let left_over = full_response.get((ERR.len() + 1)..).unwrap();
 
-        Err(types::Error::new(
-            types::ErrorKind::ServerError,
+        Err(Error::new(
+            ErrorKind::ServerError,
             format!("Server error: {}", left_over.trim()),
         ))
     } else {
-        Err(types::Error::new(
-            types::ErrorKind::InvalidResponse,
+        Err(Error::new(
+            ErrorKind::InvalidResponse,
             format!("Response is invalid: '{}'", full_response),
         ))
     }
-}
-
-pub async fn parse_socket_address<A: ToSocketAddrs>(addr: A) -> types::Result<SocketAddr> {
-    Ok(addr
-        .to_socket_addrs()
-        .map_err(|e| {
-            types::Error::new(
-                types::ErrorKind::ParseServerAddress,
-                format!("Failed to parse given address: {}", e),
-            )
-        })?
-        .next()
-        .unwrap())
 }
 
 pub fn parse_capabilities(response: &str) -> Capabilities {

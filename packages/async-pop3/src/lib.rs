@@ -4,15 +4,13 @@ mod socket;
 pub mod types;
 mod utils;
 
-use std::{net::ToSocketAddrs, time::Duration};
-
 use async_native_tls::{TlsConnector, TlsStream};
-use parse::{parse_capabilities, parse_socket_address, Parser};
+use parse::{parse_capabilities, Parser};
 use socket::Socket;
 use tokio::{
     io::{AsyncRead, AsyncWrite},
-    net::TcpStream,
-    time::timeout,
+    net::{TcpStream, ToSocketAddrs},
+    time::{timeout, Duration},
 };
 use types::{Capabilities, Capability, Stats, StatsResponse, UniqueIDResponse};
 use utils::create_command;
@@ -90,9 +88,7 @@ pub async fn connect<A: ToSocketAddrs>(
 ) -> types::Result<Client<TlsStream<TcpStream>>> {
     let connection_timeout = get_connection_timeout(connection_timeout);
 
-    let addr = parse_socket_address(addr).await?;
-
-    let tcp_stream = timeout(connection_timeout, TcpStream::connect(&addr)).await??;
+    let tcp_stream = timeout(connection_timeout, TcpStream::connect(addr)).await??;
 
     let tls_stream = tls_connector.connect(domain, tcp_stream).await?;
 
@@ -110,9 +106,7 @@ pub async fn connect_plain<A: ToSocketAddrs>(
 ) -> types::Result<Client<TcpStream>> {
     let connection_timeout = get_connection_timeout(connection_timeout);
 
-    let addr = parse_socket_address(addr).await?;
-
-    let tcp_stream = timeout(connection_timeout, TcpStream::connect(&addr)).await??;
+    let tcp_stream = timeout(connection_timeout, TcpStream::connect(addr)).await??;
 
     let socket = Socket::new(tcp_stream);
 
@@ -179,7 +173,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Client<S> {
     pub async fn noop(&mut self) -> types::Result<()> {
         let socket = self.get_socket_mut()?;
 
-        let command = b"NOOP";
+        let command = "NOOP";
 
         socket.send_command(command, false).await?;
 
