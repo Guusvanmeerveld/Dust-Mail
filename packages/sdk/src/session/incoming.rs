@@ -1,4 +1,6 @@
-use std::io::{Read, Write};
+use std::fmt::Debug;
+
+use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::{
     client::incoming::{IncomingClient, IncomingClientBuilder, IncomingSession},
@@ -7,25 +9,29 @@ use crate::{
 
 use super::login::{LoginOptions, LoginType};
 
-fn create_session_from_client<S: Write + Read + Send + 'static>(
+async fn create_session_from_client<
+    S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync + 'static,
+>(
     client: IncomingClient<S>,
     login_type: &LoginType,
-) -> Result<Box<dyn IncomingSession + Send>> {
+) -> Result<Box<dyn IncomingSession>> {
     match login_type {
         LoginType::PasswordBased(password_creds) => {
-            client.login(password_creds.username(), password_creds.password())
+            client
+                .login(password_creds.username(), password_creds.password())
+                .await
         }
-        LoginType::OAuthBased(oauth_creds) => client.oauth2_login(oauth_creds),
+        LoginType::OAuthBased(oauth_creds) => client.oauth2_login(oauth_creds.clone()).await,
     }
 }
 
 /// Given some login options and a client type, create an incoming session.
 ///
 /// This will automatically connect and login to the mail server specified in the login options using the credentials specified in the login options.
-pub fn create_incoming_session(
+pub async fn create_incoming_session(
     options: &LoginOptions,
     client_type: &IncomingClientType,
-) -> Result<Box<dyn IncomingSession + Send>> {
+) -> Result<Box<dyn IncomingSession>> {
     let mut builder = IncomingClientBuilder::new(client_type);
 
     builder
@@ -34,14 +40,14 @@ pub fn create_incoming_session(
 
     match options.security() {
         ConnectionSecurity::Tls => {
-            let client = builder.build()?;
+            let client = builder.build().await?;
 
-            create_session_from_client(client, options.login_type())
+            create_session_from_client(client, options.login_type()).await
         }
         ConnectionSecurity::Plain => {
-            let client = builder.build_plain()?;
+            let client = builder.build_plain().await?;
 
-            create_session_from_client(client, options.login_type())
+            create_session_from_client(client, options.login_type()).await
         }
         _ => {
             todo!()

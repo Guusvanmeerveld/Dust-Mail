@@ -12,7 +12,7 @@ pub use client::*;
 pub use connection::ConnectionSecurity;
 pub use error::{Error, ErrorKind};
 pub use flags::Flag;
-pub use mailbox::{Counts, MailBox};
+pub use mailbox::{Counts, MailBox, MailBoxList};
 pub use message::{Address, Content, Message, Preview};
 pub use oauth2::OAuthCredentials;
 

@@ -1,7 +1,6 @@
+mod cache;
 mod client;
 mod parse;
-mod tls;
-mod utils;
 
 #[cfg(feature = "detect")]
 pub mod detect;

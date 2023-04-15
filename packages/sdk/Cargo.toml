@@ -7,12 +7,10 @@ edition = "2021"
 
 [dependencies]
 # Imap
-imap = {version = "2.4.1", optional = true }
-imap-proto = { version = "0.16", optional = true }
-bufstream = {version = "0.1", optional = true}
+async-imap = {version = "0.6.0", default-features = false, features = ["runtime-tokio"], optional = true }
 
 # Pop
-pop3 = {version = "0.1", optional = true, path = "../pop3" }
+async-pop3 = {version = "0.1", optional = true, path = "../async-pop3" }
 
 # Smtp
 lettre = { version = "0.10", optional = true }
@@ -31,10 +29,15 @@ serde_json = "1.0"
 chrono = "0.4"
 
 # Tls
-native-tls = "0.2"
+async-native-tls = {version = "0.4.0", default-features = false, features = ["runtime-tokio"] }
+
+async-tcp = { version = "0.1.0", path = "../async-tcp" }
+
+dust-mail-utils = { version = "0.1.0", path = "../structures-rs" }
 
 # Async
 tokio = { version = "1", features = ["full"] }
+async-trait = "0.1.66"
 futures = "0.3"
 
 # Sanitizing text
@@ -51,5 +54,5 @@ autoconfig = ["dep:autoconfig"]
 
 smtp = ["dep:lettre"]
 
-pop = ["dep:pop3"]
-imap = ["dep:imap", "dep:imap-proto", "dep:bufstream"]
+pop = ["dep:async-pop3"]
+imap = ["dep:async-imap"] 

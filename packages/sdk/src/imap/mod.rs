@@ -1,126 +1,153 @@
 mod parse;
-mod types;
-mod utils;
 // use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::net::TcpStream;
-use std::time::{Duration, Instant};
+use std::fmt::Debug;
 
-use imap::types::{Fetch as ImapFetch, Mailbox as ImapMailbox};
-use native_tls::TlsStream;
+use async_imap::types::Fetch as ImapFetch;
+use async_native_tls::{TlsConnector, TlsStream};
+use async_trait::async_trait;
+use futures::StreamExt;
+use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::net::TcpStream;
+use tokio::time::Duration;
 
+use crate::cache::{Cache, Refresher};
 use crate::client::incoming::IncomingSession;
-use crate::parse::map_imap_error;
-use crate::tls::create_tls_connector;
 use crate::types::{
-    // Counts,
-    Error,
-    ErrorKind,
-    MailBox,
-    Message,
-    OAuthCredentials,
-    Preview,
-    Result,
+    Error, ErrorKind, MailBox, MailBoxList, Message, OAuthCredentials, Preview, Result,
 };
-
-use self::utils::find_box_in_list;
 
 const QUERY_PREVIEW: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE UID)";
 const QUERY_FULL_MESSAGE: &str = "(FLAGS INTERNALDATE RFC822.SIZE ENVELOPE RFC822 UID)";
 
-const REFRESH_BOX_LIST_TIMEOUT: u64 = 1 * 60;
+// const STATUS_ITEMS: &str = "(MESSAGES UNSEEN)";
 
-pub struct ImapClient<S: Read + Write> {
-    client: imap::Client<S>,
+struct BoxListRefresher<'a, S: AsyncRead + AsyncWrite + Unpin + Debug + Send> {
+    session: &'a mut async_imap::Session<S>,
 }
 
-pub struct ImapSession<S: Read + Write> {
-    session: imap::Session<S>,
-    box_list: Vec<MailBox>,
-    box_list_last_refresh: Option<Instant>,
-    // Whether the message count for each mailbox has been retrieved in this session.
-    // retrieved_message_counts: bool,
+#[async_trait]
+impl<S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync> Refresher<MailBoxList>
+    for BoxListRefresher<'_, S>
+{
+    async fn refresh(&mut self) -> Result<MailBoxList> {
+        let mut mailbox_stream = self.session.list(None, Some("*")).await?;
+
+        // A planar graph of all of the mailboxes in the users account
+        let mut mailboxes_planar: Vec<MailBox> = Vec::new();
+
+        while let Some(mailbox) = mailbox_stream.next().await {
+            if let Ok(mailbox) = mailbox {
+                mailboxes_planar.push(MailBox::from(mailbox));
+            }
+        }
+
+        let boxes = MailBoxList::new(mailboxes_planar);
+
+        Ok(boxes)
+    }
+}
+
+pub struct ImapClient<S: AsyncRead + AsyncWrite + Unpin + Debug + Send> {
+    client: async_imap::Client<S>,
+}
+
+pub struct ImapSession<S: AsyncWrite + AsyncRead + Unpin + Debug + Send + Sync> {
+    session: async_imap::Session<S>,
+    box_list: Cache<MailBoxList>,
     /// The currently selected box' id.
-    selected_box: Option<(String, ImapMailbox)>,
+    selected_box: Option<String>,
 }
 
-pub fn connect<S: AsRef<str>, P: Into<u16>>(
+pub async fn connect<S: AsRef<str>, P: Into<u16>>(
     server: S,
     port: P,
 ) -> Result<ImapClient<TlsStream<TcpStream>>> {
-    let tls = create_tls_connector()?;
+    let tls = TlsConnector::new();
 
-    let client = imap::connect((server.as_ref(), port.into()), server.as_ref(), &tls)
-        .map_err(map_imap_error)?;
+    let client = async_imap::connect((server.as_ref(), port.into()), server.as_ref(), tls).await?;
 
     let imap_client = ImapClient { client };
 
     Ok(imap_client)
 }
 
-pub fn connect_plain<S: AsRef<str>, P: Into<u16>>(
+pub async fn connect_plain<S: AsRef<str>, P: Into<u16>>(
     server: S,
     port: P,
 ) -> Result<ImapClient<TcpStream>> {
-    let stream = TcpStream::connect((server.as_ref(), port.into()))
-        .map_err(|e| Error::new(ErrorKind::Connect, e.to_string()))?;
+    let stream = TcpStream::connect((server.as_ref(), port.into())).await?;
 
-    let client = imap::Client::new(stream);
+    let client = async_imap::Client::new(stream);
 
     Ok(ImapClient { client })
 }
 
-impl<S: Read + Write> ImapClient<S> {
-    pub fn login<T: AsRef<str>>(self, username: T, password: T) -> Result<ImapSession<S>> {
+impl<S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync> ImapClient<S> {
+    fn new_imap_session(session: async_imap::Session<S>) -> ImapSession<S> {
+        let box_list_cache = Cache::new(Duration::from_secs(30));
+
+        ImapSession {
+            session,
+            box_list: box_list_cache,
+            selected_box: None,
+        }
+    }
+
+    pub async fn login<T: AsRef<str>>(self, username: T, password: T) -> Result<ImapSession<S>> {
         let session = self
             .client
             .login(username, password)
-            .map_err(|(err, _)| map_imap_error(err))?;
+            .await
+            .map_err(|(error, _)| {
+                Error::new(
+                    ErrorKind::Imap(error),
+                    "Failed to login to remote IMAP server using password",
+                )
+            })?;
 
-        let imap_session = ImapSession {
-            session,
-            box_list: Vec::new(),
-            box_list_last_refresh: None,
-            selected_box: None,
-        };
+        let imap_session = Self::new_imap_session(session);
 
         Ok(imap_session)
     }
 
-    pub fn oauth2_login(self, login: &OAuthCredentials) -> Result<ImapSession<S>> {
+    pub async fn oauth2_login(self, login: OAuthCredentials) -> Result<ImapSession<S>> {
         let session = self
             .client
             .authenticate("XOAUTH2", login)
-            .map_err(|(err, _)| map_imap_error(err))?;
+            .await
+            .map_err(|(error, _)| {
+                Error::new(
+                    ErrorKind::Imap(error),
+                    "Failed to login to remote IMAP server using oauth",
+                )
+            })?;
 
-        let imap_session = ImapSession {
-            session,
-            box_list: Vec::new(),
-            box_list_last_refresh: None,
-            selected_box: None,
-        };
+        let imap_session = Self::new_imap_session(session);
 
         Ok(imap_session)
     }
 }
 
-impl<S: Read + Write> ImapSession<S> {
-    fn get_session_mut(&mut self) -> &mut imap::Session<S> {
+impl<S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync> ImapSession<S> {
+    fn get_session_mut(&mut self) -> &mut async_imap::Session<S> {
         &mut self.session
+    }
+
+    async fn get_mail_box_list(&mut self) -> Result<&MailBoxList> {
+        let mut refresher = BoxListRefresher {
+            session: &mut self.session,
+        };
+
+        let mail_box_list = self.box_list.get(&mut refresher).await?;
+
+        Ok(mail_box_list)
     }
 
     /// Given an array of fetches that is expected to have length 1, return that one fetch and error if it has more or less than 1 items.
     fn get_item_from_fetch_else_err<'a>(fetched: &'a Vec<ImapFetch>) -> Result<&'a ImapFetch> {
-        // if fetched.len() > 1 {
-        //     return Err(Error::new(
-        //         ErrorKind::UnexpectedBehavior,
-        //         "Got multiple messages when fetching a single message",
-        //     ));
-        // }
-
         if fetched.len() == 0 {
             return Err(Error::new(
-                ErrorKind::ImapError,
+                ErrorKind::UnexpectedBehavior,
                 "Could not find a message with that id",
             ));
         }
@@ -134,178 +161,99 @@ impl<S: Read + Write> ImapSession<S> {
     }
 
     /// This function will check if a box with a given box id is actually selectable, throwing an error if it is not.
-    fn box_is_selectable_else_err(&mut self, box_id: &str) -> Result<()> {
-        if self.box_list.len() > 0 {
-            let current_box_list = self.box_list()?;
+    async fn box_is_selectable_else_err(&mut self, box_id: &str) -> Result<()> {
+        let box_list = self.get_mail_box_list().await?;
 
-            let requested_box = find_box_in_list(current_box_list, box_id);
+        let requested_box = box_list.get_box(box_id);
 
-            match requested_box {
-                Some(mailbox) => {
-                    if !mailbox.selectable() {
-                        return Err(Error::new(
-                            ErrorKind::ImapError,
-                            format!("The mailbox with id '{}' is not selectable", box_id),
-                        ));
-                    }
+        match requested_box {
+            Some(mailbox) => {
+                if !mailbox.selectable() {
+                    return Err(Error::new(
+                        ErrorKind::MailServer,
+                        format!("The mailbox with id '{}' is not selectable", box_id),
+                    ));
                 }
-                None => {}
             }
-        };
+            None => {}
+        }
 
         Ok(())
     }
 
     /// Select a given box if it hasn't already been selected, otherwise return the already selected box.
-    fn select(&mut self, box_id: &str) -> Result<ImapMailbox> {
-        match self.selected_box.as_ref() {
-            Some((selected_box_id, selected_box)) => {
-                if selected_box_id == box_id {
-                    return Ok(selected_box.clone());
-                } else {
-                    let session = self.get_session_mut();
+    async fn select(&mut self, box_id: &str) -> Result<&MailBox> {
+        let box_id = box_id.trim();
 
-                    session.close().map_err(map_imap_error)?;
-                }
+        let box_is_selected_already = self.selected_box.is_some();
+
+        // If there is no box selected yet or the box we have selected is not the box when want to select, we have to request the server.
+        if !box_is_selected_already || self.selected_box.as_ref().unwrap() != box_id {
+            let session = self.get_session_mut();
+
+            // If there is already a box selected we must close it first
+            if box_is_selected_already {
+                session.close().await?;
             }
-            None => {}
+
+            session.select(&box_id).await?;
+
+            self.selected_box = Some(String::from(box_id))
         };
 
-        let session = self.get_session_mut();
+        let box_list = self.get_mail_box_list().await?;
 
-        let mailbox = session.select(box_id).map_err(map_imap_error)?;
-
-        self.selected_box = Some((box_id.to_string(), mailbox.clone()));
-
-        Ok(mailbox)
+        if let Some(found_box) = box_list.get_box(&box_id) {
+            Ok(found_box)
+        } else {
+            Err(Error::new(
+                ErrorKind::MailBoxNotFound,
+                "Could not find a mailbox with that id",
+            ))
+        }
     }
 }
 
-impl<S: Read + Write> IncomingSession for ImapSession<S> {
-    fn logout(&mut self) -> Result<()> {
+#[async_trait]
+impl<S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync> IncomingSession for ImapSession<S> {
+    async fn logout(&mut self) -> Result<()> {
         let session = self.get_session_mut();
 
-        session.logout().map_err(map_imap_error)?;
+        session.logout().await?;
 
         Ok(())
     }
 
-    fn box_list(&mut self) -> Result<&Vec<MailBox>> {
-        if let Some(last_refresh) = self.box_list_last_refresh {
-            let timeout_duration = Duration::from_secs(REFRESH_BOX_LIST_TIMEOUT);
+    async fn box_list(&mut self) -> Result<&Vec<MailBox>> {
+        let mailbox_list = self.get_mail_box_list().await?;
 
-            if last_refresh
-                .elapsed()
-                .checked_sub(timeout_duration)
-                .is_none()
-            {
-                return Ok(&self.box_list);
-            }
+        Ok(mailbox_list.get_vec())
+    }
+
+    async fn get(&mut self, box_id: &str) -> Result<&MailBox> {
+        let box_id = box_id.trim().to_ascii_lowercase();
+
+        let box_list = self.get_mail_box_list().await?;
+
+        match box_list.get_box(&box_id) {
+            Some(found_mailbox) => Ok(found_mailbox),
+            None => Err(Error::new(
+                ErrorKind::MailBoxNotFound,
+                format!("Could not find a mailbox with id '{}'", &box_id),
+            )),
         }
-
-        // let has_retrieved_box_counts = self.retrieved_message_counts;
-
-        let session = self.get_session_mut();
-
-        let mailboxes = session.list(None, Some("*")).map_err(map_imap_error)?;
-
-        // let mut count_map = HashMap::new();
-
-        // if !has_retrieved_box_counts {
-        //     for mailbox in &mailboxes {
-        //         let counts = session
-        //             .status(mailbox.name(), "(MESSAGES UNSEEN)")
-        //             .map_err(map_imap_error)?;
-
-        //         println!("{:?}", counts);
-        //         count_map.insert(
-        //             mailbox.name(),
-        //             Counts::new(counts.unseen.unwrap_or(0), counts.exists),
-        //         );
-        //     }
-
-        //     self.retrieved_message_counts = true;
-        // } else {
-        //     for mailbox in &self.box_list {
-        //         if let Some(counts) = mailbox.counts() {
-        //             count_map.insert(mailbox.id().clone(), counts.clone());
-        //         }
-        //     }
-        // }
-
-        let mailboxes: Vec<_> = mailboxes.iter().map(|mailbox| (mailbox, None)).collect();
-
-        let boxes = parse::get_boxes_from_names(&mailboxes);
-
-        self.box_list_last_refresh = Some(Instant::now());
-
-        self.box_list = boxes;
-
-        Ok(&self.box_list)
     }
 
-    fn get(&mut self, box_id: &str) -> Result<&MailBox> {
-        let box_list_length = &self.box_list.len();
-
+    async fn delete(&mut self, box_id: &str) -> Result<()> {
         let session = self.get_session_mut();
 
-        // let imap_counts = session.select(box_id).map_err(map_imap_error)?;
+        session.delete(box_id).await?;
 
-        // If we already have all of the mailboxes, return those instead.
-        let mailbox = if box_list_length > &0 {
-            let cached_box_list = self.box_list()?;
-
-            if let Some(found_mailbox) = utils::find_box_in_list(cached_box_list, box_id) {
-                found_mailbox
-            } else {
-                return Err(Error::new(
-                    ErrorKind::MailBoxNotFound,
-                    format!("Could not find a mailbox with id '{}'", box_id),
-                ));
-            }
-        // Otherwise retrieve them from the server
-        } else {
-            let names = session
-                .list(Some(box_id), Some("*"))
-                .map_err(map_imap_error)?;
-
-            let mailboxes_with_counts: Vec<_> = names
-                .iter()
-                .map(|name| {
-                    // if name.name() == box_id {
-                    //     (name, Some(imap_counts.clone()))
-                    // } else {
-                    (name, None)
-                    // }
-                })
-                .collect();
-
-            let mailboxes = parse::get_boxes_from_names(&mailboxes_with_counts);
-
-            self.box_list = mailboxes;
-
-            match utils::find_box_in_list(&self.box_list, box_id) {
-                Some(mailbox) => mailbox,
-                None => {
-                    return Err(Error::new(
-                        ErrorKind::ImapError,
-                        format!("Box with id '{}' not found", box_id),
-                    ))
-                }
-            }
-        };
-
-        Ok(mailbox)
+        Ok(())
     }
 
-    fn delete(&mut self, box_id: &str) -> Result<()> {
-        let session = self.get_session_mut();
-
-        session.delete(box_id).map_err(map_imap_error)
-    }
-
-    fn rename(&mut self, box_id: &str, new_name: &str) -> Result<()> {
-        let mailbox = self.get(box_id)?;
+    async fn rename(&mut self, box_id: &str, new_name: &str) -> Result<()> {
+        let mailbox = self.get(box_id).await?;
 
         let new_name = match mailbox.delimiter() {
             Some(delimiter) => {
@@ -331,81 +279,111 @@ impl<S: Read + Write> IncomingSession for ImapSession<S> {
 
         let session = self.get_session_mut();
 
-        session.close().map_err(map_imap_error)?;
+        session.close().await?;
 
-        session.rename(box_id, new_name).map_err(map_imap_error)
+        session.rename(box_id, &new_name).await?;
+
+        Ok(())
     }
 
-    fn create(&mut self, box_id: &str) -> Result<()> {
+    async fn create(&mut self, box_id: &str) -> Result<()> {
         let session = self.get_session_mut();
 
-        session.create(box_id).map_err(map_imap_error)
+        session.create(box_id).await?;
+
+        Ok(())
     }
 
-    fn messages(&mut self, box_id: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
-        self.box_is_selectable_else_err(box_id)?;
+    async fn messages(&mut self, box_id: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
+        self.box_is_selectable_else_err(box_id).await?;
 
-        let total_messages = self
-            .select(&box_id)
-            .map(|selected_box| selected_box.exists)?;
+        let selected_box = self.select(&box_id).await?;
 
-        if total_messages < 1 {
-            return Ok(Vec::new());
-        }
+        if let Some(counts) = selected_box.counts() {
+            let total_messages = *counts.total();
 
-        let sequence_start = if total_messages < end {
-            1
+            if total_messages < 1 {
+                return Ok(Vec::new());
+            }
+
+            let sequence_start = if total_messages < end {
+                1
+            } else {
+                total_messages.saturating_sub(end).saturating_add(1)
+            };
+
+            let sequence_end = if total_messages < start {
+                1
+            } else {
+                total_messages.saturating_sub(start)
+            };
+
+            let sequence = format!("{}:{}", sequence_start, sequence_end);
+
+            let session = self.get_session_mut();
+
+            let mut preview_stream = session.fetch(sequence, QUERY_PREVIEW).await?;
+
+            let mut previews: Vec<Preview> = Vec::new();
+
+            while let Some(fetch) = preview_stream.next().await {
+                let fetch = fetch?;
+
+                let preview = parse::fetch_to_preview(&fetch)?;
+
+                previews.push(preview);
+            }
+
+            Ok(previews)
         } else {
-            total_messages.saturating_sub(end).saturating_add(1)
-        };
-
-        let sequence_end = if total_messages < start {
-            1
-        } else {
-            total_messages.saturating_sub(start)
-        };
-
-        let sequence = format!("{}:{}", sequence_start, sequence_end);
-
-        let session = self.get_session_mut();
-
-        let data = session
-            .fetch(sequence, QUERY_PREVIEW)
-            .map_err(map_imap_error)?;
-
-        let mut previews: Vec<Preview> =
-            Vec::with_capacity((sequence_end.saturating_sub(sequence_start)) as usize);
-
-        for fetch in data.iter() {
-            let preview = parse::fetch_to_preview(fetch)?;
-            previews.insert(0, preview);
+            Ok(Vec::new())
         }
-
-        Ok(previews)
     }
 
-    fn get_message(&mut self, box_id: &str, msg_id: &str) -> Result<Message> {
-        self.box_is_selectable_else_err(box_id)?;
+    async fn get_message(&mut self, box_id: &str, msg_id: &str) -> Result<Message> {
+        self.box_is_selectable_else_err(box_id).await?;
 
-        self.select(box_id)?;
+        self.select(box_id).await?;
 
         let session = self.get_session_mut();
 
-        let fetched = session
-            .uid_fetch(msg_id, QUERY_FULL_MESSAGE)
-            .map_err(map_imap_error)?;
+        let mut fetch_stream = session.uid_fetch(msg_id, QUERY_FULL_MESSAGE).await?;
+
+        let mut fetched = Vec::new();
+
+        while let Some(fetch) = fetch_stream.next().await {
+            let fetch = fetch?;
+
+            let uid = match &fetch.uid {
+                Some(uid) => uid,
+                // Only returns None when the UID parameter is not specified.
+                None => unreachable!(),
+            };
+
+            let msg_id: u32 = msg_id.parse().map_err(|_| {
+                Error::new(
+                    ErrorKind::ParseString,
+                    "Failed to parse imap message uid to u32",
+                )
+            })?;
+
+            // Only add the fetches that match our uid
+            if uid == &msg_id {
+                fetched.push(fetch);
+            }
+        }
 
         let fetch = Self::get_item_from_fetch_else_err(&fetched)?;
 
-        parse::fetch_to_message(fetch)
+        parse::fetch_to_message(fetch).await
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::net::TcpStream;
+    use async_native_tls::TlsStream;
 
-    use native_tls::TlsStream;
+    use tokio::net::TcpStream;
 
     use super::ImapSession;
 
@@ -415,7 +393,7 @@ mod tests {
 
     use std::env;
 
-    fn create_test_session() -> ImapSession<TlsStream<TcpStream>> {
+    async fn create_test_session() -> ImapSession<TlsStream<TcpStream>> {
         dotenv().ok();
 
         let username = env::var("IMAP_USERNAME").unwrap();
@@ -424,84 +402,84 @@ mod tests {
         let server = env::var("IMAP_SERVER").unwrap();
         let port: u16 = 993;
 
-        let client = super::connect(server, port).unwrap();
+        let client = super::connect(server, port).await.unwrap();
 
-        let session = client.login(&username, &password).unwrap();
+        let session = client.login(&username, &password).await.unwrap();
 
         session
     }
 
-    #[test]
-    fn login() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn login() {
+        let mut session = create_test_session().await;
 
-        session.logout().unwrap();
+        session.logout().await.unwrap();
     }
 
-    #[test]
-    fn get_mailbox() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn get_mailbox() {
+        let mut session = create_test_session().await;
 
         let box_name = "Web";
 
-        let mailbox = session.get(box_name).unwrap();
+        let mailbox = session.get(box_name).await.unwrap();
 
         println!("{:?}", mailbox);
 
-        session.logout().unwrap();
+        session.logout().await.unwrap();
     }
 
-    #[test]
-    fn get_messages() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn get_messages() {
+        let mut session = create_test_session().await;
 
         let box_name = "INBOX";
 
-        let messages = session.messages(box_name, 0, 10).unwrap();
+        let messages = session.messages(box_name, 0, 10).await.unwrap();
 
         for preview in messages.into_iter() {
             println!("{}", preview.sent().unwrap());
         }
 
-        session.logout().unwrap();
+        session.logout().await.unwrap();
     }
 
-    #[test]
-    fn get_box_list() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn get_box_list() {
+        let mut session = create_test_session().await;
 
-        let box_list = session.box_list().unwrap();
+        let box_list = session.box_list().await.unwrap();
 
         for mailbox in box_list {
             println!("{}", mailbox.id());
         }
 
-        session.logout().unwrap();
+        session.logout().await.unwrap();
     }
 
-    #[test]
-    fn get_message() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn get_message() {
+        let mut session = create_test_session().await;
 
         let msg_id = "1113";
         let box_id = "INBOX";
 
-        let message = session.get_message(box_id, msg_id).unwrap();
+        let message = session.get_message(box_id, msg_id).await.unwrap();
 
         println!("{}", message.content().text().unwrap());
 
-        session.logout().unwrap();
+        session.logout().await.unwrap();
     }
 
-    #[test]
-    fn rename_box() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn rename_box() {
+        let mut session = create_test_session().await;
 
         let new_box_name = "Delivery";
         let box_id = "Test";
 
-        session.rename(box_id, new_box_name).unwrap();
+        session.rename(box_id, new_box_name).await.unwrap();
 
-        session.logout().unwrap();
+        session.logout().await.unwrap();
     }
 }

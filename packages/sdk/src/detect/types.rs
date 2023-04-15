@@ -1,16 +1,26 @@
 use serde::Serialize;
+use tokio::net::ToSocketAddrs;
 
 use crate::{
     parse::to_json,
     types::{ConnectionSecurity, Result},
 };
 
-#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Serialize, Clone, PartialEq, Eq, Hash)]
 pub enum ServerConfigType {
     Imap,
     Pop,
     Smtp,
     Exchange,
+}
+
+impl ServerConfigType {
+    pub fn is_outgoing(&self) -> bool {
+        match self {
+            Self::Smtp => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -164,4 +174,44 @@ impl Config {
     }
 }
 
-pub type Socket = (String, u16, ConnectionSecurity);
+pub struct Socket {
+    domain: String,
+    port: u16,
+    security: ConnectionSecurity,
+}
+
+impl Socket {
+    pub fn new<D: Into<String>>(domain: D, port: u16, security: ConnectionSecurity) -> Self {
+        Self {
+            domain: domain.into(),
+            port,
+            security,
+        }
+    }
+
+    pub fn from_tuple<S: AsRef<str>>(tuple: (S, u16, ConnectionSecurity)) -> Self {
+        Self::new(tuple.0.as_ref(), tuple.1, tuple.2)
+    }
+
+    pub fn addr(&self) -> impl ToSocketAddrs + '_ {
+        (self.domain.as_ref(), self.port.clone())
+    }
+
+    pub fn domain(&self) -> &str {
+        &self.domain
+    }
+
+    pub fn into_server_config(self, config_type: ServerConfigType) -> ServerConfig {
+        ServerConfig::new(
+            config_type,
+            self.port,
+            self.domain,
+            self.security,
+            vec![AuthenticationType::Encrypted],
+        )
+    }
+
+    pub fn security(&self) -> &ConnectionSecurity {
+        &self.security
+    }
+}

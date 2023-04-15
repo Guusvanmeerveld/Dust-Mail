@@ -1,14 +1,18 @@
 mod parse;
 
-use std::{collections::HashMap, io::Read, io::Write, net::TcpStream};
+use std::collections::HashMap;
 
-use native_tls::TlsStream;
-use pop3::types::{Left, Right};
+use async_native_tls::{TlsConnector, TlsStream};
+use async_pop3::types::UniqueIDResponse;
+use async_trait::async_trait;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
+};
 
 use crate::{
     client::incoming::IncomingSession,
-    parse::{map_pop_error, parse_headers, parse_rfc822},
-    tls::create_tls_connector,
+    parse::{parse_headers, parse_rfc822},
     types::{Counts, Error, ErrorKind, Flag, MailBox, Message, Preview, Result},
 };
 
@@ -18,45 +22,42 @@ use self::parse::parse_preview_from_headers;
 
 const MAILBOX_DEFAULT_NAME: &str = "Inbox";
 
-pub struct PopClient<S: Read + Write> {
-    session: pop3::Client<S>,
+pub struct PopClient<S: AsyncRead + AsyncWrite + Unpin> {
+    session: async_pop3::Client<S>,
 }
 
-pub struct PopSession<S: Read + Write> {
-    session: pop3::Client<S>,
+pub struct PopSession<S: AsyncRead + AsyncWrite + Unpin> {
+    session: async_pop3::Client<S>,
     current_mailbox: Vec<MailBox>,
     unique_id_map: HashMap<String, u32>,
 }
 
-pub fn connect<S: AsRef<str>, P: Into<u16>>(
+pub async fn connect<S: AsRef<str>, P: Into<u16>>(
     server: S,
     port: P,
 ) -> Result<PopClient<TlsStream<TcpStream>>> {
-    let tls = create_tls_connector()?;
+    let tls = TlsConnector::new();
 
-    let session = pop3::connect((server.as_ref(), port.into()), server.as_ref(), &tls, None)
-        .map_err(map_pop_error)?;
+    let session =
+        async_pop3::connect((server.as_ref(), port.into()), server.as_ref(), &tls, None).await?;
 
     Ok(PopClient { session })
 }
 
-pub fn connect_plain<S: AsRef<str>, P: Into<u16>>(
+pub async fn connect_plain<S: AsRef<str>, P: Into<u16>>(
     server: S,
     port: P,
 ) -> Result<PopClient<TcpStream>> {
-    let session =
-        pop3::connect_plain((server.as_ref(), port.into()), None).map_err(map_pop_error)?;
+    let session = async_pop3::connect_plain((server.as_ref(), port.into()), None).await?;
 
     Ok(PopClient { session })
 }
 
-impl<S: Read + Write> PopClient<S> {
-    pub fn login<T: AsRef<str>>(self, username: T, password: T) -> Result<PopSession<S>> {
+impl<S: AsyncRead + AsyncWrite + Unpin> PopClient<S> {
+    pub async fn login<T: AsRef<str>>(self, username: T, password: T) -> Result<PopSession<S>> {
         let mut session = self.session;
 
-        session
-            .login(username.as_ref(), password.as_ref())
-            .map_err(map_pop_error)?;
+        session.login(username.as_ref(), password.as_ref()).await?;
 
         // session.capabilities()
 
@@ -68,35 +69,29 @@ impl<S: Read + Write> PopClient<S> {
     }
 }
 
-impl<S: Read + Write> PopSession<S> {
-    fn get_session_mut(&mut self) -> &mut pop3::Client<S> {
+impl<S: AsyncRead + AsyncWrite + Unpin> PopSession<S> {
+    fn get_session_mut(&mut self) -> &mut async_pop3::Client<S> {
         &mut self.session
     }
 
     /// Fetches the message count from the pop server and creates a new 'fake' mailbox.
     ///
     /// We do this because Pop does not support mailboxes.
-    fn get_default_box(&mut self) -> Result<MailBox> {
+    async fn get_default_box(&mut self) -> Result<MailBox> {
         let session = self.get_session_mut();
 
-        let message_count = match session.stat().map_err(map_pop_error) {
-            Ok(stats) => Some(stats.0),
-            Err(err) => return Err(err),
-        };
+        let message_count = session.stat().await?.0;
 
         let box_name = MAILBOX_DEFAULT_NAME;
 
-        let counts: Option<Counts> = match message_count {
-            Some(count) => Some(Counts::new(0, count)),
-            None => None,
-        };
+        let counts = Counts::new(0, message_count);
 
-        let mailbox = MailBox::new(counts, None, Vec::new(), true, box_name, box_name);
+        let mailbox = MailBox::new(Some(counts), None, Vec::new(), true, box_name, box_name);
 
         Ok(mailbox)
     }
 
-    fn get_msg_number_from_msg_id(&mut self, msg_id: &str) -> Result<u32> {
+    async fn get_msg_number_from_msg_id(&mut self, msg_id: &str) -> Result<u32> {
         match self.unique_id_map.get(msg_id) {
             Some(msg_number) => return Ok(msg_number.clone()),
             None => {}
@@ -104,12 +99,12 @@ impl<S: Read + Write> PopSession<S> {
 
         let session = self.get_session_mut();
 
-        let unique_id_vec = match session.uidl(None).map_err(map_pop_error)? {
-            Left(unique_id_vec) => unique_id_vec,
-            // We gave the function a 'None'
-            Right(_) => {
+        let unique_id_vec = match session.uidl(None).await? {
+            UniqueIDResponse::UniqueID(_) => {
+                // We gave the function a 'None' so it should never return this
                 unreachable!()
             }
+            UniqueIDResponse::UniqueIDList(unique_ids) => unique_ids,
         };
 
         self.unique_id_map = unique_id_vec
@@ -127,23 +122,24 @@ impl<S: Read + Write> PopSession<S> {
     }
 }
 
-impl<S: Read + Write> IncomingSession for PopSession<S> {
-    fn logout(&mut self) -> Result<()> {
+#[async_trait]
+impl<S: AsyncRead + AsyncWrite + Unpin + Send> IncomingSession for PopSession<S> {
+    async fn logout(&mut self) -> Result<()> {
         let session = self.get_session_mut();
 
-        session.quit().map_err(map_pop_error)?;
+        session.quit().await?;
 
         Ok(())
     }
 
-    fn box_list(&mut self) -> Result<&Vec<MailBox>> {
-        self.current_mailbox = vec![self.get_default_box()?];
+    async fn box_list(&mut self) -> Result<&Vec<MailBox>> {
+        self.current_mailbox = vec![self.get_default_box().await?];
 
         Ok(&self.current_mailbox)
     }
 
-    fn get(&mut self, _: &str) -> Result<&MailBox> {
-        self.current_mailbox = vec![self.get_default_box()?];
+    async fn get(&mut self, _: &str) -> Result<&MailBox> {
+        self.current_mailbox = vec![self.get_default_box().await?];
 
         let selected_box = match self.current_mailbox.first() {
             Some(mailbox) => mailbox,
@@ -153,29 +149,29 @@ impl<S: Read + Write> IncomingSession for PopSession<S> {
         Ok(selected_box)
     }
 
-    fn delete(&mut self, _: &str) -> Result<()> {
+    async fn delete(&mut self, _: &str) -> Result<()> {
         Err(Error::new(
             ErrorKind::Unsupported,
             "Pop does not support deleting mailboxes",
         ))
     }
 
-    fn rename(&mut self, _: &str, _: &str) -> Result<()> {
+    async fn rename(&mut self, _: &str, _: &str) -> Result<()> {
         Err(Error::new(
             ErrorKind::Unsupported,
             "Pop does not support renaming mailboxes",
         ))
     }
 
-    fn create(&mut self, _: &str) -> Result<()> {
+    async fn create(&mut self, _: &str) -> Result<()> {
         Err(Error::new(
             ErrorKind::Unsupported,
             "Pop does not support creating mailboxes",
         ))
     }
 
-    fn messages(&mut self, _: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
-        let mailbox = self.get_default_box()?;
+    async fn messages(&mut self, _: &str, start: u32, end: u32) -> Result<Vec<Preview>> {
+        let mailbox = self.get_default_box().await?;
 
         let total_messages = mailbox.counts().unwrap().total();
 
@@ -200,19 +196,20 @@ impl<S: Read + Write> IncomingSession for PopSession<S> {
         let mut unique_id_map = HashMap::new();
 
         for msg_number in sequence_start..sequence_end {
-            let unique_id = match session.uidl(Some(msg_number)).map_err(map_pop_error) {
-                Ok(response) => match response {
-                    Left(all_messages) => all_messages.into_iter().next().unwrap().1,
-                    Right(item) => item.1,
-                },
-                Err(err) => return Err(err),
+            let uidl_response = session.uidl(Some(msg_number)).await?;
+
+            let unique_id = match uidl_response {
+                UniqueIDResponse::UniqueIDList(all_messages) => {
+                    all_messages.into_iter().next().unwrap().1
+                }
+                UniqueIDResponse::UniqueID(item) => item.1,
             };
 
             // Add the unique id to the local map so we don't have to retrieve the entire list of unique id's later
             // just to get this message's msg_number.
             unique_id_map.insert(unique_id.clone(), msg_number);
 
-            let header_bytes = session.top(msg_number, 0).map_err(map_pop_error)?;
+            let header_bytes = session.top(msg_number, 0).await?;
 
             let headers = parse_headers(&header_bytes)?;
 
@@ -233,14 +230,14 @@ impl<S: Read + Write> IncomingSession for PopSession<S> {
         Ok(previews)
     }
 
-    fn get_message(&mut self, _: &str, msg_id: &str) -> Result<Message> {
-        let msg_number = self.get_msg_number_from_msg_id(msg_id)?;
+    async fn get_message(&mut self, _: &str, msg_id: &str) -> Result<Message> {
+        let msg_number = self.get_msg_number_from_msg_id(msg_id).await?;
 
         let session = self.get_session_mut();
 
-        let message_bytes = session.retr(msg_number).map_err(map_pop_error)?;
+        let message_bytes = session.retr(msg_number).await?;
 
-        let content = parse_rfc822(&message_bytes)?;
+        let content = parse_rfc822(&message_bytes).await?;
 
         let headers = parse_headers(&message_bytes)?;
 
@@ -276,17 +273,17 @@ impl<S: Read + Write> IncomingSession for PopSession<S> {
 
 #[cfg(test)]
 mod test {
-    use std::net::TcpStream;
 
     use super::PopSession;
 
     use crate::client::incoming::IncomingSession;
 
+    use async_native_tls::TlsStream;
     use dotenv::dotenv;
-    use native_tls::TlsStream;
     use std::env;
+    use tokio::net::TcpStream;
 
-    fn create_test_session() -> PopSession<TlsStream<TcpStream>> {
+    async fn create_test_session() -> PopSession<TlsStream<TcpStream>> {
         dotenv().ok();
 
         let username = env::var("POP_USERNAME").unwrap();
@@ -295,18 +292,18 @@ mod test {
         let server = env::var("POP_SERVER").unwrap();
         let port: u16 = 995;
 
-        let client = super::connect(server, port).unwrap();
+        let client = super::connect(server, port).await.unwrap();
 
-        let session = client.login(&username, &password).unwrap();
+        let session = client.login(&username, &password).await.unwrap();
 
         session
     }
 
-    #[test]
-    fn get_messages() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn get_messages() {
+        let mut session = create_test_session().await;
 
-        let previews = session.messages("Inbox", 0, 10).unwrap();
+        let previews = session.messages("Inbox", 0, 10).await.unwrap();
 
         for preview in previews.iter() {
             println!(
@@ -318,11 +315,11 @@ mod test {
         }
     }
 
-    #[test]
-    fn get_message() {
-        let mut session = create_test_session();
+    #[tokio::test]
+    async fn get_message() {
+        let mut session = create_test_session().await;
 
-        let message = session.get_message("Inbox", "17812").unwrap();
+        let message = session.get_message("Inbox", "17812").await.unwrap();
 
         println!("{:?}", message.to());
     }

@@ -1,37 +1,31 @@
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
-use imap::types::{
+use async_imap::types::{
     Fetch,
     Flag as ImapFlag,
     //  Mailbox as ImapCounts,
-    Name as ImapBox,
-    NameAttribute as ImapBoxAttribute,
 };
 
 use crate::{
     parse::{parse_headers, parse_rfc822},
-    types::{
-        Address, Content, Counts, Error, ErrorKind, Flag, Headers, MailBox, Message, Preview,
-        Result,
-    },
+    types::{Address, Content, Error, ErrorKind, Flag, Headers, Message, Preview, Result},
 };
 
-use super::types::MailBoxTree;
-
-const AT_SYMBOL: u8 = 64;
-
-fn bytes_to_string(bytes: &Option<&[u8]>) -> Option<String> {
+fn bytes_to_string<'a>(bytes: &Option<Cow<'a, [u8]>>) -> Option<String> {
     match bytes {
-        Some(bytes) => String::from_utf8(bytes.to_vec()).ok(),
+        Some(bytes) => Some(std::str::from_utf8(&bytes).ok()?.to_string()),
         None => None,
     }
 }
 
-fn address_to_string(mailbox: Option<&[u8]>, host: Option<&[u8]>) -> Option<String> {
-    vec![mailbox, Some(&[AT_SYMBOL]), host]
-        .iter()
-        .map(bytes_to_string)
-        .collect()
+fn address_to_string(
+    mailbox: &Option<Cow<'_, [u8]>>,
+    host: &Option<Cow<'_, [u8]>>,
+) -> Option<String> {
+    let mailbox_string = bytes_to_string(mailbox)?;
+    let host_string = bytes_to_string(host)?;
+
+    Some(format!("{}@{}", mailbox_string, host_string))
 }
 
 fn parse_uid(uid: Option<u32>) -> Result<String> {
@@ -44,9 +38,8 @@ fn parse_uid(uid: Option<u32>) -> Result<String> {
     }
 }
 
-fn imap_flags_to_flags(imap_flags: &[ImapFlag]) -> Vec<Flag> {
-    imap_flags
-        .iter()
+fn imap_flags_to_flags<'a, I: Iterator<Item = ImapFlag<'a>>>(imap_flag: I) -> Vec<Flag> {
+    imap_flag
         .filter_map(|flag| {
             let flag = match flag {
                 ImapFlag::Seen => Some(Flag::Read),
@@ -73,7 +66,7 @@ pub fn fetch_to_preview(fetch: &Fetch) -> Result<Preview> {
         Some(envelope) => envelope,
         None => {
             return Err(Error::new(
-                ErrorKind::ParseMessage,
+                ErrorKind::InvalidMessage,
                 format!("Message with id '{}' does not contain an envelope", id),
             ))
         }
@@ -91,7 +84,7 @@ pub fn fetch_to_preview(fetch: &Fetch) -> Result<Preview> {
             .iter()
             .map(|address| {
                 let name = bytes_to_string(&address.name);
-                let address = address_to_string(address.mailbox, address.host);
+                let address = address_to_string(&address.mailbox, &address.host);
 
                 Address::new(name, address)
             })
@@ -106,7 +99,7 @@ pub fn fetch_to_preview(fetch: &Fetch) -> Result<Preview> {
     Ok(preview)
 }
 
-pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
+pub async fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
     let envelope = fetch.envelope().unwrap();
 
     let flags = imap_flags_to_flags(fetch.flags());
@@ -121,7 +114,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
             .iter()
             .map(|address| {
                 let name = bytes_to_string(&address.name);
-                let address = address_to_string(address.mailbox, address.host);
+                let address = address_to_string(&address.mailbox, &address.host);
 
                 Address::new(name, address)
             })
@@ -134,7 +127,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
             .iter()
             .map(|address| {
                 let name = bytes_to_string(&address.name);
-                let address = address_to_string(address.mailbox, address.host);
+                let address = address_to_string(&address.mailbox, &address.host);
 
                 Address::new(name, address)
             })
@@ -147,7 +140,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
             .iter()
             .map(|address| {
                 let name = bytes_to_string(&address.name);
-                let address = address_to_string(address.mailbox, address.host);
+                let address = address_to_string(&address.mailbox, &address.host);
 
                 Address::new(name, address)
             })
@@ -160,7 +153,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
             .iter()
             .map(|address| {
                 let name = bytes_to_string(&address.name);
-                let address = address_to_string(address.mailbox, address.host);
+                let address = address_to_string(&address.mailbox, &address.host);
 
                 Address::new(name, address)
             })
@@ -177,7 +170,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
 
     let (content, headers): (Content, Headers) = match fetch.body() {
         Some(body) => {
-            let content = parse_rfc822(body)?;
+            let content = parse_rfc822(body).await?;
             let headers = parse_headers(body)?;
 
             (content, headers)
@@ -192,7 +185,7 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
     Ok(message)
 }
 
-/// Given a mailboxes id on the server and the delimiter assigned to that box, give that last item that is created when the id is splitted on the delimiter.
+// Given a mailboxes id on the server and the delimiter assigned to that box, give that last item that is created when the id is splitted on the delimiter.
 // pub fn name_from_box_id(id: &str, delimiter: Option<&str>) -> String {
 //     match delimiter {
 //         Some(delimiter) => {
@@ -209,74 +202,3 @@ pub fn fetch_to_message(fetch: &Fetch) -> Result<Message> {
 //         .as_ref()
 //         .map(|imap_counts| Counts::new(imap_counts.unseen.unwrap_or(0), imap_counts.exists))
 // }
-
-/// This is a function that takes an array of mailbox names and builds it into a folder tree of mailboxes.
-/// In the case that there is a mailbox present that has children, the children must also be present in the given array of mailboxes.
-pub fn get_boxes_from_names(imap_boxes: &Vec<(&ImapBox, Option<Counts>)>) -> Vec<MailBox> {
-    let mut folders: HashMap<String, MailBoxTree> = HashMap::new();
-
-    for (folder, counts) in imap_boxes {
-        match folder.delimiter() {
-            Some(delimiter) => {
-                let parts: Vec<_> = folder.name().split(delimiter).collect();
-
-                let mut current: Option<&mut MailBoxTree> = None;
-
-                for part in parts {
-                    let id = match current.as_ref() {
-                        Some(current) => {
-                            format!("{}{}{}", current.id(), delimiter, part)
-                        }
-                        None => String::from(part),
-                    };
-
-                    let children = match current {
-                        Some(current_box) => current_box.children_mut(),
-                        None => &mut folders,
-                    };
-
-                    let current_box = imap_boxes
-                        .iter()
-                        .find(|(imap_box, _)| imap_box.name() == &id);
-
-                    let selectable = !current_box
-                        .map(|(current_box, _)| {
-                            current_box
-                                .attributes()
-                                .contains(&ImapBoxAttribute::NoSelect)
-                        })
-                        .unwrap_or(false);
-
-                    let counts = current_box
-                        .map(|current_box| current_box.1.clone())
-                        .unwrap_or(Some(Counts::new(0, 0)));
-
-                    current = Some(
-                        children
-                            .entry(String::from(part))
-                            .or_insert(MailBoxTree::new(
-                                counts,
-                                Some(String::from(delimiter)),
-                                HashMap::new(),
-                                selectable,
-                                id.as_str(),
-                                part,
-                            )),
-                    );
-                }
-            }
-            None => {
-                let id = folder.name().to_string();
-
-                let selectable = !folder.attributes().contains(&ImapBoxAttribute::NoSelect);
-
-                folders.insert(
-                    id.clone(),
-                    MailBoxTree::new(counts.clone(), None, HashMap::new(), selectable, &id, &id),
-                );
-            }
-        }
-    }
-
-    folders.into_iter().map(|(_, value)| value.into()).collect()
-}

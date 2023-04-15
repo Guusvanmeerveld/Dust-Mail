@@ -4,6 +4,7 @@ members = [
     "apps/web/src-tauri",
     "apps/server",
     "packages/sdk",
+    "packages/async-tcp",
     "packages/autoconfig",
     "packages/structures-rs",
     "packages/async-pop3"

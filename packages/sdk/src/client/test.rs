@@ -6,7 +6,7 @@ use crate::types::IncomingClientType;
 
 use super::incoming::{IncomingClientBuilder, IncomingSession};
 
-fn create_session() -> Box<dyn IncomingSession> {
+async fn create_session() -> Box<dyn IncomingSession> {
     dotenv().ok();
 
     let username = env::var("IMAP_USERNAME").unwrap();
@@ -19,25 +19,26 @@ fn create_session() -> Box<dyn IncomingSession> {
         .set_server(server)
         .set_port(port)
         .build()
+        .await
         .unwrap();
 
-    let session = client.login(&username, &password).unwrap();
+    let session = client.login(&username, &password).await.unwrap();
 
     session
 }
 
-#[test]
-fn logout() {
-    let mut session = create_session();
+#[tokio::test]
+async fn logout() {
+    let mut session = create_session().await;
 
-    session.logout().unwrap();
+    session.logout().await.unwrap();
 }
 
-#[test]
-fn box_list() {
-    let mut session = create_session();
+#[tokio::test]
+async fn box_list() {
+    let mut session = create_session().await;
 
-    let list = session.box_list().unwrap();
+    let list = session.box_list().await.unwrap();
 
     for mailbox in list {
         println!("{}", mailbox.counts().unwrap().total());

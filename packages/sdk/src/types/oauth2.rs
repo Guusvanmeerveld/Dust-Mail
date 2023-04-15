@@ -25,10 +25,10 @@ impl OAuthCredentials {
 }
 
 #[cfg(feature = "imap")]
-impl imap::Authenticator for OAuthCredentials {
+impl async_imap::Authenticator for OAuthCredentials {
     type Response = String;
 
-    fn process(&self, _: &[u8]) -> Self::Response {
+    fn process(&mut self, _: &[u8]) -> Self::Response {
         format!(
             "user={}\x01auth=Bearer {}\x01\x01",
             self.username, self.access_token
