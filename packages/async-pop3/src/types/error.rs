@@ -1,13 +1,13 @@
 use std::{error, fmt};
 
 use async_native_tls::Error as TlsError;
-use tokio::{io::Error as IoError, time::error::Elapsed};
+use tokio::{io::Error as IoError, time::error::Elapsed as TimeoutError};
 
 #[derive(Debug)]
 pub enum ErrorKind {
     Tls(TlsError),
     Io(IoError),
-    Timeout(Elapsed),
+    Timeout(TimeoutError),
     Connect,
     NotConnected,
     ShouldNotBeConnected,
@@ -88,8 +88,8 @@ impl From<IoError> for Error {
     }
 }
 
-impl From<Elapsed> for Error {
-    fn from(timeout_error: Elapsed) -> Self {
+impl From<TimeoutError> for Error {
+    fn from(timeout_error: TimeoutError) -> Self {
         Self::new(
             ErrorKind::Timeout(timeout_error),
             "Timeout when connecting to server",

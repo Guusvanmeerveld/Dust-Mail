@@ -112,6 +112,9 @@ pub fn parse_server_response<'a>(full_response: &'a str) -> Result<&'a str> {
     }
 }
 
+/// Parse the capabilities from a string formatted according to the rfc:
+///
+/// https://www.rfc-editor.org/rfc/rfc2449#page-4
 pub fn parse_capabilities(response: &str) -> Capabilities {
     let end_of_line = char::from_u32(LF as u32).unwrap();
 
