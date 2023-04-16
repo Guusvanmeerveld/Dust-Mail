@@ -81,12 +81,12 @@ impl Error {
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self.kind() {
-            ErrorKind::Pop(e) => Some(e),
-            ErrorKind::Imap(e) => Some(e),
-            ErrorKind::Io(e) => Some(e),
-            ErrorKind::Tls(e) => Some(e),
-            ErrorKind::ParseMessage(e) => Some(e),
-            ErrorKind::Tcp(e) => Some(e),
+            ErrorKind::Pop(e) => e.source(),
+            ErrorKind::Imap(e) => e.source(),
+            ErrorKind::Io(e) => e.source(),
+            ErrorKind::Tls(e) => e.source(),
+            ErrorKind::ParseMessage(e) => e.source(),
+            ErrorKind::Tcp(e) => e.source(),
             _ => None,
         }
     }

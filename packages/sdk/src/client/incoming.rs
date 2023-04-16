@@ -37,7 +37,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync + 'static> Incoming
         self,
         username: T,
         password: T,
-    ) -> Result<Box<dyn IncomingSession>> {
+    ) -> Result<Box<dyn IncomingSession + Send>> {
         match self.client {
             #[cfg(feature = "imap")]
             IncomingClientTypeWithClient::Imap(client) => {
@@ -62,7 +62,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin + Debug + Send + Sync + 'static> Incoming
     pub async fn oauth2_login(
         self,
         oauth_credentials: OAuthCredentials,
-    ) -> Result<Box<dyn IncomingSession>> {
+    ) -> Result<Box<dyn IncomingSession + Send>> {
         match self.client {
             #[cfg(feature = "imap")]
             IncomingClientTypeWithClient::Imap(client) => {

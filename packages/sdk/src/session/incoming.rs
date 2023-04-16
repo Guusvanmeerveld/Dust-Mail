@@ -14,7 +14,7 @@ async fn create_session_from_client<
 >(
     client: IncomingClient<S>,
     login_type: &LoginType,
-) -> Result<Box<dyn IncomingSession>> {
+) -> Result<Box<dyn IncomingSession + Send>> {
     match login_type {
         LoginType::PasswordBased(password_creds) => {
             client
@@ -31,7 +31,7 @@ async fn create_session_from_client<
 pub async fn create_incoming_session(
     options: &LoginOptions,
     client_type: &IncomingClientType,
-) -> Result<Box<dyn IncomingSession>> {
+) -> Result<Box<dyn IncomingSession + Send>> {
     let mut builder = IncomingClientBuilder::new(client_type);
 
     builder

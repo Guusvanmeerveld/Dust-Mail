@@ -180,7 +180,7 @@ pub async fn from_email(email_address: &str) -> Result<Config> {
 mod test {
     #[tokio::test]
     async fn from_email() {
-        let email = "guusvanmeerveld@yahoo.com";
+        let email = "mail@samtaen.nl";
 
         let config = super::from_email(email).await.unwrap();
 
