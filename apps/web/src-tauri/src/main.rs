@@ -3,18 +3,19 @@
     windows_subsystem = "windows"
 )]
 
-mod base64;
 mod commands;
-mod cryptography;
-mod files;
+mod hash;
+mod keyring;
+mod sessions;
 
+mod identifier;
 mod menu;
 mod parse;
 mod tray;
 mod types;
 
+use sessions::Sessions;
 use tauri::{Manager, SystemTrayEvent};
-use types::Sessions;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {

@@ -18,12 +18,15 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "1.2", features = ["devtools", "isolation", "shell-open", "system-tray", "window-close", "window-create"] }
 sdk = { path = "../../../packages/sdk", version = "0.1" }
-chacha20poly1305 = { version = "0.10", features = ["stream"] }
 open = "3.0"
 base64 = "0.21"
 directories = "4.0"
 futures = "0.3"
 dashmap = "5.4.0"
+keyring = "2.0.2"
+data-encoding = "2.3.3"
+ring = "0.16.20"
+whoami = "1.4.0"
 
 [features]
 # by default Tauri runs in production mode
