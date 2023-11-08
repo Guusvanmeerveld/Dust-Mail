@@ -11,6 +11,9 @@
     <img alt="MIT license" src="https://img.shields.io/github/license/Guusvanmeerveld/Dust-Mail" />
     
 </div>
+
+<h3 align="center">This project has moved to <a href="https://github.com/Dust-Mail">here</a></h3>
+
 <p align="center">Warning: This is very early software and should be treated as such. It is recommended to not login using the credentials of your main email address until the first stable release.</p>
 <p align="center">Dust Mail is an opensource, fast and elegant mail client. It is still in active development and currently only has support for imap and smtp, with planned support for pop3, jmap and even Protonmail.</p>
 
